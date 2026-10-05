@@ -1,8 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #faf8f5;
+  --foreground: #1e293b;
 }
 
 @theme inline {
@@ -12,15 +13,56 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+}
+
+/* Ensure inputs with white/light backgrounds always render crisp dark text regardless of dark mode */
+input:not([class*="text-"]):not([class*="bg-slate-900"]):not([class*="bg-zinc-"]):not([class*="bg-gray-900"]),
+textarea:not([class*="text-"]):not([class*="bg-slate-900"]):not([class*="bg-zinc-"]):not([class*="bg-gray-900"]) {
+  color: #1e293b;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}
+
+/* Modal form inputs always crisp dark text */
+.modal-light-input,
+form input[type="text"],
+form textarea {
+  color: #1e293b;
+}
+
+/* Custom font mood classes */
+.font-handwriting {
+  font-family: 'Caveat', cursive, system-ui, sans-serif;
+}
+
+.font-rounded {
+  font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+}
+
+/* Custom cheerful scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
