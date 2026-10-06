@@ -17,6 +17,11 @@ import {
   CELEBRATION_OPTIONS,
   CATEGORY_COLORS,
   DEFAULT_PREFERENCES,
+  PIN_STYLE_OPTIONS,
+  COMPLETION_STAMP_OPTIONS,
+  STAMP_COLOR_OPTIONS,
+  VIEW_DENSITY_OPTIONS,
+  DESK_BUDDY_OPTIONS,
 } from '@/lib/userPreferences';
 import { compressImageToDataUrl, compressWallpaperImageToDataUrl } from '@/lib/imageCompressor';
 import { triggerCelebration } from '@/lib/confetti';
@@ -43,6 +48,10 @@ import {
   Download,
   FileJson,
   CheckCircle2,
+  Stamp,
+  Smile,
+  Layers,
+  Pin,
 } from 'lucide-react';
 import { playPopSound, playVictoryChime } from '@/lib/soundEffects';
 import { Task } from '@/types/task';
@@ -66,7 +75,16 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
 }) => {
   const [formData, setFormData] = useState<UserPreferences>(currentPreferences);
   const [prevPreferences, setPrevPreferences] = useState<UserPreferences>(currentPreferences);
-  const [activeTab, setActiveTab] = useState<'profile' | 'theme' | 'workflow' | 'categories' | 'gamification' | 'effects' | 'backup'>('profile');
+  const [activeTab, setActiveTab] = useState<
+    | 'profile'
+    | 'theme'
+    | 'aesthetics'
+    | 'workflow'
+    | 'categories'
+    | 'gamification'
+    | 'effects'
+    | 'backup'
+  >('profile');
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadingWallpaper, setIsUploadingWallpaper] = useState(false);
   const [restoreMsg, setRestoreMsg] = useState<string | null>(null);
@@ -260,6 +278,13 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
         const importedPreferences: UserPreferences = {
           ...DEFAULT_PREFERENCES,
           ...rawPrefs,
+          pinStyle: rawPrefs.pinStyle || DEFAULT_PREFERENCES.pinStyle,
+          completionStamp: rawPrefs.completionStamp || DEFAULT_PREFERENCES.completionStamp,
+          stampColor: rawPrefs.stampColor || DEFAULT_PREFERENCES.stampColor,
+          viewDensity: rawPrefs.viewDensity || DEFAULT_PREFERENCES.viewDensity,
+          sortBy: rawPrefs.sortBy || DEFAULT_PREFERENCES.sortBy,
+          deskBuddy: rawPrefs.deskBuddy || DEFAULT_PREFERENCES.deskBuddy,
+          footerText: typeof rawPrefs.footerText === 'string' ? rawPrefs.footerText : DEFAULT_PREFERENCES.footerText,
           customLogoUrl: isSafeUrl(rawPrefs.customLogoUrl),
           customBgUrl: isSafeUrl(rawPrefs.customBgUrl),
         };
@@ -472,6 +497,18 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
           >
             <Palette className="w-3.5 h-3.5" />
             <span>Tema</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('aesthetics')}
+            className={`pb-2 text-xs font-bold transition-all border-b-2 flex items-center gap-1.5 cursor-pointer whitespace-nowrap px-1 ${
+              activeTab === 'aesthetics'
+                ? 'border-orange-500 text-orange-600'
+                : 'border-transparent text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            <Stamp className="w-3.5 h-3.5" />
+            <span>Fisik & Maskot</span>
           </button>
           <button
             type="button"
@@ -1231,7 +1268,236 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
             </div>
           )}
 
-          {/* TAB 3: ALUR & KOLOM */}
+          {/* TAB: ESTETIKA FISIK & TEMAN MEJA (PHYSICAL AESTHETICS & DESK BUDDY) */}
+          {activeTab === 'aesthetics' && (
+            <div className="space-y-6">
+              {/* 1. Gaya Sematan Pin Fisik */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <Pin className="w-3.5 h-3.5 text-orange-500" />
+                    <span>Gaya Sematan Catatan (Pins & Clips)</span>
+                  </label>
+                  <span className="text-[11px] text-slate-400">Penyemat fisik di tepi atas kartu</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                  {PIN_STYLE_OPTIONS.map((opt) => {
+                    const isSelected = (formData.pinStyle || 'pin') === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => {
+                          playPopSound(formData.soundProfile);
+                          setFormData({ ...formData, pinStyle: opt.id });
+                        }}
+                        className={`p-3 rounded-2xl border text-center transition-all cursor-pointer flex flex-col items-center justify-between gap-1.5 ${
+                          isSelected
+                            ? 'border-orange-500 bg-orange-50/60 ring-2 ring-orange-300 shadow-xs'
+                            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                        }`}
+                      >
+                        <span className="text-2xl drop-shadow-xs">{opt.icon}</span>
+                        <div>
+                          <div className="font-bold text-xs text-slate-800">{opt.label.split(' ')[0]}</div>
+                          <p className="text-[10px] text-slate-400 line-clamp-1">{opt.desc}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 2. Stempel Selesai Retro (Completion Rubber Stamp) */}
+              <div className="p-4 rounded-2xl bg-amber-50/40 border border-amber-200/80 space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-amber-950 uppercase tracking-wider flex items-center gap-1.5">
+                    <Stamp className="w-4 h-4 text-amber-600" />
+                    <span>Stempel Retro &quot;Selesai&quot; (Completion Stamp)</span>
+                  </label>
+                  <span className="text-[11px] text-amber-700 font-medium">Cap tinta otomatis di kolom DONE ✨</span>
+                </div>
+
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Pilih teks cap stempel dan warna tinta vintage yang akan dicetak pada kartu tugas saat berhasil diselesaikan.
+                </p>
+
+                {/* Pilihan Kata Stempel */}
+                <div>
+                  <span className="text-[11px] font-bold text-slate-600 block mb-1.5">Pilihan Teks Cap:</span>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {COMPLETION_STAMP_OPTIONS.map((opt) => {
+                      const isSelected = (formData.completionStamp || 'SELESAI!') === opt.id;
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => {
+                            playPopSound(formData.soundProfile);
+                            setFormData({ ...formData, completionStamp: opt.id });
+                          }}
+                          className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${
+                            isSelected
+                              ? 'border-amber-500 bg-white shadow-xs ring-2 ring-amber-300'
+                              : 'border-amber-200/70 bg-white/70 hover:bg-white hover:border-amber-300'
+                          }`}
+                        >
+                          <div>
+                            <span className="font-black text-xs tracking-wider text-slate-800 block">
+                              {opt.label}
+                            </span>
+                            <span className="text-[10px] text-slate-400 block line-clamp-1">
+                              {opt.desc}
+                            </span>
+                          </div>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-amber-600 shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Pilihan Warna Tinta Stempel */}
+                {formData.completionStamp !== 'none' && (
+                  <div className="pt-2 border-t border-amber-200/60">
+                    <span className="text-[11px] font-bold text-slate-600 block mb-1.5">Warna Tinta Stempel:</span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {STAMP_COLOR_OPTIONS.map((sc) => {
+                        const isSelected = (formData.stampColor || 'red') === sc.id;
+                        return (
+                          <button
+                            key={sc.id}
+                            type="button"
+                            onClick={() => {
+                              playPopSound(formData.soundProfile);
+                              setFormData({ ...formData, stampColor: sc.id });
+                            }}
+                            className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                              isSelected
+                                ? 'border-slate-800 bg-white shadow-xs ring-2 ring-slate-400 scale-105'
+                                : 'border-slate-200 bg-white/70 hover:bg-white'
+                            }`}
+                          >
+                            <span
+                              className="w-3.5 h-3.5 rounded-full border border-black/10"
+                              style={{ backgroundColor: sc.hex }}
+                            />
+                            <span className="text-slate-800">{sc.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 3. Kepadatan Tampilan (View Density) */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-orange-500" />
+                    <span>Kepadatan Tampilan Kartu (View Density)</span>
+                  </label>
+                  <span className="text-[11px] text-slate-400">Atur ukuran & kerapatan catatan</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {VIEW_DENSITY_OPTIONS.map((opt) => {
+                    const isSelected = (formData.viewDensity || 'cozy') === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => {
+                          playPopSound(formData.soundProfile);
+                          setFormData({ ...formData, viewDensity: opt.id });
+                        }}
+                        className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-3 ${
+                          isSelected
+                            ? 'border-orange-500 bg-orange-50/60 ring-2 ring-orange-300 shadow-xs'
+                            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                        }`}
+                      >
+                        <span className="text-2xl p-1.5 rounded-xl bg-white shadow-2xs shrink-0">
+                          {opt.icon}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-bold text-xs text-slate-800 flex items-center justify-between">
+                            <span>{opt.label}</span>
+                            {isSelected && <Check className="w-4 h-4 text-orange-600" />}
+                          </div>
+                          <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                            {opt.desc}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 4. Teman Meja Virtual (Desk Buddy Mascot) */}
+              <div className="p-4 rounded-2xl bg-sky-50/40 border border-sky-200/80 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-sky-950 uppercase tracking-wider flex items-center gap-1.5">
+                    <Smile className="w-4 h-4 text-sky-600" />
+                    <span>Teman Meja Virtual (Desk Buddy Mascot)</span>
+                  </label>
+                  <span className="text-[11px] text-sky-700 font-medium">Sahabat setia di pojok papan 🐾</span>
+                </div>
+
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Maskot interaktif yang menemani hari kerjamu, menyemangati setiap kali tugas selesai, dan memberikan kutipan motivasi saat diklik.
+                </p>
+
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                  {DESK_BUDDY_OPTIONS.map((opt) => {
+                    const isSelected = (formData.deskBuddy || 'cat') === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => {
+                          playPopSound(formData.soundProfile);
+                          setFormData({ ...formData, deskBuddy: opt.id });
+                        }}
+                        className={`p-3 rounded-2xl border text-center transition-all cursor-pointer flex flex-col items-center justify-between gap-1 ${
+                          isSelected
+                            ? 'border-sky-500 bg-white shadow-xs ring-2 ring-sky-300'
+                            : 'border-sky-200/70 bg-white/70 hover:bg-white hover:border-sky-300'
+                        }`}
+                      >
+                        <span className="text-2xl drop-shadow-2xs">{opt.avatar}</span>
+                        <div>
+                          <span className="font-bold text-xs text-slate-800 block">{opt.name.split(' ')[0]}</span>
+                          <span className="text-[10px] text-slate-400 block line-clamp-1">{opt.desc}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 5. Teks Footer & Watermark Kustom */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-slate-800">
+                    Teks Footer / Hak Cipta Kustom
+                  </label>
+                  <span className="text-[11px] text-slate-400">Tampil di bagian bawah sendiri</span>
+                </div>
+                <input
+                  type="text"
+                  maxLength={60}
+                  value={formData.footerText || ''}
+                  onChange={(e) => setFormData({ ...formData, footerText: e.target.value })}
+                  placeholder="Contoh: Slam Area © 2026 atau Studio Kreatif Kami © 2026"
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-medium bg-white focus:outline-hidden focus:ring-2 focus:ring-orange-400 text-slate-800"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: ALUR & KOLOM */}
           {activeTab === 'workflow' && (
             <div className="space-y-5">
               <div>

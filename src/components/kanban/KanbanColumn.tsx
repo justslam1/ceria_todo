@@ -1,7 +1,16 @@
 import React from 'react';
 import { Droppable } from '@hello-pangea/dnd';
 import { Task, TaskStatus } from '@/types/task';
-import { WashiTapeStyle, FontMood, CustomCategory, NoteColorMode } from '@/types/preferences';
+import {
+  WashiTapeStyle,
+  FontMood,
+  CustomCategory,
+  NoteColorMode,
+  PinStyle,
+  CompletionStamp,
+  StampColor,
+  ViewDensity,
+} from '@/types/preferences';
 import { TaskCard } from './TaskCard';
 import { Lightbulb, Zap, Trophy, Plus, Sparkles, Archive } from 'lucide-react';
 
@@ -16,6 +25,10 @@ interface KanbanColumnProps {
   customCategories?: CustomCategory[];
   fontMood?: FontMood;
   noteColorMode?: NoteColorMode;
+  pinStyle?: PinStyle;
+  completionStamp?: CompletionStamp;
+  stampColor?: StampColor;
+  viewDensity?: ViewDensity;
   onEditTask: (task: Task) => void;
   onDeleteTask: (id: string) => void;
   onStatusChange: (id: string, newStatus: TaskStatus) => void;
@@ -37,6 +50,10 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
   customCategories,
   fontMood = 'modern',
   noteColorMode = 'column',
+  pinStyle = 'pin',
+  completionStamp = 'SELESAI!',
+  stampColor = 'red',
+  viewDensity = 'cozy',
   onEditTask,
   onDeleteTask,
   onStatusChange,
@@ -167,7 +184,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className={`flex-1 flex flex-col gap-3 min-h-[440px] p-1.5 rounded-2xl transition-all duration-200 ${
+            className={`flex-1 flex flex-col ${viewDensity === 'compact' ? 'gap-2' : 'gap-3'} min-h-[440px] p-1.5 rounded-2xl transition-all duration-200 ${
               snapshot.isDraggingOver ? theme.dropActive : ''
             }`}
           >
@@ -202,6 +219,10 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
                   customCategories={customCategories}
                   fontMood={fontMood}
                   noteColorMode={noteColorMode}
+                  pinStyle={pinStyle}
+                  completionStamp={completionStamp}
+                  stampColor={stampColor}
+                  viewDensity={viewDensity}
                   onEdit={onEditTask}
                   onDelete={onDeleteTask}
                   onStatusChange={onStatusChange}

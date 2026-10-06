@@ -6,6 +6,12 @@ export type FontMood = 'modern' | 'handwriting' | 'rounded';
 export type CelebrationFx = 'confetti' | 'fireworks' | 'stars' | 'none';
 export type NoteColor = 'auto' | 'yellow' | 'pink' | 'blue' | 'green' | 'purple' | 'white';
 export type NoteColorMode = 'column' | 'priority' | 'custom';
+export type PinStyle = 'pin' | 'paperclip' | 'woodpeg' | 'magnet' | 'tape';
+export type CompletionStamp = 'SELESAI!' | 'LUNAS' | 'APPROVED' | 'MANTAP! 👍' | 'DONE ✓' | 'none';
+export type StampColor = 'red' | 'green' | 'blue' | 'purple' | 'gold';
+export type ViewDensity = 'cozy' | 'compact';
+export type SortByOption = 'manual' | 'priority' | 'dueDate' | 'title';
+export type DeskBuddyType = 'cat' | 'dog' | 'plant' | 'coffee' | 'none';
 
 export interface ColumnSetting {
   title: string;
@@ -50,6 +56,16 @@ export interface UserPreferences {
     IN_PROGRESS: ColumnSetting;
     DONE: ColumnSetting;
   };
+  // New: Physical Aesthetics & Pins
+  pinStyle: PinStyle;
+  completionStamp: CompletionStamp;
+  stampColor: StampColor;
+  // New: View Density & Sorting
+  viewDensity: ViewDensity;
+  sortBy: SortByOption;
+  // New: Desk Buddy Mascot & Custom Footer
+  deskBuddy: DeskBuddyType;
+  footerText: string;
 }
 
 export interface ThemeConfig {

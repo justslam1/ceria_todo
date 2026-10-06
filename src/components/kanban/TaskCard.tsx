@@ -1,8 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Draggable } from '@hello-pangea/dnd';
 import { Task, TaskStatus } from '@/types/task';
-import { WashiTapeStyle, FontMood, CustomCategory, NoteColor, NoteColorMode } from '@/types/preferences';
-import { getStickyNoteStyle } from '@/lib/userPreferences';
+import {
+  WashiTapeStyle,
+  FontMood,
+  CustomCategory,
+  NoteColor,
+  NoteColorMode,
+  PinStyle,
+  CompletionStamp,
+  StampColor,
+  ViewDensity,
+} from '@/types/preferences';
+import { getStickyNoteStyle, getStampStyle } from '@/lib/userPreferences';
 import { PriorityBadge, CategoryBadge, DateBadge, TimeEstimateBadge } from '@/components/ui/Badge';
 import {
   Trash2,
@@ -15,6 +25,8 @@ import {
   Pin,
   Timer,
   Sparkles,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { parseTaskDescription } from '@/lib/subtasks';
 
@@ -31,6 +43,10 @@ interface TaskCardProps {
   customCategories?: CustomCategory[];
   fontMood?: FontMood;
   noteColorMode?: NoteColorMode;
+  pinStyle?: PinStyle;
+  completionStamp?: CompletionStamp;
+  stampColor?: StampColor;
+  viewDensity?: ViewDensity;
 }
 
 export const TaskCard: React.FC<TaskCardProps> = ({
@@ -46,7 +62,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   customCategories,
   fontMood = 'modern',
   noteColorMode = 'column',
+  pinStyle = 'pin',
+  completionStamp = 'SELESAI!',
+  stampColor = 'red',
+  viewDensity = 'cozy',
 }) => {
+  const [isSubtasksExpanded, setIsSubtasksExpanded] = useState(false);
+
   const getNextStatus = (current: TaskStatus): TaskStatus | null => {
     if (current === 'TODO') return 'IN_PROGRESS';
     if (current === 'IN_PROGRESS') return 'DONE';
@@ -81,6 +103,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   const subtasks = parsed.subtasks;
 
   const theme = getStickyNoteStyle(task.status, task.priority, explicitColor, noteColorMode);
+  const stampStyle = getStampStyle(stampColor);
+  const isCompact = viewDensity === 'compact';
 
   return (
     <Draggable draggableId={task.id} index={index}>
@@ -88,7 +112,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
-          className={`relative group rounded-2xl p-4 pt-5 border transition-all duration-200 ${
+          className={`relative group rounded-2xl border transition-all duration-200 ${
+            isCompact ? 'p-3 pt-4' : 'p-4 pt-5'
+          } ${
             snapshot.isDragging
               ? theme.dragging
               : `${theme.paperBg} ${tiltClass} hover:rotate-0 hover:scale-[1.01] hover:shadow-lg`
@@ -96,6 +122,40 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             isPinned ? 'ring-2 ring-amber-400 shadow-md shadow-amber-200/40' : ''
           }`}
         >
+          {/* Physical Fastener Pin Style on Top Edge */}
+          {pinStyle === 'pin' && (
+            <div
+              className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-20 pointer-events-none drop-shadow-md select-none text-xl transition-transform group-hover:scale-110"
+              title="Paku Payung"
+            >
+              📌
+            </div>
+          )}
+          {pinStyle === 'paperclip' && (
+            <div
+              className="absolute -top-3.5 left-6 z-20 pointer-events-none drop-shadow-md select-none text-xl transition-transform group-hover:rotate-6"
+              title="Klip Kertas"
+            >
+              📎
+            </div>
+          )}
+          {pinStyle === 'woodpeg' && (
+            <div
+              className="absolute -top-4 left-7 z-20 pointer-events-none drop-shadow-md select-none text-xl transition-transform group-hover:-translate-y-0.5"
+              title="Jepit Kayu"
+            >
+              🪵
+            </div>
+          )}
+          {pinStyle === 'magnet' && (
+            <div
+              className="absolute -top-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none drop-shadow-md select-none text-lg transition-transform group-hover:scale-110"
+              title="Magnet Kulkas"
+            >
+              🧲
+            </div>
+          )}
+
           {/* Decorative Washi Tape strip at the top center */}
           {washiTapeStyle !== 'none' && (
             <div
@@ -116,7 +176,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           )}
 
           {/* Card Top Header: Drag Handle, Badges, Pin Badge, Actions */}
-          <div className="flex items-center justify-between gap-2 mb-2.5">
+          <div className={`flex items-center justify-between gap-1.5 ${isCompact ? 'mb-1.5' : 'mb-2.5'}`}>
             <div className="flex items-center gap-1.5 flex-wrap">
               <div
                 {...provided.dragHandleProps}
@@ -184,11 +244,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           <h4
             className={`${
               fontMood === 'handwriting'
-                ? 'font-handwriting text-base font-bold tracking-wide'
+                ? isCompact ? 'font-handwriting text-sm font-bold tracking-wide' : 'font-handwriting text-base font-bold tracking-wide'
                 : fontMood === 'rounded'
-                ? 'font-rounded font-bold text-sm'
-                : 'font-bold text-sm'
-            } ${theme.title} leading-snug mb-1.5 ${
+                ? isCompact ? 'font-rounded font-bold text-xs' : 'font-rounded font-bold text-sm'
+                : isCompact ? 'font-bold text-xs' : 'font-bold text-sm'
+            } ${theme.title} leading-snug ${isCompact ? 'mb-1' : 'mb-1.5'} ${
               task.status === 'DONE' ? 'line-through text-slate-500' : ''
             }`}
           >
@@ -198,7 +258,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           {/* Sticky Note Description / Notes */}
           {displayDescription && (
             <p
-              className={`text-xs text-slate-700 line-clamp-2 mb-2 leading-relaxed ${
+              className={`${isCompact ? 'text-[11px] line-clamp-1 mb-1.5' : 'text-xs line-clamp-2 mb-2'} text-slate-700 leading-relaxed ${
                 fontMood === 'handwriting' ? 'font-handwriting text-sm font-semibold' : ''
               }`}
             >
@@ -208,66 +268,135 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
           {/* Subtask Checklist on Card */}
           {subtasks.length > 0 && (
-            <div className="mb-2.5 p-2 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 space-y-1.5">
-              <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
-                <span className="flex items-center gap-1">
-                  <CheckSquare className="w-3 h-3 text-amber-600" />
-                  <span>Sub-tugas:</span>
-                </span>
-                <span className="font-mono text-[10px] px-1.5 py-0.2 rounded-md bg-white/70 shadow-2xs font-bold text-slate-800">
-                  {subtasks.filter((s) => s.completed).length}/{subtasks.length}
-                </span>
-              </div>
+            isCompact ? (
+              /* Compact subtasks single-line preview with toggle expand */
+              <div className="mb-2 p-1.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 space-y-1">
+                <button
+                  type="button"
+                  onClick={() => setIsSubtasksExpanded((prev) => !prev)}
+                  className="w-full flex items-center justify-between text-[10px] font-bold text-slate-700 dark:text-slate-200 cursor-pointer hover:opacity-80"
+                >
+                  <span className="flex items-center gap-1">
+                    <CheckSquare className="w-2.5 h-2.5 text-amber-600" />
+                    <span>Sub-tugas: {subtasks.filter((s) => s.completed).length}/{subtasks.length}</span>
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-12 bg-black/10 dark:bg-white/10 h-1 rounded-full overflow-hidden">
+                      <div
+                        className="bg-emerald-500 h-full"
+                        style={{
+                          width: `${Math.round(
+                            (subtasks.filter((s) => s.completed).length / subtasks.length) * 100
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                    {isSubtasksExpanded ? <ChevronUp className="w-3 h-3 text-slate-400" /> : <ChevronDown className="w-3 h-3 text-slate-400" />}
+                  </div>
+                </button>
 
-              {/* Mini progress bar for subtasks */}
-              <div className="w-full bg-black/10 dark:bg-white/10 h-1 rounded-full overflow-hidden">
-                <div
-                  className="bg-emerald-500 h-full transition-all duration-300"
-                  style={{
-                    width: `${Math.round(
-                      (subtasks.filter((s) => s.completed).length / subtasks.length) * 100
-                    )}%`,
-                  }}
-                />
+                {isSubtasksExpanded && (
+                  <div className="space-y-1 pt-1 border-t border-black/5 dark:border-white/10">
+                    {subtasks.map((st, sIdx) => (
+                      <label
+                        key={st.id || sIdx}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-1.5 text-[11px] text-slate-800 dark:text-slate-200 cursor-pointer select-none"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={st.completed}
+                          onChange={() => onToggleSubtask?.(task.id, sIdx)}
+                          className="w-3 h-3 accent-amber-500 rounded cursor-pointer shrink-0"
+                        />
+                        <span className={`truncate ${st.completed ? 'line-through text-slate-400' : 'font-medium'}`}>
+                          {st.title}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
+            ) : (
+              /* Cozy full subtask list */
+              <div className="mb-2.5 p-2 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 space-y-1.5">
+                <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                  <span className="flex items-center gap-1">
+                    <CheckSquare className="w-3 h-3 text-amber-600" />
+                    <span>Sub-tugas:</span>
+                  </span>
+                  <span className="font-mono text-[10px] px-1.5 py-0.2 rounded-md bg-white/70 shadow-2xs font-bold text-slate-800">
+                    {subtasks.filter((s) => s.completed).length}/{subtasks.length}
+                  </span>
+                </div>
 
-              {/* Subtasks items with click-to-toggle */}
-              <div className="space-y-1 pt-0.5">
-                {subtasks.map((st, sIdx) => (
-                  <label
-                    key={st.id || sIdx}
-                    onClick={(e) => {
-                      e.stopPropagation();
+                {/* Mini progress bar for subtasks */}
+                <div className="w-full bg-black/10 dark:bg-white/10 h-1 rounded-full overflow-hidden">
+                  <div
+                    className="bg-emerald-500 h-full transition-all duration-300"
+                    style={{
+                      width: `${Math.round(
+                        (subtasks.filter((s) => s.completed).length / subtasks.length) * 100
+                      )}%`,
                     }}
-                    className="flex items-center gap-1.5 text-xs text-slate-800 cursor-pointer hover:opacity-80 transition-opacity select-none group/item"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={st.completed}
-                      onChange={() => onToggleSubtask?.(task.id, sIdx)}
-                      className="w-3.5 h-3.5 accent-amber-500 rounded cursor-pointer shrink-0"
-                    />
-                    <span
-                      className={`truncate text-[11px] ${
-                        st.completed ? 'line-through text-slate-400 opacity-75' : 'font-medium'
-                      }`}
+                  />
+                </div>
+
+                {/* Subtasks items with click-to-toggle */}
+                <div className="space-y-1 pt-0.5">
+                  {subtasks.map((st, sIdx) => (
+                    <label
+                      key={st.id || sIdx}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
+                      className="flex items-center gap-1.5 text-xs text-slate-800 cursor-pointer hover:opacity-80 transition-opacity select-none group/item"
                     >
-                      {st.title}
-                    </span>
-                  </label>
-                ))}
+                      <input
+                        type="checkbox"
+                        checked={st.completed}
+                        onChange={() => onToggleSubtask?.(task.id, sIdx)}
+                        className="w-3.5 h-3.5 accent-amber-500 rounded cursor-pointer shrink-0"
+                      />
+                      <span
+                        className={`truncate text-[11px] ${
+                          st.completed ? 'line-through text-slate-400 opacity-75' : 'font-medium'
+                        }`}
+                      >
+                        {st.title}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )
+          )}
+
+          {/* Retro Completion Stamp (Visible on DONE status) */}
+          {task.status === 'DONE' && completionStamp && completionStamp !== 'none' && (
+            <div className="absolute right-3 bottom-10 pointer-events-none select-none z-20 -rotate-12 transition-transform group-hover:rotate-[-8deg] group-hover:scale-105">
+              <div
+                className={`border-2 border-dashed px-2 py-0.5 rounded-lg font-black uppercase tracking-wider text-[11px] sm:text-xs shadow-xs backdrop-blur-2xs flex items-center gap-1 opacity-90 ${stampStyle.borderClass} ${stampStyle.textClass} ${stampStyle.bgClass}`}
+                style={{
+                  boxShadow: '0 0 0 1.5px currentColor inset',
+                  textShadow: '0.5px 0.5px 0px rgba(0,0,0,0.06)',
+                }}
+              >
+                <span>{completionStamp}</span>
               </div>
             </div>
           )}
 
           {/* Created Date & Time meta text */}
-          <div className={`flex items-center gap-1 text-[10px] ${theme.subtleText} mb-2.5 font-medium`}>
-            <History className="w-3 h-3 opacity-70" />
-            <span>Dibuat: {formatCreatedTime(task.createdAt)}</span>
-          </div>
+          {!isCompact && (
+            <div className={`flex items-center gap-1 text-[10px] ${theme.subtleText} mb-2.5 font-medium`}>
+              <History className="w-3 h-3 opacity-70" />
+              <span>Dibuat: {formatCreatedTime(task.createdAt)}</span>
+            </div>
+          )}
 
           {/* Sticky Note Footer: Due Date with Time, Estimate & Quick Advance */}
-          <div className={`flex items-center justify-between gap-2 pt-2.5 border-t ${theme.divider} mt-1 text-xs`}>
+          <div className={`flex items-center justify-between gap-1.5 ${isCompact ? 'pt-1.5 mt-0.5' : 'pt-2.5 mt-1'} border-t ${theme.divider} text-xs`}>
             <div className="flex items-center gap-1.5 flex-wrap">
               <DateBadge date={task.dueDate} isDone={task.status === 'DONE'} />
               <TimeEstimateBadge time={task.estimatedTime} />
@@ -277,7 +406,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             {nextStatus && (
               <button
                 onClick={() => onStatusChange(task.id, nextStatus)}
-                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold ${theme.btnBg} border shadow-2xs transition-all active:scale-95 cursor-pointer`}
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-xs font-bold ${theme.btnBg} border shadow-2xs transition-all active:scale-95 cursor-pointer`}
                 title={nextStatus === 'IN_PROGRESS' ? 'Mulai kerjakan' : 'Tandai selesai'}
               >
                 <span>{nextStatus === 'IN_PROGRESS' ? 'Aksi' : 'Selesai'}</span>
@@ -286,7 +415,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             )}
 
             {task.status === 'DONE' && (
-              <span className="inline-flex items-center gap-1 text-emerald-800 font-bold">
+              <span className="inline-flex items-center gap-1 text-emerald-800 dark:text-emerald-300 font-bold text-[11px]">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 Selesai
               </span>

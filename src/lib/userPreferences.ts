@@ -10,9 +10,25 @@ import {
   CustomCategory,
   NoteColor,
   NoteColorMode,
+  PinStyle,
+  CompletionStamp,
+  StampColor,
+  ViewDensity,
+  SortByOption,
+  DeskBuddyType,
 } from '@/types/preferences';
 
-export type { CustomCategory, NoteColor, NoteColorMode };
+export type {
+  CustomCategory,
+  NoteColor,
+  NoteColorMode,
+  PinStyle,
+  CompletionStamp,
+  StampColor,
+  ViewDensity,
+  SortByOption,
+  DeskBuddyType,
+};
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
   appName: 'Papan Catatan',
@@ -60,6 +76,13 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
       emoji: '🏆',
     },
   },
+  pinStyle: 'pin',
+  completionStamp: 'SELESAI!',
+  stampColor: 'red',
+  viewDensity: 'cozy',
+  sortBy: 'manual',
+  deskBuddy: 'cat',
+  footerText: 'Slam Area © 2026',
 };
 
 export const APP_ICON_PRESETS = [
@@ -532,6 +555,64 @@ export const COLUMN_ICON_OPTIONS = {
   ],
 };
 
+export const PIN_STYLE_OPTIONS: { id: PinStyle; label: string; icon: string; desc: string }[] = [
+  { id: 'pin', label: 'Paku Payung 📌', icon: '📌', desc: 'Paku payung merah klasik ala papan buletin' },
+  { id: 'paperclip', label: 'Klip Kertas 📎', icon: '📎', desc: 'Penjepit kertas perak minimalis rapi' },
+  { id: 'woodpeg', label: 'Jepit Kayu 🪵', icon: '🪵', desc: 'Jepitan kayu jemuran ala polaroid' },
+  { id: 'magnet', label: 'Magnet Bulat 🧲', icon: '🧲', desc: 'Magnet kulkas mengkilap warna-warni' },
+  { id: 'tape', label: 'Selotip Saja 🏷️', icon: '🏷️', desc: 'Hanya strip washi tape tanpa sematan' },
+];
+
+export const COMPLETION_STAMP_OPTIONS: { id: CompletionStamp; label: string; desc: string }[] = [
+  { id: 'SELESAI!', label: 'SELESAI!', desc: 'Stempel standar misi beres gemilang' },
+  { id: 'LUNAS', label: 'LUNAS', desc: 'Cocok untuk tagihan, belanja & kewajiban' },
+  { id: 'APPROVED', label: 'APPROVED', desc: 'Cap verifikasi persetujuan profesional' },
+  { id: 'MANTAP! 👍', label: 'MANTAP! 👍', desc: 'Apresiasi santai penuh semangat' },
+  { id: 'DONE ✓', label: 'DONE ✓', desc: 'Cap centang modern minimalis' },
+  { id: 'none', label: 'Tanpa Stempel', desc: 'Kartu selesai bersih tanpa cap' },
+];
+
+export const STAMP_COLOR_OPTIONS: {
+  id: StampColor;
+  label: string;
+  borderClass: string;
+  textClass: string;
+  bgClass: string;
+  hex: string;
+}[] = [
+  { id: 'red', label: 'Merah Karmin', borderClass: 'border-red-600 dark:border-red-500', textClass: 'text-red-600 dark:text-red-400', bgClass: 'bg-red-500/10', hex: '#dc2626' },
+  { id: 'green', label: 'Hijau Emerald', borderClass: 'border-emerald-600 dark:border-emerald-500', textClass: 'text-emerald-600 dark:text-emerald-400', bgClass: 'bg-emerald-500/10', hex: '#16a34a' },
+  { id: 'blue', label: 'Biru Arsip', borderClass: 'border-blue-600 dark:border-blue-500', textClass: 'text-blue-600 dark:text-blue-400', bgClass: 'bg-blue-500/10', hex: '#2563eb' },
+  { id: 'purple', label: 'Ungu Lilac', borderClass: 'border-purple-600 dark:border-purple-500', textClass: 'text-purple-600 dark:text-purple-400', bgClass: 'bg-purple-500/10', hex: '#9333ea' },
+  { id: 'gold', label: 'Emas Juara', borderClass: 'border-amber-600 dark:border-amber-500', textClass: 'text-amber-700 dark:text-amber-400', bgClass: 'bg-amber-500/10', hex: '#d97706' },
+];
+
+export const VIEW_DENSITY_OPTIONS: { id: ViewDensity; label: string; icon: string; desc: string }[] = [
+  { id: 'cozy', label: 'Mode Nyaman (Cozy)', icon: '📖', desc: 'Kartu lega, sub-tugas terbuka & mudah dibaca' },
+  { id: 'compact', label: 'Mode Ringkas (Compact)', icon: '📑', desc: 'Kartu padat & hemat ruang untuk banyak tugas' },
+];
+
+export const SORT_BY_OPTIONS: { id: SortByOption; label: string; desc: string }[] = [
+  { id: 'manual', label: 'Manual (Bebas Geser)', desc: 'Urutan bebas via drag-and-drop' },
+  { id: 'priority', label: 'Prioritas Tertinggi', desc: 'Tinggi 🔥 ke Santai 🍃' },
+  { id: 'dueDate', label: 'Tenggat Terdekat', desc: 'Jatuh tempo paling awal di atas' },
+  { id: 'title', label: 'Abjad (A - Z)', desc: 'Nama tugas berurutan alfabetis' },
+];
+
+export const DESK_BUDDY_OPTIONS: {
+  id: DeskBuddyType;
+  name: string;
+  avatar: string;
+  desc: string;
+  defaultQuote: string;
+}[] = [
+  { id: 'cat', name: 'Mimi si Kucing', avatar: '🐱', desc: 'Kucing manis penyemangat kerja', defaultQuote: 'Meow! Satu per satu pasti kelar kok! 🐾' },
+  { id: 'dog', name: 'Bobi si Anjing', avatar: '🐶', desc: 'Anjing setia yang selalu bersemangat', defaultQuote: 'Guk! Kamu pasti bisa, ayo semangat! 🦴' },
+  { id: 'plant', name: 'Moko si Sukulen', avatar: '🌱', desc: 'Tanaman tenang pembawa fokus', defaultQuote: 'Tumbuh sedikit demi sedikit setiap hari 🌿' },
+  { id: 'coffee', name: 'KopiBot Barista', avatar: '☕', desc: 'Robot kopi pembangkit energi', defaultQuote: 'Bip-bop! Jangan lupa seduh kopi & minum air! ⚡' },
+  { id: 'none', name: 'Tanpa Maskot', avatar: '🚫', desc: 'Tampilan bersih tanpa teman meja', defaultQuote: '' },
+];
+
 const STORAGE_KEY = 'ceria_todo_user_preferences_v1';
 
 function isSafeUrl(url: unknown): string | null {
@@ -558,6 +639,13 @@ export function loadUserPreferences(): UserPreferences {
     return {
       ...DEFAULT_PREFERENCES,
       ...parsed,
+      pinStyle: parsed.pinStyle || DEFAULT_PREFERENCES.pinStyle,
+      completionStamp: parsed.completionStamp || DEFAULT_PREFERENCES.completionStamp,
+      stampColor: parsed.stampColor || DEFAULT_PREFERENCES.stampColor,
+      viewDensity: parsed.viewDensity || DEFAULT_PREFERENCES.viewDensity,
+      sortBy: parsed.sortBy || DEFAULT_PREFERENCES.sortBy,
+      deskBuddy: parsed.deskBuddy || DEFAULT_PREFERENCES.deskBuddy,
+      footerText: typeof parsed.footerText === 'string' ? parsed.footerText : DEFAULT_PREFERENCES.footerText,
       customLogoUrl: isSafeUrl(parsed.customLogoUrl),
       customBgUrl: isSafeUrl(parsed.customBgUrl),
       columns: {
@@ -603,4 +691,9 @@ export function saveUserPreferences(prefs: UserPreferences): void {
 export function getThemeConfig(themeId: string): ThemeConfig {
   const found = THEME_LIST.find((t) => t.id === themeId);
   return found || THEME_LIST[0];
+}
+
+export function getStampStyle(color: StampColor = 'red') {
+  const found = STAMP_COLOR_OPTIONS.find((c) => c.id === color);
+  return found || STAMP_COLOR_OPTIONS[0];
 }

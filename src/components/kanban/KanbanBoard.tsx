@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useSyncExternalStore } from 'react';
 import { DragDropContext, DropResult } from '@hello-pangea/dnd';
 import { Task, TaskStatus, CreateTaskInput, UpdateTaskInput } from '@/types/task';
-import { UserPreferences } from '@/types/preferences';
+import { UserPreferences, SortByOption } from '@/types/preferences';
 import {
   loadUserPreferences,
   saveUserPreferences,
@@ -17,6 +17,7 @@ import { TaskFormModal } from '@/components/modals/TaskFormModal';
 import { PersonalizationModal } from '@/components/modals/PersonalizationModal';
 import { PomodoroBar } from '@/components/pomodoro/PomodoroBar';
 import { ArchiveModal } from '@/components/modals/ArchiveModal';
+import { DeskBuddy } from '@/components/ui/DeskBuddy';
 import {
   toggleSubtaskInRawDescription,
   isTaskPinned,
@@ -40,6 +41,9 @@ import {
   Timer,
   ArrowRight,
   AlertTriangle,
+  ArrowUpDown,
+  LayoutGrid,
+  Rows3,
 } from 'lucide-react';
 
 export const KanbanBoard: React.FC = () => {
@@ -263,18 +267,36 @@ export const KanbanBoard: React.FC = () => {
     });
   }, [activeTasks, searchQuery, selectedCategory, selectedPriority]);
 
+  // Sort filtered tasks if a specific sorting mode is active
+  const sortedFilteredTasks = useMemo(() => {
+    const list = [...filteredTasks];
+    if (preferences.sortBy === 'priority') {
+      const priorityWeight: Record<string, number> = { HIGH: 1, MEDIUM: 2, LOW: 3 };
+      list.sort((a, b) => (priorityWeight[a.priority] || 2) - (priorityWeight[b.priority] || 2));
+    } else if (preferences.sortBy === 'dueDate') {
+      list.sort((a, b) => {
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      });
+    } else if (preferences.sortBy === 'title') {
+      list.sort((a, b) => a.title.localeCompare(b.title, 'id'));
+    }
+    return list;
+  }, [filteredTasks, preferences.sortBy]);
+
   // Group tasks by status
   const todoTasks = useMemo(
-    () => filteredTasks.filter((t) => t.status === 'TODO'),
-    [filteredTasks]
+    () => sortedFilteredTasks.filter((t) => t.status === 'TODO'),
+    [sortedFilteredTasks]
   );
   const inProgressTasks = useMemo(
-    () => filteredTasks.filter((t) => t.status === 'IN_PROGRESS'),
-    [filteredTasks]
+    () => sortedFilteredTasks.filter((t) => t.status === 'IN_PROGRESS'),
+    [sortedFilteredTasks]
   );
   const doneTasks = useMemo(
-    () => filteredTasks.filter((t) => t.status === 'DONE'),
-    [filteredTasks]
+    () => sortedFilteredTasks.filter((t) => t.status === 'DONE'),
+    [sortedFilteredTasks]
   );
 
   // Milestone / Progress calculations based on active tasks
@@ -1079,6 +1101,69 @@ export const KanbanBoard: React.FC = () => {
               </select>
             </div>
 
+            {/* Sort Selector */}
+            <div
+              className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-xl border ${
+                themeConfig.isDark
+                  ? 'bg-slate-900/40 border-slate-700/60 text-slate-300'
+                  : 'bg-white/50 border-slate-200 text-slate-600'
+              }`}
+            >
+              <ArrowUpDown className="w-3 h-3 text-slate-400" />
+              <span className="font-medium text-slate-500 text-[11px]">Urutkan:</span>
+              <select
+                value={preferences.sortBy || 'manual'}
+                onChange={(e) =>
+                  handleSavePreferences({
+                    ...preferences,
+                    sortBy: e.target.value as SortByOption,
+                  })
+                }
+                className={`bg-transparent font-semibold text-xs focus:outline-hidden cursor-pointer ${
+                  themeConfig.isDark ? 'text-slate-200' : 'text-slate-800'
+                }`}
+              >
+                <option value="manual" className={themeConfig.isDark ? 'bg-slate-900 text-white' : ''}>Manual (Bebas)</option>
+                <option value="priority" className={themeConfig.isDark ? 'bg-slate-900 text-white' : ''}>Prioritas 🔥</option>
+                <option value="dueDate" className={themeConfig.isDark ? 'bg-slate-900 text-white' : ''}>Tenggat Terdekat 🗓️</option>
+                <option value="title" className={themeConfig.isDark ? 'bg-slate-900 text-white' : ''}>Abjad (A-Z) 🔤</option>
+              </select>
+            </div>
+
+            {/* View Density Quick Toggle */}
+            <button
+              type="button"
+              onClick={() => {
+                playPopSound(preferences.soundProfile);
+                handleSavePreferences({
+                  ...preferences,
+                  viewDensity: preferences.viewDensity === 'compact' ? 'cozy' : 'compact',
+                });
+              }}
+              className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-xl border transition-colors cursor-pointer ${
+                themeConfig.isDark
+                  ? 'bg-slate-900/40 border-slate-700/60 text-slate-300 hover:bg-slate-800/60'
+                  : 'bg-white/50 border-slate-200 text-slate-600 hover:bg-slate-50'
+              }`}
+              title={
+                preferences.viewDensity === 'compact'
+                  ? 'Ganti ke Mode Nyaman (Cozy)'
+                  : 'Ganti ke Mode Ringkas (Compact)'
+              }
+            >
+              {preferences.viewDensity === 'compact' ? (
+                <>
+                  <Rows3 className="w-3.5 h-3.5 text-amber-500" />
+                  <span className="font-semibold text-[11px]">Ringkas</span>
+                </>
+              ) : (
+                <>
+                  <LayoutGrid className="w-3.5 h-3.5 text-amber-500" />
+                  <span className="font-semibold text-[11px]">Nyaman</span>
+                </>
+              )}
+            </button>
+
             {/* Refresh Button */}
             <button
               onClick={handleRefreshTasks}
@@ -1209,6 +1294,10 @@ export const KanbanBoard: React.FC = () => {
               customCategories={preferences.customCategories}
               fontMood={preferences.fontMood}
               noteColorMode={preferences.noteColorMode}
+              pinStyle={preferences.pinStyle}
+              completionStamp={preferences.completionStamp}
+              stampColor={preferences.stampColor}
+              viewDensity={preferences.viewDensity}
               onEditTask={handleOpenEdit}
               onDeleteTask={handleDeleteTask}
               onStatusChange={handleStatusChange}
@@ -1230,6 +1319,10 @@ export const KanbanBoard: React.FC = () => {
               customCategories={preferences.customCategories}
               fontMood={preferences.fontMood}
               noteColorMode={preferences.noteColorMode}
+              pinStyle={preferences.pinStyle}
+              completionStamp={preferences.completionStamp}
+              stampColor={preferences.stampColor}
+              viewDensity={preferences.viewDensity}
               onEditTask={handleOpenEdit}
               onDeleteTask={handleDeleteTask}
               onStatusChange={handleStatusChange}
@@ -1251,6 +1344,10 @@ export const KanbanBoard: React.FC = () => {
               customCategories={preferences.customCategories}
               fontMood={preferences.fontMood}
               noteColorMode={preferences.noteColorMode}
+              pinStyle={preferences.pinStyle}
+              completionStamp={preferences.completionStamp}
+              stampColor={preferences.stampColor}
+              viewDensity={preferences.viewDensity}
               onEditTask={handleOpenEdit}
               onDeleteTask={handleDeleteTask}
               onStatusChange={handleStatusChange}
@@ -1269,7 +1366,7 @@ export const KanbanBoard: React.FC = () => {
         <p className={`text-xs font-medium tracking-wide transition-colors ${
           themeConfig.isDark ? 'text-slate-500' : 'text-slate-400'
         }`}>
-          Slam Area © 2026
+          {preferences.footerText || 'Slam Area © 2026'}
         </p>
       </footer>
       </div>
@@ -1321,6 +1418,14 @@ export const KanbanBoard: React.FC = () => {
         onDeleteArchivedTask={handleDeleteArchivedTask}
         onClearAllArchived={handleClearAllArchived}
         soundProfile={preferences.soundProfile}
+      />
+
+      {/* Virtual Desk Buddy Mascot */}
+      <DeskBuddy
+        buddyType={preferences.deskBuddy}
+        soundProfile={preferences.soundProfile}
+        completedTasksCount={doneCount}
+        dailyGoal={preferences.dailyTargetGoal}
       />
 
       {/* Floating Network Error Toast */}
