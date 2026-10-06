@@ -27,7 +27,11 @@ export const metadata: Metadata = {
   authors: [{ name: 'Slam Area' }],
   keywords: ['todo', 'kanban', 'productivity', 'sticky note', 'papan catatan'],
   icons: {
-    icon: '/favicon.ico',
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: '32x32' },
+    ],
+    apple: '/apple-touch-icon.png',
   },
   openGraph: {
     title: 'Papan Catatan',

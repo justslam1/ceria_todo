@@ -116,23 +116,24 @@ export const KanbanBoard: React.FC = () => {
     const appName = preferences.appName?.trim() || 'Papan Catatan';
     document.title = appName;
 
-    // 2. Dynamic Favicon (Logo Unggahan atau Ikon Preset Emoji)
+    // 2. Dynamic Favicon (Logo Unggahan atau Ikon Preset Emoji jika diubah)
     let faviconUrl = preferences.customLogoUrl;
-    if (!faviconUrl) {
-      const icon = preferences.appIconPreset || '✨';
-      faviconUrl = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="85">${encodeURIComponent(icon)}</text></svg>`;
+    if (!faviconUrl && preferences.appIconPreset && preferences.appIconPreset !== '✨') {
+      faviconUrl = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="85">${encodeURIComponent(preferences.appIconPreset)}</text></svg>`;
     }
 
-    const existingIcons = document.querySelectorAll<HTMLLinkElement>("link[rel*='icon']");
-    if (existingIcons.length > 0) {
-      existingIcons.forEach((el) => {
-        el.href = faviconUrl;
-      });
-    } else {
-      const link = document.createElement('link');
-      link.rel = 'icon';
-      link.href = faviconUrl;
-      document.head.appendChild(link);
+    if (faviconUrl) {
+      const existingIcons = document.querySelectorAll<HTMLLinkElement>("link[rel*='icon']");
+      if (existingIcons.length > 0) {
+        existingIcons.forEach((el) => {
+          el.href = faviconUrl;
+        });
+      } else {
+        const link = document.createElement('link');
+        link.rel = 'icon';
+        link.href = faviconUrl;
+        document.head.appendChild(link);
+      }
     }
 
     // 3. Sinkronisasi dark mode class
