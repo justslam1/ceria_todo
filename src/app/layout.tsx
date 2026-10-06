@@ -21,16 +21,16 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'Papan Catatan - Studio Papan Buletin Kerja',
+  title: 'Papan Catatan',
   description: 'Kelola tugas harian dengan menyenangkan bersama Papan Catatan!',
-  applicationName: 'Ceria Todo',
+  applicationName: 'Papan Catatan',
   authors: [{ name: 'Slam Area' }],
-  keywords: ['todo', 'kanban', 'productivity', 'sticky note', 'ceria todo'],
+  keywords: ['todo', 'kanban', 'productivity', 'sticky note', 'papan catatan'],
   icons: {
     icon: '/favicon.ico',
   },
   openGraph: {
-    title: 'Papan Catatan - Studio Papan Buletin Kerja',
+    title: 'Papan Catatan',
     description: 'Kelola tugas harian dengan menyenangkan bersama Papan Catatan!',
     type: 'website',
     locale: 'id_ID',

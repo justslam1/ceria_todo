@@ -112,14 +112,9 @@ export const KanbanBoard: React.FC = () => {
   useEffect(() => {
     if (typeof document === 'undefined') return;
 
-    // 1. Dynamic Title (Judul & Slogan / Motto)
-    const appName = preferences.appName?.trim() || 'Ceria Todo';
-    const slogan = preferences.dailyMotto?.trim();
-    if (slogan) {
-      document.title = `${appName} - ${slogan}`;
-    } else {
-      document.title = `${appName} - ${preferences.boardTitle || 'Papan Buletin'}`;
-    }
+    // 1. Dynamic Title
+    const appName = preferences.appName?.trim() || 'Papan Catatan';
+    document.title = appName;
 
     // 2. Dynamic Favicon (Logo Unggahan atau Ikon Preset Emoji)
     let faviconUrl = preferences.customLogoUrl;
