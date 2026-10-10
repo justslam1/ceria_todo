@@ -187,7 +187,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className={`flex-1 flex flex-col ${viewDensity === 'compact' ? 'gap-2' : 'gap-3'} min-h-[440px] p-1.5 rounded-2xl transition-all duration-200 ${
+            className={`flex-1 flex flex-col ${viewDensity === 'compact' ? 'gap-2' : 'gap-3'} min-h-[440px] p-1.5 pt-2.5 rounded-2xl transition-all duration-200 ${
               snapshot.isDraggingOver ? theme.dropActive : ''
             }`}
           >

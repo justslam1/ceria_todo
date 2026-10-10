@@ -122,7 +122,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
-          className={`relative group rounded-2xl border transition-all duration-200 overflow-hidden ${
+          className={`relative group rounded-2xl border transition-all duration-200 ${
             isCompact ? 'p-3 pt-4' : 'p-4 pt-5'
           } ${
             snapshot.isDragging
@@ -135,7 +135,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           {/* Subtle Physical Paper Texture Overlay */}
           {effectiveTexture !== 'plain' && (
             <div
-              className="absolute inset-0 rounded-2xl pointer-events-none z-0 opacity-70"
+              className="absolute inset-0 rounded-2xl pointer-events-none z-0 opacity-70 overflow-hidden"
               style={textureStyle}
             />
           )}
@@ -158,7 +158,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           )}
           {pinStyle === 'woodpeg' && (
             <div
-              className="absolute -top-4 left-7 z-20 pointer-events-none drop-shadow-md select-none text-xl transition-transform group-hover:-translate-y-0.5"
+              className="absolute -top-3.5 left-7 z-20 pointer-events-none drop-shadow-md select-none text-xl transition-transform group-hover:-translate-y-0.5"
               title="Jepit Kayu"
             >
               🪵
@@ -173,8 +173,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             </div>
           )}
 
-          {/* Decorative Washi Tape strip at the top center */}
-          {washiTapeStyle !== 'none' && (
+          {/* Decorative Washi Tape strip at the top center (Only when tape style is selected) */}
+          {pinStyle === 'tape' && washiTapeStyle !== 'none' && (
             <div
               className={`absolute -top-2.5 left-1/2 -translate-x-1/2 w-16 h-5 border backdrop-blur-xs rounded-xs shadow-2xs rotate-[-1deg] transition-all pointer-events-none z-10 ${
                 isPinned
