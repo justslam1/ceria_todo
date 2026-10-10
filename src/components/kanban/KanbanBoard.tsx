@@ -41,6 +41,7 @@ import {
   Award,
   Timer,
   ArrowRight,
+  ArrowLeft,
   AlertTriangle,
   ArrowUpDown,
   LayoutGrid,
@@ -1316,18 +1317,41 @@ export const KanbanBoard: React.FC = () => {
                     >
                       <Timer className="w-3.5 h-3.5" />
                     </button>
+                    {task.status === 'IN_PROGRESS' && (
+                      <button
+                        type="button"
+                        onClick={() => handleStatusChange(task.id, 'TODO')}
+                        className="px-1.5 py-0.5 rounded-lg bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-bold shadow-2xs active:scale-95 transition-all cursor-pointer flex items-center gap-0.5"
+                        title="Kembalikan ke Rencana"
+                      >
+                        <ArrowLeft className="w-2.5 h-2.5" />
+                        <span>Rencana</span>
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() =>
                         handleStatusChange(
                           task.id,
-                          task.status === 'TODO' ? 'IN_PROGRESS' : 'DONE'
+                          task.status === 'TODO'
+                            ? preferences.activeColumnCount === 2
+                              ? 'DONE'
+                              : 'IN_PROGRESS'
+                            : 'DONE'
                         )
                       }
                       className="px-2 py-0.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-bold shadow-2xs active:scale-95 transition-all cursor-pointer flex items-center gap-0.5"
-                      title={task.status === 'TODO' ? 'Mulai Kerjakan' : 'Selesaikan Misi'}
+                      title={
+                        task.status === 'TODO' && preferences.activeColumnCount !== 2
+                          ? 'Mulai Kerjakan'
+                          : 'Selesaikan Misi'
+                      }
                     >
-                      <span>{task.status === 'TODO' ? 'Aksi' : 'Selesai'}</span>
+                      <span>
+                        {task.status === 'TODO' && preferences.activeColumnCount !== 2
+                          ? 'Aksi'
+                          : 'Selesai'}
+                      </span>
                       <ArrowRight className="w-2.5 h-2.5" />
                     </button>
                     <button

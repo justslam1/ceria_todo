@@ -20,6 +20,7 @@ import {
   Trash2,
   Edit3,
   ArrowRight,
+  ArrowLeft,
   GripVertical,
   CheckCircle2,
   History,
@@ -81,7 +82,14 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     return null;
   };
 
+  const getPrevStatus = (current: TaskStatus): TaskStatus | null => {
+    if (current === 'DONE') return activeColumnCount === 2 ? 'TODO' : 'IN_PROGRESS';
+    if (current === 'IN_PROGRESS') return 'TODO';
+    return null;
+  };
+
   const nextStatus = getNextStatus(task.status);
+  const prevStatus = getPrevStatus(task.status);
 
   // Subtle natural angle for organic sticky note look
   const tiltClass = index % 2 === 0 ? '-rotate-[0.6deg]' : 'rotate-[0.6deg]';
@@ -427,24 +435,43 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               <TimeEstimateBadge time={task.estimatedTime} />
             </div>
 
-            {/* Quick Status Advance Button */}
-            {nextStatus && (
-              <button
-                onClick={() => onStatusChange(task.id, nextStatus)}
-                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-xs font-bold ${theme.btnBg} border shadow-2xs transition-all active:scale-95 cursor-pointer`}
-                title={nextStatus === 'IN_PROGRESS' ? 'Mulai kerjakan' : 'Tandai selesai'}
-              >
-                <span>{nextStatus === 'IN_PROGRESS' ? 'Aksi' : 'Selesai'}</span>
-                <ArrowRight className="w-3 h-3" />
-              </button>
-            )}
+            {/* Quick Status Buttons (Back / Forward) */}
+            <div className="flex items-center gap-1 shrink-0">
+              {prevStatus && (
+                <button
+                  type="button"
+                  onClick={() => onStatusChange(task.id, prevStatus)}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-xs font-bold bg-white/80 hover:bg-white text-slate-600 dark:text-slate-300 dark:bg-slate-800/80 dark:hover:bg-slate-800 border border-slate-200/90 dark:border-slate-700 shadow-2xs transition-all active:scale-95 cursor-pointer"
+                  title={
+                    prevStatus === 'TODO'
+                      ? 'Kembalikan ke Rencana'
+                      : 'Kembalikan ke Sedang Dikerjakan'
+                  }
+                >
+                  <ArrowLeft className="w-3 h-3" />
+                  <span>{prevStatus === 'TODO' ? 'Rencana' : 'Aksi'}</span>
+                </button>
+              )}
 
-            {task.status === 'DONE' && (
-              <span className="inline-flex items-center gap-1 text-emerald-800 dark:text-emerald-300 font-bold text-[11px]">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                Selesai
-              </span>
-            )}
+              {nextStatus && (
+                <button
+                  type="button"
+                  onClick={() => onStatusChange(task.id, nextStatus)}
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-xs font-bold ${theme.btnBg} border shadow-2xs transition-all active:scale-95 cursor-pointer`}
+                  title={nextStatus === 'IN_PROGRESS' ? 'Mulai kerjakan' : 'Tandai selesai'}
+                >
+                  <span>{nextStatus === 'IN_PROGRESS' ? 'Aksi' : 'Selesai'}</span>
+                  <ArrowRight className="w-3 h-3" />
+                </button>
+              )}
+
+              {task.status === 'DONE' && (
+                <span className="inline-flex items-center gap-1 text-emerald-800 dark:text-emerald-300 font-bold text-[11px] px-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Selesai
+                </span>
+              )}
+            </div>
           </div>
         </div>
       )}
