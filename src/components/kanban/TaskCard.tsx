@@ -456,21 +456,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 <button
                   type="button"
                   onClick={() => onStatusChange(task.id, nextStatus)}
-                  className={`inline-flex items-center justify-center gap-1 rounded-xl text-xs font-bold ${theme.btnBg} border shadow-2xs transition-all active:scale-95 cursor-pointer ${
-                    nextStatus === 'IN_PROGRESS'
-                      ? 'w-6 h-6 p-0'
-                      : 'px-2 py-0.5'
-                  }`}
-                  title={nextStatus === 'IN_PROGRESS' ? 'Mulai kerjakan' : 'Tandai selesai'}
+                  className={`w-6 h-6 rounded-xl flex items-center justify-center text-xs font-bold ${theme.btnBg} border shadow-2xs transition-all active:scale-95 cursor-pointer`}
+                  title={nextStatus === 'DONE' ? 'Tandai selesai (→)' : 'Mulai kerjakan (→)'}
                 >
-                  {nextStatus === 'IN_PROGRESS' ? (
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  ) : (
-                    <>
-                      <span>Selesai</span>
-                      <ArrowRight className="w-3 h-3" />
-                    </>
-                  )}
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               )}
 
