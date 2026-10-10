@@ -819,14 +819,16 @@ export const KanbanBoard: React.FC = () => {
         {/* Main Board Container */}
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3.5 flex flex-col gap-2.5">
         {/* Board Header & Progress Milestone Banner */}
-        <div
-          className={`p-3 sm:px-4 sm:py-3 rounded-2xl border shadow-xs flex flex-col gap-2 transition-all duration-300 ${
-            themeConfig.isDark
-              ? 'bg-[#1b1e28]/40 backdrop-blur-md border-slate-700/50 shadow-slate-950/20'
-              : `bg-white/40 backdrop-blur-md ${themeConfig.headerBorder} shadow-slate-200/50`
-          }`}
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
+        {(preferences.showBoardHeader !== false || (preferences.showDailyGoalBanner !== false && preferences.dailyTargetGoal > 0)) && (
+          <div
+            className={`p-3 sm:px-4 sm:py-3 rounded-2xl border shadow-xs flex flex-col gap-2 transition-all duration-300 ${
+              themeConfig.isDark
+                ? 'bg-[#1b1e28]/40 backdrop-blur-md border-slate-700/50 shadow-slate-950/20'
+                : `bg-white/40 backdrop-blur-md ${themeConfig.headerBorder} shadow-slate-200/50`
+            }`}
+          >
+            {preferences.showBoardHeader !== false && (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
             <div className="flex items-center gap-2.5">
               {/* Board Icon Magnet/Pin */}
               <div
@@ -918,9 +920,10 @@ export const KanbanBoard: React.FC = () => {
               </div>
             </div>
           </div>
+        )}
 
           {/* Gamifikasi: Target Harian & Hadiah (Daily Target & Self-Reward) */}
-          {preferences.dailyTargetGoal > 0 && (
+          {preferences.showDailyGoalBanner !== false && preferences.dailyTargetGoal > 0 && (
             <div
               className={`px-3 py-1.5 rounded-xl border flex flex-col sm:flex-row items-center justify-between gap-2 transition-all ${
                 doneCount >= preferences.dailyTargetGoal
@@ -998,34 +1001,37 @@ export const KanbanBoard: React.FC = () => {
           )}
 
           {/* Segmented Color Progress Bar */}
-          <div
-            className={`w-full h-1.5 rounded-full overflow-hidden flex shadow-inner ${
-              themeConfig.isDark ? 'bg-slate-900' : 'bg-slate-100'
-            }`}
-          >
-            {totalCount > 0 ? (
-              <>
-                <div
-                  style={{ width: `${(doneCount / totalCount) * 100}%` }}
-                  className="bg-emerald-500 transition-all duration-300"
-                  title={`Selesai: ${doneCount} tugas`}
-                />
-                <div
-                  style={{ width: `${(inProgressCount / totalCount) * 100}%` }}
-                  className="bg-sky-500 transition-all duration-300"
-                  title={`Sedang dikerjakan: ${inProgressCount} tugas`}
-                />
-                <div
-                  style={{ width: `${(todoCount / totalCount) * 100}%` }}
-                  className="bg-amber-400 transition-all duration-300"
-                  title={`Rencana: ${todoCount} tugas`}
-                />
-              </>
-            ) : (
-              <div className={`w-full ${themeConfig.isDark ? 'bg-slate-800' : 'bg-slate-200/50'}`} />
-            )}
-          </div>
+          {preferences.showBoardHeader !== false && (
+            <div
+              className={`w-full h-1.5 rounded-full overflow-hidden flex shadow-inner ${
+                themeConfig.isDark ? 'bg-slate-900' : 'bg-slate-100'
+              }`}
+            >
+              {totalCount > 0 ? (
+                <>
+                  <div
+                    style={{ width: `${(doneCount / totalCount) * 100}%` }}
+                    className="bg-emerald-500 transition-all duration-300"
+                    title={`Selesai: ${doneCount} tugas`}
+                  />
+                  <div
+                    style={{ width: `${(inProgressCount / totalCount) * 100}%` }}
+                    className="bg-sky-500 transition-all duration-300"
+                    title={`Sedang dikerjakan: ${inProgressCount} tugas`}
+                  />
+                  <div
+                    style={{ width: `${(todoCount / totalCount) * 100}%` }}
+                    className="bg-amber-400 transition-all duration-300"
+                    title={`Rencana: ${todoCount} tugas`}
+                  />
+                </>
+              ) : (
+                <div className={`w-full ${themeConfig.isDark ? 'bg-slate-800' : 'bg-slate-200/50'}`} />
+              )}
+            </div>
+          )}
         </div>
+        )}
 
         {/* Search, Filter & Controls Toolbar */}
         <div

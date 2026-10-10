@@ -96,6 +96,8 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   footerText: 'Slam Area © 2026',
   paperTexture: 'plain',
   stickers: DEFAULT_STICKERS,
+  showBoardHeader: true,
+  showDailyGoalBanner: true,
 };
 
 export const APP_ICON_PRESETS = [
@@ -735,6 +737,8 @@ export function loadUserPreferences(): UserPreferences {
       footerText: typeof parsed.footerText === 'string' ? parsed.footerText : DEFAULT_PREFERENCES.footerText,
       paperTexture: parsed.paperTexture || DEFAULT_PREFERENCES.paperTexture,
       stickers: Array.isArray(parsed.stickers) ? parsed.stickers : DEFAULT_PREFERENCES.stickers,
+      showBoardHeader: parsed.showBoardHeader !== false,
+      showDailyGoalBanner: parsed.showDailyGoalBanner !== false,
       customLogoUrl: isSafeUrl(parsed.customLogoUrl),
       customBgUrl: isSafeUrl(parsed.customBgUrl),
       columns: {

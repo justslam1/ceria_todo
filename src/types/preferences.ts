@@ -80,6 +80,9 @@ export interface UserPreferences {
   // New: Paper Textures & Desk Stickers
   paperTexture: PaperTexture;
   stickers: BoardSticker[];
+  // New: Banner Visibility Toggles
+  showBoardHeader: boolean;
+  showDailyGoalBanner: boolean;
 }
 
 export interface ThemeConfig {

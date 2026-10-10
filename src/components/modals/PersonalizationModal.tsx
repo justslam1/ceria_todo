@@ -291,6 +291,8 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
           footerText: typeof rawPrefs.footerText === 'string' ? rawPrefs.footerText : DEFAULT_PREFERENCES.footerText,
           paperTexture: rawPrefs.paperTexture || DEFAULT_PREFERENCES.paperTexture,
           stickers: Array.isArray(rawPrefs.stickers) ? rawPrefs.stickers : DEFAULT_PREFERENCES.stickers,
+          showBoardHeader: rawPrefs.showBoardHeader !== false,
+          showDailyGoalBanner: rawPrefs.showDailyGoalBanner !== false,
           customLogoUrl: isSafeUrl(rawPrefs.customLogoUrl),
           customBgUrl: isSafeUrl(rawPrefs.customBgUrl),
         };
@@ -793,6 +795,71 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
                     placeholder="Contoh: Assooyyyy | Pelan-pelan asal konsisten ✨"
                     className="w-full px-3.5 py-2 rounded-2xl border border-slate-200 text-sm bg-white text-slate-800 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-orange-400 font-medium"
                   />
+                </div>
+
+                {/* Tampilan Banner Papan (Header & Target) */}
+                <div className="p-4 rounded-2xl bg-orange-50/40 border border-orange-200/80 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold text-orange-950 uppercase tracking-wider flex items-center gap-1.5">
+                      <Sliders className="w-3.5 h-3.5 text-orange-500" />
+                      Tampilan Banner Papan (Header & Target)
+                    </h3>
+                    <span className="text-[11px] text-orange-600/80 font-medium">Saklar On / Off 🔘</span>
+                  </div>
+
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Atur apakah banner informasi papan dan banner target harian ditampilkan di bagian atas papan kanban.
+                  </p>
+
+                  <div className="space-y-2 pt-1">
+                    {/* Switch 1: Header Papan & Progres Misi */}
+                    <label className="flex items-start justify-between gap-3 p-3 rounded-xl bg-white border border-orange-200/60 hover:border-orange-300 cursor-pointer transition-all">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm">📌</span>
+                          <span className="text-xs font-bold text-slate-800">
+                            Header Papan & Progres Misi
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Menampilkan nama papan buletin, sapaan waktu, persentase pencapaian, dan bilah progres multi-warna.
+                        </p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={formData.showBoardHeader !== false}
+                        onChange={(e) => {
+                          playPopSound(formData.soundProfile);
+                          setFormData({ ...formData, showBoardHeader: e.target.checked });
+                        }}
+                        className="mt-1 w-4 h-4 rounded text-orange-600 focus:ring-orange-400 border-slate-300 cursor-pointer accent-orange-500"
+                      />
+                    </label>
+
+                    {/* Switch 2: Target Harian & Hadiah */}
+                    <label className="flex items-start justify-between gap-3 p-3 rounded-xl bg-white border border-orange-200/60 hover:border-orange-300 cursor-pointer transition-all">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm">🎯</span>
+                          <span className="text-xs font-bold text-slate-800">
+                            Banner Target Harian & Hadiah
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Menampilkan hitungan target harian (misal: 0/4 selesai), catatan self-reward, dan tombol klaim hadiah.
+                        </p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={formData.showDailyGoalBanner !== false}
+                        onChange={(e) => {
+                          playPopSound(formData.soundProfile);
+                          setFormData({ ...formData, showDailyGoalBanner: e.target.checked });
+                        }}
+                        className="mt-1 w-4 h-4 rounded text-orange-600 focus:ring-orange-400 border-slate-300 cursor-pointer accent-orange-500"
+                      />
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2122,6 +2189,30 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
                     />
                     <span className="text-xs text-slate-500">tugas/hari</span>
                   </div>
+                </div>
+
+                {/* Toggle Visibilitas Banner Target di Papan */}
+                <div className="pt-2.5 border-t border-amber-200/60">
+                  <label className="flex items-center justify-between gap-2.5 cursor-pointer p-1">
+                    <div className="flex-1 min-w-0">
+                      <span className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                        <span>🎯</span>
+                        <span>Tampilkan Banner Target Harian di Papan</span>
+                      </span>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        Matikan jika ingin menyembunyikan kotak progres target harian dari bagian atas papan kanban.
+                      </p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={formData.showDailyGoalBanner !== false}
+                      onChange={(e) => {
+                        playPopSound(formData.soundProfile);
+                        setFormData({ ...formData, showDailyGoalBanner: e.target.checked });
+                      }}
+                      className="w-4 h-4 rounded text-orange-600 focus:ring-orange-400 border-slate-300 cursor-pointer accent-orange-500 shrink-0"
+                    />
+                  </label>
                 </div>
               </div>
 
