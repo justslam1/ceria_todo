@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import {
   UserPreferences,
   ThemeConfig,
@@ -16,6 +17,8 @@ import {
   ViewDensity,
   SortByOption,
   DeskBuddyType,
+  PaperTexture,
+  BoardSticker,
 } from '@/types/preferences';
 
 export type {
@@ -28,7 +31,15 @@ export type {
   ViewDensity,
   SortByOption,
   DeskBuddyType,
+  PaperTexture,
+  BoardSticker,
 };
+
+export const DEFAULT_STICKERS: BoardSticker[] = [
+  { id: 'stk-coffee', emoji: '☕', x: 92, y: 7, rotation: 8, scale: 1 },
+  { id: 'stk-star', emoji: '⭐', x: 3.5, y: 15, rotation: -12, scale: 1 },
+  { id: 'stk-plant', emoji: '🌱', x: 93, y: 78, rotation: -6, scale: 1 },
+];
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
   appName: 'Papan Catatan',
@@ -54,10 +65,10 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   rewardNote: 'Beli Es Kopi Susu gula aren! ☕✨',
   rewardClaimedDate: null,
   customCategories: [
-    { id: 'cat-personal', name: 'Personal', color: 'purple' },
-    { id: 'cat-kerja', name: 'Kerja', color: 'amber' },
-    { id: 'cat-belajar', name: 'Belajar', color: 'sky' },
-    { id: 'cat-sehat', name: 'Kesehatan', color: 'emerald' },
+    { id: 'cat-personal', name: 'Personal', color: 'purple', paperTexture: 'plain' },
+    { id: 'cat-kerja', name: 'Kerja', color: 'amber', paperTexture: 'grid' },
+    { id: 'cat-belajar', name: 'Belajar', color: 'sky', paperTexture: 'lined' },
+    { id: 'cat-sehat', name: 'Kesehatan', color: 'emerald', paperTexture: 'dots' },
   ],
   columns: {
     TODO: {
@@ -83,6 +94,8 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   sortBy: 'manual',
   deskBuddy: 'cat',
   footerText: 'Slam Area © 2026',
+  paperTexture: 'plain',
+  stickers: DEFAULT_STICKERS,
 };
 
 export const APP_ICON_PRESETS = [
@@ -613,6 +626,80 @@ export const DESK_BUDDY_OPTIONS: {
   { id: 'none', name: 'Tanpa Maskot', avatar: '🚫', desc: 'Tampilan bersih tanpa teman meja', defaultQuote: '' },
 ];
 
+export const PAPER_TEXTURE_OPTIONS: {
+  id: PaperTexture;
+  label: string;
+  icon: string;
+  desc: string;
+}[] = [
+  { id: 'plain', label: 'Polos Halus (Bawaan)', icon: '📄', desc: 'Permukaan bersih minimalis' },
+  { id: 'grid', label: 'Kotak-kotak (Grid/Graph)', icon: '📐', desc: 'Pola grid matematika rapi' },
+  { id: 'lined', label: 'Buku Tulis Bergaris (Lined)', icon: '📝', desc: 'Garis horizontal buku catatan' },
+  { id: 'dots', label: 'Titik-titik BuJo (Dot Grid)', icon: '🔘', desc: 'Titik jurnal bullet serbaguna' },
+  { id: 'kraft', label: 'Kertas Kraft Vintage', icon: '🪵', desc: 'Serat hangat kertas daur ulang' },
+];
+
+export const STICKER_PRESETS: { id: string; emoji: string; label: string; category: string }[] = [
+  { id: 'coffee', emoji: '☕', label: 'Kopi Hangat', category: 'santai' },
+  { id: 'star', emoji: '⭐', label: 'Bintang Emas', category: 'fokus' },
+  { id: 'sparkles', emoji: '✨', label: 'Kilau Ajaib', category: 'fokus' },
+  { id: 'cat', emoji: '🐱', label: 'Kucing Manis', category: 'hewan' },
+  { id: 'dog', emoji: '🐶', label: 'Anak Anjing', category: 'hewan' },
+  { id: 'fire', emoji: '🔥', label: 'Api Semangat', category: 'fokus' },
+  { id: 'bolt', emoji: '⚡', label: 'Kilat Fokus', category: 'fokus' },
+  { id: 'plant', emoji: '🌱', label: 'Tunas Baru', category: 'alam' },
+  { id: 'flower', emoji: '🌸', label: 'Bunga Sakura', category: 'alam' },
+  { id: 'sunflower', emoji: '🌻', label: 'Bunga Matahari', category: 'alam' },
+  { id: 'heart', emoji: '💖', label: 'Hati Berkilau', category: 'santai' },
+  { id: 'rocket', emoji: '🚀', label: 'Roket Terbang', category: 'fokus' },
+  { id: 'target', emoji: '🎯', label: 'Target Pas', category: 'fokus' },
+  { id: 'croissant', emoji: '🥐', label: 'Roti Croissant', category: 'santai' },
+  { id: 'donut', emoji: '🍩', label: 'Donat Ceria', category: 'santai' },
+  { id: 'clover', emoji: '🍀', label: 'Semanggi Hoki', category: 'alam' },
+  { id: 'palette', emoji: '🎨', label: 'Palet Kreatif', category: 'fokus' },
+  { id: 'bulb', emoji: '💡', label: 'Ide Cemerlang', category: 'fokus' },
+  { id: 'rainbow', emoji: '🌈', label: 'Pelangi Cerah', category: 'santai' },
+  { id: 'bear', emoji: '🧸', label: 'Boneka Beruang', category: 'hewan' },
+];
+
+export function getPaperTextureStyle(
+  texture: PaperTexture = 'plain',
+  isDark: boolean = false
+): CSSProperties {
+  if (texture === 'plain') return {};
+
+  const lineColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)';
+  const strongLineColor = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.09)';
+  const dotColor = isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.12)';
+
+  switch (texture) {
+    case 'grid':
+      return {
+        backgroundImage: `linear-gradient(to right, ${lineColor} 1px, transparent 1px), linear-gradient(to bottom, ${lineColor} 1px, transparent 1px)`,
+        backgroundSize: '16px 16px',
+      };
+    case 'lined':
+      return {
+        backgroundImage: `repeating-linear-gradient(transparent, transparent 21px, ${strongLineColor} 21px, ${strongLineColor} 22px)`,
+        backgroundSize: '100% 22px',
+      };
+    case 'dots':
+      return {
+        backgroundImage: `radial-gradient(circle, ${dotColor} 1.2px, transparent 1.2px)`,
+        backgroundSize: '16px 16px',
+      };
+    case 'kraft':
+      return {
+        backgroundImage: isDark
+          ? `radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.04) 1px, transparent 1px), repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 255, 255, 0.02) 10px, rgba(255, 255, 255, 0.02) 11px)`
+          : `radial-gradient(circle at 50% 50%, rgba(139, 94, 60, 0.06) 1px, transparent 1px), repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(160, 110, 70, 0.03) 10px, rgba(160, 110, 70, 0.03) 11px)`,
+        backgroundSize: '12px 12px, 16px 16px',
+      };
+    default:
+      return {};
+  }
+}
+
 const STORAGE_KEY = 'ceria_todo_user_preferences_v1';
 
 function isSafeUrl(url: unknown): string | null {
@@ -646,6 +733,8 @@ export function loadUserPreferences(): UserPreferences {
       sortBy: parsed.sortBy || DEFAULT_PREFERENCES.sortBy,
       deskBuddy: parsed.deskBuddy || DEFAULT_PREFERENCES.deskBuddy,
       footerText: typeof parsed.footerText === 'string' ? parsed.footerText : DEFAULT_PREFERENCES.footerText,
+      paperTexture: parsed.paperTexture || DEFAULT_PREFERENCES.paperTexture,
+      stickers: Array.isArray(parsed.stickers) ? parsed.stickers : DEFAULT_PREFERENCES.stickers,
       customLogoUrl: isSafeUrl(parsed.customLogoUrl),
       customBgUrl: isSafeUrl(parsed.customBgUrl),
       columns: {

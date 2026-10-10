@@ -12,6 +12,16 @@ export type StampColor = 'red' | 'green' | 'blue' | 'purple' | 'gold';
 export type ViewDensity = 'cozy' | 'compact';
 export type SortByOption = 'manual' | 'priority' | 'dueDate' | 'title';
 export type DeskBuddyType = 'cat' | 'dog' | 'plant' | 'coffee' | 'none';
+export type PaperTexture = 'plain' | 'grid' | 'lined' | 'dots' | 'kraft';
+
+export interface BoardSticker {
+  id: string;
+  emoji: string;
+  x: number; // percentage (0 - 95%)
+  y: number; // percentage (0 - 95%)
+  rotation: number; // degrees, -25 to 25
+  scale?: number; // scale multiplier e.g. 1
+}
 
 export interface ColumnSetting {
   title: string;
@@ -23,6 +33,7 @@ export interface CustomCategory {
   id: string;
   name: string;
   color: string; // 'purple' | 'pink' | 'amber' | 'emerald' | 'sky' | 'rose' | 'indigo' | 'teal'
+  paperTexture?: PaperTexture;
 }
 
 export interface UserPreferences {
@@ -66,6 +77,9 @@ export interface UserPreferences {
   // New: Desk Buddy Mascot & Custom Footer
   deskBuddy: DeskBuddyType;
   footerText: string;
+  // New: Paper Textures & Desk Stickers
+  paperTexture: PaperTexture;
+  stickers: BoardSticker[];
 }
 
 export interface ThemeConfig {

@@ -11,8 +11,9 @@ import {
   CompletionStamp,
   StampColor,
   ViewDensity,
+  PaperTexture,
 } from '@/types/preferences';
-import { getStickyNoteStyle, getStampStyle } from '@/lib/userPreferences';
+import { getStickyNoteStyle, getStampStyle, getPaperTextureStyle } from '@/lib/userPreferences';
 import { PriorityBadge, CategoryBadge, DateBadge, TimeEstimateBadge } from '@/components/ui/Badge';
 import {
   Trash2,
@@ -47,6 +48,7 @@ interface TaskCardProps {
   completionStamp?: CompletionStamp;
   stampColor?: StampColor;
   viewDensity?: ViewDensity;
+  paperTexture?: PaperTexture;
 }
 
 export const TaskCard: React.FC<TaskCardProps> = ({
@@ -66,6 +68,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   completionStamp = 'SELESAI!',
   stampColor = 'red',
   viewDensity = 'cozy',
+  paperTexture = 'plain',
 }) => {
   const [isSubtasksExpanded, setIsSubtasksExpanded] = useState(false);
 
@@ -106,13 +109,20 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   const stampStyle = getStampStyle(stampColor);
   const isCompact = viewDensity === 'compact';
 
+  // Determine paper texture (category override or board global setting)
+  const matchingCat = customCategories?.find(
+    (c) => c.name.toLowerCase() === (task.category || '').toLowerCase()
+  );
+  const effectiveTexture: PaperTexture = matchingCat?.paperTexture || paperTexture || 'plain';
+  const textureStyle = getPaperTextureStyle(effectiveTexture, false);
+
   return (
     <Draggable draggableId={task.id} index={index}>
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
-          className={`relative group rounded-2xl border transition-all duration-200 ${
+          className={`relative group rounded-2xl border transition-all duration-200 overflow-hidden ${
             isCompact ? 'p-3 pt-4' : 'p-4 pt-5'
           } ${
             snapshot.isDragging
@@ -122,6 +132,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             isPinned ? 'ring-2 ring-amber-400 shadow-md shadow-amber-200/40' : ''
           }`}
         >
+          {/* Subtle Physical Paper Texture Overlay */}
+          {effectiveTexture !== 'plain' && (
+            <div
+              className="absolute inset-0 rounded-2xl pointer-events-none z-0 opacity-70"
+              style={textureStyle}
+            />
+          )}
           {/* Physical Fastener Pin Style on Top Edge */}
           {pinStyle === 'pin' && (
             <div

@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import {
   UserPreferences,
   ThemeId,
+  PaperTexture,
 } from '@/types/preferences';
 import {
   THEME_LIST,
@@ -22,6 +23,9 @@ import {
   STAMP_COLOR_OPTIONS,
   VIEW_DENSITY_OPTIONS,
   DESK_BUDDY_OPTIONS,
+  PAPER_TEXTURE_OPTIONS,
+  DEFAULT_STICKERS,
+  getPaperTextureStyle,
 } from '@/lib/userPreferences';
 import { compressImageToDataUrl, compressWallpaperImageToDataUrl } from '@/lib/imageCompressor';
 import { triggerCelebration } from '@/lib/confetti';
@@ -285,6 +289,8 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
           sortBy: rawPrefs.sortBy || DEFAULT_PREFERENCES.sortBy,
           deskBuddy: rawPrefs.deskBuddy || DEFAULT_PREFERENCES.deskBuddy,
           footerText: typeof rawPrefs.footerText === 'string' ? rawPrefs.footerText : DEFAULT_PREFERENCES.footerText,
+          paperTexture: rawPrefs.paperTexture || DEFAULT_PREFERENCES.paperTexture,
+          stickers: Array.isArray(rawPrefs.stickers) ? rawPrefs.stickers : DEFAULT_PREFERENCES.stickers,
           customLogoUrl: isSafeUrl(rawPrefs.customLogoUrl),
           customBgUrl: isSafeUrl(rawPrefs.customBgUrl),
         };
@@ -1477,7 +1483,93 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
                 </div>
               </div>
 
-              {/* 5. Teks Footer & Watermark Kustom */}
+              {/* 5. Tekstur Kertas Catatan (Paper Textures) */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <span className="text-base">📐</span>
+                    <span>Tekstur Kertas Catatan (Paper Textures)</span>
+                  </label>
+                  <span className="text-[11px] text-slate-400">Tekstur dasar seluruh sticky note</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                  {PAPER_TEXTURE_OPTIONS.map((opt) => {
+                    const isSelected = (formData.paperTexture || 'plain') === opt.id;
+                    const sampleStyle = getPaperTextureStyle(opt.id, false);
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => {
+                          playPopSound(formData.soundProfile);
+                          setFormData({ ...formData, paperTexture: opt.id });
+                        }}
+                        className={`p-3 rounded-2xl border text-center transition-all cursor-pointer flex flex-col items-center justify-between gap-2 relative overflow-hidden ${
+                          isSelected
+                            ? 'border-orange-500 bg-orange-50/60 ring-2 ring-orange-300 shadow-xs'
+                            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                        }`}
+                      >
+                        {/* Sample texture preview swatch */}
+                        <div
+                          className="w-full h-10 rounded-xl border border-slate-200/80 bg-amber-50/80 shadow-2xs relative flex items-center justify-center text-sm"
+                          style={sampleStyle}
+                        >
+                          <span className="bg-white/80 dark:bg-slate-900/80 px-1.5 py-0.5 rounded-md text-[10px] font-bold shadow-2xs">
+                            {opt.icon}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="font-bold text-xs text-slate-800">{opt.label.split(' ')[0]}</div>
+                          <p className="text-[10px] text-slate-400 line-clamp-1">{opt.desc}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 6. Stiker Meja & Dekorasi (Corkboard Stickers) */}
+              <div className="p-4 rounded-2xl bg-amber-50/40 border border-amber-200/80 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-amber-950 uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="text-base">🎨</span>
+                    <span>Stiker Meja & Catatan Tempel Dekoratif</span>
+                  </label>
+                  <span className="text-[11px] text-amber-700 font-semibold bg-amber-100 px-2 py-0.5 rounded-full">
+                    {formData.stickers?.length || 0} stiker aktif
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Stiker bebas diseret (*free-floating*) di papan buletin kerja. Kamu bisa menambahkannya langsung melalui tombol &quot;🎨 Stiker Meja&quot; di pojok kanan bawah papan.
+                </p>
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playPopSound(formData.soundProfile);
+                      setFormData({ ...formData, stickers: DEFAULT_STICKERS });
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-white hover:bg-amber-100/60 border border-amber-300 text-amber-900 text-xs font-bold transition-all shadow-2xs active:scale-95 cursor-pointer"
+                  >
+                    Reset ke Stiker Bawaan
+                  </button>
+                  {(formData.stickers?.length || 0) > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playPopSound(formData.soundProfile);
+                        setFormData({ ...formData, stickers: [] });
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-white hover:bg-rose-50 border border-rose-200 text-rose-600 text-xs font-semibold transition-all shadow-2xs active:scale-95 cursor-pointer"
+                    >
+                      Hapus Semua Stiker
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* 7. Teks Footer & Watermark Kustom */}
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-bold text-slate-800">
@@ -1912,6 +2004,30 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
                             🏷️ {cat.name}
                           </span>
                         </div>
+
+                        {/* Paper texture for category */}
+                        <select
+                          value={cat.paperTexture || 'plain'}
+                          onChange={(e) => {
+                            playPopSound(formData.soundProfile);
+                            setFormData({
+                              ...formData,
+                              customCategories: formData.customCategories.map((item) =>
+                                item.id === cat.id
+                                  ? { ...item, paperTexture: e.target.value as PaperTexture }
+                                  : item
+                              ),
+                            });
+                          }}
+                          className="text-[10px] bg-white border border-slate-200 rounded-xl px-1.5 py-1 text-slate-700 font-semibold focus:outline-hidden cursor-pointer shadow-2xs"
+                          title="Pilih tekstur kertas khusus untuk kategori ini"
+                        >
+                          <option value="plain">📄 Polos</option>
+                          <option value="grid">📐 Grid</option>
+                          <option value="lined">📝 Garis</option>
+                          <option value="dots">🔘 Titik</option>
+                          <option value="kraft">🪵 Kraft</option>
+                        </select>
 
                         {/* Inline color changer */}
                         <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
