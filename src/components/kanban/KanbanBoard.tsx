@@ -11,6 +11,8 @@ import {
   DEFAULT_PREFERENCES,
 } from '@/lib/userPreferences';
 import { KanbanColumn } from './KanbanColumn';
+import { NotesBoard } from '@/components/notes/NotesBoard';
+import { NoteItem, NoteColor } from '@/types/note';
 import { Navbar } from '@/components/ui/Navbar';
 import { QuickPasteModal } from '@/components/modals/QuickPasteModal';
 import { TaskFormModal } from '@/components/modals/TaskFormModal';
@@ -82,6 +84,13 @@ export const KanbanBoard: React.FC = () => {
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [defaultStatusForNew, setDefaultStatusForNew] = useState<TaskStatus>('TODO');
   const [singleColumnTab, setSingleColumnTab] = useState<TaskStatus>('TODO');
+
+  // Notes Mode State
+  const [activeTab, setActiveTab] = useState<'tasks' | 'notes'>('tasks');
+  const [notes, setNotes] = useState<NoteItem[]>([]);
+  const [isNotesLoading, setIsNotesLoading] = useState(false);
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+  const [editingNote, setEditingNote] = useState<NoteItem | null>(null);
 
   const [currentDate, setCurrentDate] = useState('');
   const [currentTime, setCurrentTime] = useState('');
@@ -227,6 +236,123 @@ export const KanbanBoard: React.FC = () => {
       setIsLoading(false);
     }
   }, []);
+
+  // Initial notes load
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadInitialNotes() {
+      try {
+        const res = await fetch('/api/notes', { signal: AbortSignal.timeout(8000) });
+        const data = await res.json();
+        if (!ignore && data.success && Array.isArray(data.data)) {
+          setNotes(data.data);
+        }
+      } catch (err) {
+        if (!ignore) {
+          console.error('Gagal mengambil data catatan:', err);
+        }
+      }
+    }
+
+    loadInitialNotes();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  // Fetch notes from API for manual refresh
+  const fetchNotes = useCallback(async () => {
+    setIsNotesLoading(true);
+    try {
+      const res = await fetch('/api/notes', { signal: AbortSignal.timeout(8000) });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data)) {
+        setNotes(data.data);
+      }
+    } catch (err) {
+      console.error('Gagal mengambil data catatan:', err);
+    } finally {
+      setIsNotesLoading(false);
+    }
+  }, []);
+
+  const handleCreateNote = async (data: { title: string; content: string; color: NoteColor; isPinned: boolean }) => {
+    try {
+      const res = await fetch('/api/notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const resData = await res.json();
+      if (resData.success && resData.data) {
+        setNotes((prev) => [resData.data, ...prev]);
+        playPopSound(preferences.soundProfile);
+      }
+    } catch (err) {
+      console.error('Gagal membuat catatan:', err);
+    }
+  };
+
+  const handleUpdateNote = async (id: string, updateData: Partial<NoteItem>) => {
+    setNotes((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, ...updateData, updatedAt: new Date().toISOString() } : n))
+    );
+    try {
+      const res = await fetch(`/api/notes/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData),
+      });
+      const resData = await res.json();
+      if (resData.success && resData.data) {
+        setNotes((prev) =>
+          prev.map((n) => (n.id === id ? resData.data : n))
+        );
+      }
+    } catch (err) {
+      console.error('Gagal memperbarui catatan:', err);
+      fetchNotes();
+    }
+  };
+
+  const handleDeleteNote = async (id: string) => {
+    setNotes((prev) => prev.filter((n) => n.id !== id));
+    try {
+      await fetch(`/api/notes/${id}`, { method: 'DELETE' });
+      playPopSound(preferences.soundProfile);
+    } catch (err) {
+      console.error('Gagal menghapus catatan:', err);
+      fetchNotes();
+    }
+  };
+
+  const handleConvertNoteToTask = async (note: NoteItem) => {
+    try {
+      const newTaskInput: CreateTaskInput = {
+        title: note.title.trim() || 'Catatan Baru',
+        description: note.content || '',
+        status: 'TODO',
+        priority: 'MEDIUM',
+        category: 'Catatan Bebas',
+      };
+      const res = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newTaskInput),
+      });
+      const data = await res.json();
+      if (data.success && data.data) {
+        setTasks((prev) => [data.data, ...prev]);
+        triggerCelebration(preferences.celebrationFx);
+        playVictoryChime(preferences.soundProfile);
+        setActiveTab('tasks');
+      }
+    } catch (err) {
+      console.error('Gagal mengonversi catatan ke tugas:', err);
+    }
+  };
 
   // Active vs Archived tasks
   const activeTasks = useMemo(() => {
@@ -823,11 +949,49 @@ export const KanbanBoard: React.FC = () => {
             done: doneCount,
           }}
           archivedCount={archivedTasks.length}
+          activeTab={activeTab}
+          onTabChange={(tab) => {
+            playPopSound(preferences.soundProfile);
+            setActiveTab(tab);
+          }}
+          notesCount={notes.length}
+          onOpenNewNote={() => {
+            setActiveTab('notes');
+            setEditingNote(null);
+            setIsNoteModalOpen(true);
+          }}
         />
 
         {/* Main Board Container */}
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3.5 flex flex-col gap-2.5">
-        {/* Board Header & Progress Milestone Banner */}
+          {activeTab === 'notes' ? (
+            <NotesBoard
+              notes={notes}
+              isLoading={isNotesLoading}
+              themeConfig={themeConfig}
+              onCreateNote={handleCreateNote}
+              onUpdateNote={handleUpdateNote}
+              onDeleteNote={handleDeleteNote}
+              onConvertToTask={handleConvertNoteToTask}
+              onRefreshNotes={fetchNotes}
+              isModalOpen={isNoteModalOpen}
+              onOpenCreateModal={() => {
+                setEditingNote(null);
+                setIsNoteModalOpen(true);
+              }}
+              onCloseModal={() => {
+                setIsNoteModalOpen(false);
+                setEditingNote(null);
+              }}
+              editingNote={editingNote}
+              onSelectEditingNote={(n) => {
+                setEditingNote(n);
+                setIsNoteModalOpen(true);
+              }}
+            />
+          ) : (
+            <>
+              {/* Board Header & Progress Milestone Banner */}
         {(preferences.showBoardHeader !== false || (preferences.showDailyGoalBanner !== false && preferences.dailyTargetGoal > 0)) && (
           <div
             className={`p-3 sm:px-4 sm:py-3 rounded-2xl border shadow-xs flex flex-col gap-2 transition-all duration-300 ${
@@ -1684,6 +1848,8 @@ export const KanbanBoard: React.FC = () => {
             </div>
           )}
         </DragDropContext>
+            </>
+          )}
       </main>
 
       {/* Footer */}

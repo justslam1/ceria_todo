@@ -20,6 +20,10 @@ interface NavbarProps {
     done: number;
   };
   archivedCount?: number;
+  activeTab?: 'tasks' | 'notes';
+  onTabChange?: (tab: 'tasks' | 'notes') => void;
+  notesCount?: number;
+  onOpenNewNote?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -33,6 +37,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   themeConfig,
   counts,
   archivedCount = 0,
+  activeTab = 'tasks',
+  onTabChange,
+  notesCount = 0,
+  onOpenNewNote,
 }) => {
   return (
     <header className={`sticky top-0 z-30 ${themeConfig.isDark ? 'bg-[#181a20]/90 border-slate-800' : 'bg-white/85 border-slate-200/60'} backdrop-blur-md border-b shadow-xs transition-colors duration-300`}>
@@ -82,6 +90,47 @@ export const Navbar: React.FC<NavbarProps> = ({
               </p>
             </div>
           </div>
+
+          {/* View Mode Switcher: Papan Tugas ↔ Papan Catatan */}
+          {onTabChange && (
+            <div className="flex items-center p-1 bg-slate-100/90 dark:bg-slate-800/80 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-2xs self-center">
+              <button
+                type="button"
+                onClick={() => onTabChange('tasks')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === 'tasks'
+                    ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-xs'
+                    : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+                }`}
+                title="Buka Papan Tugas (Kanban)"
+              >
+                <span>📋</span>
+                <span>Tugas</span>
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 font-bold">
+                  {counts.total}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onTabChange('notes')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === 'notes'
+                    ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-xs'
+                    : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+                }`}
+                title="Buka Papan Catatan Bebas"
+              >
+                <span>📝</span>
+                <span>Catatan</span>
+                {notesCount > 0 && (
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 font-bold">
+                    {notesCount}
+                  </span>
+                )}
+              </button>
+            </div>
+          )}
 
           {/* Counters & Action Buttons */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
@@ -187,13 +236,13 @@ export const Navbar: React.FC<NavbarProps> = ({
               <UserAuthButton />
             </div>
 
-            {/* Add Task Button */}
+            {/* Add Task / Note Button */}
             <button
-              onClick={onOpenNewTask}
+              onClick={activeTab === 'notes' ? (onOpenNewNote || onOpenNewTask) : onOpenNewTask}
               className={`inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-xl active:scale-95 text-xs sm:text-sm font-bold shadow-md transition-all duration-150 cursor-pointer shrink-0 whitespace-nowrap ${themeConfig.primaryButton}`}
             >
               <Plus className="w-4 h-4" />
-              <span>Tambah Tugas</span>
+              <span>{activeTab === 'notes' ? 'Tambah Catatan' : 'Tambah Tugas'}</span>
             </button>
           </div>
         </div>
