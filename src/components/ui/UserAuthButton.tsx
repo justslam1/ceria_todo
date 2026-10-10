@@ -38,7 +38,7 @@ export const UserAuthButton: React.FC = () => {
       <div className="relative" ref={dropdownRef}>
         <button
           onClick={() => setDropdownOpen((prev) => !prev)}
-          className="flex items-center gap-2 px-2.5 py-1.5 rounded-2xl bg-white border border-slate-200/90 hover:border-slate-300 shadow-2xs hover:shadow-xs transition-all active:scale-95 cursor-pointer"
+          className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1.5 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 shadow-2xs hover:shadow-xs transition-all active:scale-95 cursor-pointer shrink-0"
           title={`Masuk sebagai ${name || email}`}
         >
           {image ? (
@@ -48,30 +48,30 @@ export const UserAuthButton: React.FC = () => {
               width={26}
               height={26}
               unoptimized
-              className="rounded-full border border-slate-200 shadow-2xs"
+              className="rounded-full border border-slate-200 dark:border-slate-600 shadow-2xs"
             />
           ) : (
-            <div className="w-6.5 h-6.5 rounded-full bg-amber-200 text-amber-900 flex items-center justify-center font-bold text-xs shadow-2xs">
+            <div className="w-6.5 h-6.5 rounded-full bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 flex items-center justify-center font-bold text-xs shadow-2xs">
               {firstName.charAt(0).toUpperCase()}
             </div>
           )}
-          <span className="text-xs font-semibold text-slate-800 max-w-[100px] truncate">
+          <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 max-w-[70px] sm:max-w-[90px] truncate hidden xs:inline">
             {firstName}
           </span>
         </button>
 
         {/* Dropdown Menu */}
         {dropdownOpen && (
-          <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white border border-slate-200/90 shadow-xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
-            <div className="px-3 py-2 border-b border-slate-100">
-              <p className="text-xs font-bold text-slate-800 truncate">{name}</p>
-              <p className="text-[11px] text-slate-400 truncate">{email}</p>
+          <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 shadow-xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+            <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700/60">
+              <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">{name}</p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-400 truncate">{email}</p>
             </div>
 
             <div className="pt-1.5">
               <button
                 onClick={() => signOut()}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span>Keluar (Logout)</span>
