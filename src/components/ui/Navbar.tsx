@@ -39,7 +39,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-2.5">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-4">
           {/* Logo & Tagline */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
             <div
               onClick={onOpenPersonalization}
               className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-md overflow-hidden transition-transform hover:scale-105 active:scale-95 cursor-pointer ${
@@ -84,9 +84,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Counters & Action Buttons */}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {/* Quick Summary Pill */}
-            <div className={`hidden lg:flex items-center gap-2 ${themeConfig.isDark ? 'bg-slate-900 border-slate-800 text-slate-300' : 'bg-slate-50 border-slate-200/80 text-slate-600'} border px-3 py-1.5 rounded-2xl text-xs`}>
+            <div className={`hidden xl:flex items-center gap-2 ${themeConfig.isDark ? 'bg-slate-900 border-slate-800 text-slate-300' : 'bg-slate-50 border-slate-200/80 text-slate-600'} border px-2.5 py-1 rounded-2xl text-xs shrink-0`}>
               <span className={`font-semibold ${themeConfig.isDark ? 'text-slate-200' : 'text-slate-700'}`}>Total: {counts.total}</span>
               <span className="text-slate-300 dark:text-slate-700">|</span>
               <span className="text-amber-500 font-medium">
@@ -107,7 +107,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={onOpenPomodoro}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-150 cursor-pointer active:scale-95 shadow-2xs ${
+                className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border transition-all duration-150 cursor-pointer active:scale-95 shadow-2xs shrink-0 ${
                   themeConfig.isDark
                     ? 'bg-slate-800/80 hover:bg-slate-800 border-slate-700 text-amber-300'
                     : 'bg-amber-50 hover:bg-amber-100/70 border-amber-200/80 text-amber-900'
@@ -124,7 +124,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={onOpenArchive}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all duration-150 cursor-pointer active:scale-95 shadow-2xs ${
+                className={`inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl border transition-all duration-150 cursor-pointer active:scale-95 shadow-2xs shrink-0 ${
                   themeConfig.isDark
                     ? 'bg-slate-800/80 hover:bg-slate-800 border-slate-700 text-emerald-300'
                     : 'bg-emerald-50 hover:bg-emerald-100/70 border-emerald-200/80 text-emerald-900'
@@ -144,7 +144,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Personalization / Settings Button */}
             <button
               onClick={onOpenPersonalization}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-150 cursor-pointer active:scale-95 shadow-2xs ${
+              className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border transition-all duration-150 cursor-pointer active:scale-95 shadow-2xs shrink-0 ${
                 themeConfig.isDark
                   ? 'bg-slate-800/80 hover:bg-slate-800 border-slate-700 text-slate-200'
                   : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
@@ -160,7 +160,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Sound Effects Toggle Button */}
             <button
               onClick={onToggleSound}
-              className={`p-1.5 rounded-xl border transition-all duration-150 cursor-pointer ${
+              className={`p-1.5 rounded-xl border transition-all duration-150 cursor-pointer shrink-0 ${
                 isSoundMuted
                   ? themeConfig.isDark
                     ? 'bg-slate-900 border-slate-800 text-slate-600'
@@ -183,12 +183,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
 
             {/* Google Authentication Button / Avatar */}
-            <UserAuthButton />
+            <div className="shrink-0">
+              <UserAuthButton />
+            </div>
 
             {/* Add Task Button */}
             <button
               onClick={onOpenNewTask}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl active:scale-95 text-xs sm:text-sm font-bold shadow-md transition-all duration-150 cursor-pointer ${themeConfig.primaryButton}`}
+              className={`inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-xl active:scale-95 text-xs sm:text-sm font-bold shadow-md transition-all duration-150 cursor-pointer shrink-0 whitespace-nowrap ${themeConfig.primaryButton}`}
             >
               <Plus className="w-4 h-4" />
               <span>Tambah Tugas</span>
