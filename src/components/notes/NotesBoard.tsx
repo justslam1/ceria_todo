@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useRef, useCallback } from 'react';
-import { Search, Plus, Pin, RefreshCw, BookOpen, Filter, X, LayoutGrid, Wand2, Move } from 'lucide-react';
+import { Search, Plus, Pin, RefreshCw, BookOpen, Filter, X, LayoutGrid, Wand2, Move, Minimize2, Maximize2 } from 'lucide-react';
 import { NoteItem, NoteColor, NOTE_COLOR_STYLES } from '@/types/note';
 import { ThemeConfig, UserPreferences } from '@/types/preferences';
 import { NoteCard } from '@/components/notes/NoteCard';
@@ -52,9 +52,30 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
   const [livePositions, setLivePositions] = useState<Record<string, { x: number; y: number }>>({});
   const canvasRef = useRef<HTMLDivElement>(null);
 
+  // Minimize Board State
+  const [isMinimized, setIsMinimized] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('ceria_notes_minimized') === 'true';
+    }
+    return false;
+  });
+
+  const toggleMinimize = () => {
+    playPopSound(preferences?.soundProfile || 'pop');
+    setIsMinimized((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('ceria_notes_minimized', String(next));
+      }
+      return next;
+    });
+  };
 
   const activeModalOpen = isModalOpen !== undefined ? isModalOpen : internalModalOpen;
   const activeEditingNote = editingNote !== undefined ? editingNote : internalEditingNote;
+
+  // Auto expand when modal is active
+  const effectiveMinimized = isMinimized && !activeModalOpen;
 
   // Filter notes
   const filteredNotes = useMemo(() => {
@@ -283,130 +304,153 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                {layoutMode === 'canvas'
+                {effectiveMinimized
+                  ? 'Papan catatan sedang diminimalkan. Klik tombol untuk membuka kembali. 📌'
+                  : layoutMode === 'canvas'
                   ? 'Tahan dan geser memo ke mana saja secara bebas di atas meja! 📌✨'
                   : 'Tulis ide bebas, daftar belanja, draft, atau rangkuman. Bisa diubah jadi tugas kapan saja! ✨'}
               </p>
             </div>
           </div>
 
-          {/* Action Tools: Layout Switcher, Auto-arrange, Search, Add */}
+          {/* Action Tools: Layout Switcher, Auto-arrange, Search, Minimize */}
           <div className="flex items-center flex-wrap gap-2">
-            {/* View Mode Toggle: Kanvas Bebas ↔ Grid Rapi */}
-            <div
-              className={`flex items-center p-0.5 rounded-xl border text-xs ${
-                themeConfig.isDark
-                  ? 'bg-slate-800/80 border-slate-700 text-slate-300'
-                  : 'bg-slate-100 border-slate-200 text-slate-600'
-              }`}
-            >
-              <button
-                type="button"
-                onClick={() => {
-                  playPopSound(preferences?.soundProfile || 'pop');
-                  setLayoutMode('canvas');
-                }}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
-                  layoutMode === 'canvas'
-                    ? 'bg-amber-500 text-white shadow-2xs'
-                    : 'hover:text-slate-900 dark:hover:text-white'
-                }`}
-                title="Mode Kanvas Bebas (Bisa digeser ke mana saja)"
-              >
-                <Move className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Kanvas Bebas</span>
-              </button>
+            {!effectiveMinimized && (
+              <>
+                {/* View Mode Toggle: Kanvas Bebas ↔ Grid Rapi */}
+                <div
+                  className={`flex items-center p-0.5 rounded-xl border text-xs ${
+                    themeConfig.isDark
+                      ? 'bg-slate-800/80 border-slate-700 text-slate-300'
+                      : 'bg-slate-100 border-slate-200 text-slate-600'
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playPopSound(preferences?.soundProfile || 'pop');
+                      setLayoutMode('canvas');
+                    }}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                      layoutMode === 'canvas'
+                        ? 'bg-amber-500 text-white shadow-2xs'
+                        : 'hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                    title="Mode Kanvas Bebas (Bisa digeser ke mana saja)"
+                  >
+                    <Move className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Kanvas Bebas</span>
+                  </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  playPopSound(preferences?.soundProfile || 'pop');
-                  setLayoutMode('grid');
-                }}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
-                  layoutMode === 'grid'
-                    ? 'bg-amber-500 text-white shadow-2xs'
-                    : 'hover:text-slate-900 dark:hover:text-white'
-                }`}
-                title="Mode Grid Rapi"
-              >
-                <LayoutGrid className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Grid Rapi</span>
-              </button>
-            </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playPopSound(preferences?.soundProfile || 'pop');
+                      setLayoutMode('grid');
+                    }}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                      layoutMode === 'grid'
+                        ? 'bg-amber-500 text-white shadow-2xs'
+                        : 'hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                    title="Mode Grid Rapi"
+                  >
+                    <LayoutGrid className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Grid Rapi</span>
+                  </button>
+                </div>
 
-            {/* Auto-arrange button (visible on canvas mode) */}
-            {layoutMode === 'canvas' && filteredNotes.length > 0 && (
-              <button
-                type="button"
-                onClick={handleAutoArrange}
-                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs ${
-                  themeConfig.isDark
-                    ? 'bg-slate-800 border-slate-700 text-amber-300 hover:bg-slate-700'
-                    : 'bg-white border-slate-200 text-amber-700 hover:bg-amber-50'
-                }`}
-                title="Tata ulang semua memo secara rapi & berbaris"
-              >
-                <Wand2 className="w-3.5 h-3.5 text-amber-500" />
-                <span className="hidden md:inline">Rapikan Posisi</span>
-              </button>
-            )}
+                {/* Auto-arrange button (visible on canvas mode) */}
+                {layoutMode === 'canvas' && filteredNotes.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleAutoArrange}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs ${
+                      themeConfig.isDark
+                        ? 'bg-slate-800 border-slate-700 text-amber-300 hover:bg-slate-700'
+                        : 'bg-white border-slate-200 text-amber-700 hover:bg-amber-50'
+                    }`}
+                    title="Tata ulang semua memo secara rapi & berbaris"
+                  >
+                    <Wand2 className="w-3.5 h-3.5 text-amber-500" />
+                    <span className="hidden md:inline">Rapikan Posisi</span>
+                  </button>
+                )}
 
-            {/* Search Input */}
-            <div className="relative flex-1 sm:w-48 min-w-[130px]">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari catatan..."
-                style={{ color: themeConfig.isDark ? '#ffffff' : '#0f172a' }}
-                className={`w-full pl-9 pr-7 py-1.5 rounded-xl border text-xs transition-all outline-hidden ${
-                  themeConfig.isDark
-                    ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-400 focus:border-amber-500'
-                    : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white focus:border-amber-500'
-                }`}
-              />
-              {searchQuery && (
+                {/* Search Input */}
+                <div className="relative flex-1 sm:w-48 min-w-[130px]">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Cari catatan..."
+                    style={{ color: themeConfig.isDark ? '#ffffff' : '#0f172a' }}
+                    className={`w-full pl-9 pr-7 py-1.5 rounded-xl border text-xs transition-all outline-hidden ${
+                      themeConfig.isDark
+                        ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-400 focus:border-amber-500'
+                        : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white focus:border-amber-500'
+                    }`}
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Refresh Button */}
                 <button
                   type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  onClick={onRefreshNotes}
+                  disabled={isLoading}
+                  className={`p-2 rounded-xl border transition-all cursor-pointer ${
+                    themeConfig.isDark
+                      ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
+                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                  } ${isLoading ? 'opacity-50 animate-spin' : ''}`}
+                  title="Muat ulang catatan"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <RefreshCw className="w-4 h-4" />
                 </button>
+              </>
+            )}
+
+            {/* Minimize / Maximize Board Button */}
+            <button
+              type="button"
+              onClick={toggleMinimize}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs shrink-0 ${
+                effectiveMinimized
+                  ? 'bg-amber-500 hover:bg-amber-600 border-amber-500 text-white shadow-md'
+                  : themeConfig.isDark
+                  ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white'
+                  : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+              }`}
+              title={effectiveMinimized ? 'Perluas Papan Catatan' : 'Minimalkan Papan Catatan'}
+            >
+              {effectiveMinimized ? (
+                <>
+                  <Maximize2 className="w-3.5 h-3.5" />
+                  <span>Perluas Papan</span>
+                </>
+              ) : (
+                <>
+                  <Minimize2 className="w-3.5 h-3.5 text-slate-400 dark:text-slate-400" />
+                  <span className="hidden sm:inline">Minimalkan</span>
+                </>
               )}
-            </div>
-
-            {/* Refresh Button */}
-            <button
-              type="button"
-              onClick={onRefreshNotes}
-              disabled={isLoading}
-              className={`p-2 rounded-xl border transition-all cursor-pointer ${
-                themeConfig.isDark
-                  ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
-                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-              } ${isLoading ? 'opacity-50 animate-spin' : ''}`}
-              title="Muat ulang catatan"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
-
-            {/* Add Note Button */}
-            <button
-              type="button"
-              onClick={handleOpenCreateModal}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white shadow-md active:scale-95 transition-all cursor-pointer whitespace-nowrap ${themeConfig.primaryButton}`}
-            >
-              <Plus className="w-4 h-4" />
-              <span>Tambah Catatan</span>
             </button>
           </div>
         </div>
 
         {/* Color Palette Filter Bar */}
-        <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1.5 flex-wrap">
+        {!effectiveMinimized && (
+          <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1.5 flex-wrap">
           <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1 mr-1">
             <Filter className="w-3 h-3" />
             <span>Warna:</span>
@@ -445,10 +489,12 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
             );
           })}
         </div>
-      </div>
+      )}
+    </div>
 
-      {/* Main View Area */}
-      {filteredNotes.length === 0 ? (
+    {/* Main View Area */}
+    {!effectiveMinimized && (
+      filteredNotes.length === 0 ? (
         <div
           className={`text-center py-16 px-4 rounded-3xl border border-dashed flex flex-col items-center justify-center ${
             themeConfig.isDark ? 'border-slate-800 bg-slate-900/30' : 'border-slate-200 bg-white/40'
@@ -588,7 +634,8 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
             </div>
           )}
         </div>
-      )}
+      )
+    )}
 
       {/* Note Creation / Editing Modal */}
       <NoteModal
