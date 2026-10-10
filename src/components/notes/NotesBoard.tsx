@@ -165,9 +165,10 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Cari catatan..."
+                style={{ color: themeConfig.isDark ? '#ffffff' : '#0f172a' }}
                 className={`w-full pl-9 pr-7 py-2 rounded-xl border text-xs transition-all outline-hidden ${
                   themeConfig.isDark
-                    ? 'bg-slate-800 border-slate-700 text-white focus:border-amber-500'
+                    ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-400 focus:border-amber-500'
                     : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white focus:border-amber-500'
                 }`}
               />

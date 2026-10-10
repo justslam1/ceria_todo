@@ -1,9 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap');
 @import "tailwindcss";
 
+@custom-variant dark (&:where([class~="dark"], [class~="dark"] *));
+
 :root {
   --background: #faf8f5;
   --foreground: #1e293b;
+}
+
+:root.dark,
+.dark {
+  --background: #14161d;
+  --foreground: #f8fafc;
 }
 
 @theme inline {
@@ -19,9 +27,9 @@ body {
   font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
 }
 
-/* Ensure inputs with white/light backgrounds always render crisp dark text regardless of dark mode */
-input:not([class*="text-"]):not([class*="bg-slate-900"]):not([class*="bg-zinc-"]):not([class*="bg-gray-900"]),
-textarea:not([class*="text-"]):not([class*="bg-slate-900"]):not([class*="bg-zinc-"]):not([class*="bg-gray-900"]) {
+/* Ensure inputs with white/light backgrounds render crisp dark text in light mode */
+html:not(.dark) input:not([class*="text-"]):not([class*="bg-slate-900"]):not([class*="bg-zinc-"]):not([class*="bg-gray-900"]),
+html:not(.dark) textarea:not([class*="text-"]):not([class*="bg-slate-900"]):not([class*="bg-zinc-"]):not([class*="bg-gray-900"]) {
   color: #1e293b;
 }
 
@@ -31,11 +39,25 @@ textarea::placeholder {
   opacity: 1;
 }
 
-/* Modal form inputs always crisp dark text */
-.modal-light-input,
-form input[type="text"],
-form textarea {
+/* Modal form inputs in light mode */
+html:not(.dark) .modal-light-input,
+html:not(.dark) form input[type="text"]:not([class*="dark:text-"]):not([class*="text-white"]),
+html:not(.dark) form textarea:not([class*="dark:text-"]):not([class*="text-white"]) {
   color: #1e293b;
+}
+
+/* Form inputs and textareas in dark mode always render crisp bright text */
+html.dark input[type="text"],
+html.dark textarea,
+html.dark form input[type="text"],
+html.dark form textarea {
+  color: #f8fafc;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #94a3b8;
+  opacity: 1;
 }
 
 /* Custom font mood classes */
