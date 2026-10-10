@@ -100,15 +100,9 @@ export const NoteCard: React.FC<NoteCardProps> = ({
         touchAction: isCanvasMode ? 'none' : 'auto',
       }}
     >
-      {/* Decorative Washi Tape on top (Drag handle in canvas mode) */}
+      {/* Decorative Washi Tape on top */}
       <div
-        onPointerDown={isCanvasMode && onDragStart ? onDragStart : undefined}
-        className={`absolute -top-2.5 left-1/2 -translate-x-1/2 w-20 h-4 rounded-xs border opacity-85 shadow-2xs rotate-[-1.5deg] ${
-          isCanvasMode
-            ? 'cursor-grab active:cursor-grabbing hover:opacity-100 hover:scale-105 transition-transform'
-            : 'pointer-events-none'
-        } ${style.tapeColor}`}
-        title={isCanvasMode ? 'Tahan & geser untuk memindahkan catatan bebas' : undefined}
+        className={`absolute -top-2.5 left-1/2 -translate-x-1/2 w-20 h-4 rounded-xs border opacity-85 shadow-2xs rotate-[-1.5deg] pointer-events-none ${style.tapeColor}`}
       />
 
       {/* Header: Pin & Color Switcher */}

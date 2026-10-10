@@ -52,16 +52,6 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
   const [livePositions, setLivePositions] = useState<Record<string, { x: number; y: number }>>({});
   const canvasRef = useRef<HTMLDivElement>(null);
 
-  const dragStateRef = useRef<{
-    id: string;
-    startX: number;
-    startY: number;
-    initialX: number;
-    initialY: number;
-    currentX: number;
-    currentY: number;
-    hasMoved: boolean;
-  } | null>(null);
 
   const activeModalOpen = isModalOpen !== undefined ? isModalOpen : internalModalOpen;
   const activeEditingNote = editingNote !== undefined ? editingNote : internalEditingNote;
@@ -128,72 +118,62 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
     return Math.max(650, maxY + 40);
   }, [filteredNotes, getNotePosition]);
 
-  // Start drag handler
-  const handleStartDrag = (e: React.PointerEvent, note: NoteItem, currentX: number, currentY: number) => {
-    if (layoutMode !== 'canvas') return;
-    e.preventDefault();
-    e.stopPropagation();
+  // Robust window-level drag handler
+  const handleStartDrag = useCallback(
+    (e: React.PointerEvent, note: NoteItem, currentX: number, currentY: number) => {
+      if (layoutMode !== 'canvas' || e.button !== 0) return;
+      e.preventDefault();
+      e.stopPropagation();
 
-    dragStateRef.current = {
-      id: note.id,
-      startX: e.clientX,
-      startY: e.clientY,
-      initialX: currentX,
-      initialY: currentY,
-      currentX,
-      currentY,
-      hasMoved: false,
-    };
-    setDraggingId(note.id);
+      const noteId = note.id;
+      const startClientX = e.clientX;
+      const startClientY = e.clientY;
+      let lastX = currentX;
+      let lastY = currentY;
+      let hasMoved = false;
 
-    try {
-      (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    } catch {
-      // ignore
-    }
-  };
+      setDraggingId(noteId);
 
-  // Move handler
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (!dragStateRef.current) return;
-    const dx = e.clientX - dragStateRef.current.startX;
-    const dy = e.clientY - dragStateRef.current.startY;
+      const onPointerMove = (moveEvent: PointerEvent) => {
+        const dx = moveEvent.clientX - startClientX;
+        const dy = moveEvent.clientY - startClientY;
 
-    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-      dragStateRef.current.hasMoved = true;
-    }
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+          hasMoved = true;
+        }
 
-    const canvasWidth = canvasRef.current?.clientWidth || 1100;
-    const newX = Math.max(12, Math.min(canvasWidth - 324, dragStateRef.current.initialX + dx));
-    const newY = Math.max(12, dragStateRef.current.initialY + dy);
+        const canvasWidth = canvasRef.current?.clientWidth || 1100;
+        const newX = Math.max(12, Math.min(canvasWidth - 324, currentX + dx));
+        const newY = Math.max(12, currentY + dy);
 
-    dragStateRef.current.currentX = newX;
-    dragStateRef.current.currentY = newY;
+        lastX = newX;
+        lastY = newY;
 
-    setLivePositions((prev) => ({
-      ...prev,
-      [dragStateRef.current!.id]: { x: newX, y: newY },
-    }));
-  };
+        setLivePositions((prev) => ({
+          ...prev,
+          [noteId]: { x: newX, y: newY },
+        }));
+      };
 
-  // Up/Drop handler
-  const handlePointerUp = (e: React.PointerEvent) => {
-    if (!dragStateRef.current) return;
-    const { id, currentX, currentY, hasMoved } = dragStateRef.current;
-    dragStateRef.current = null;
-    setDraggingId(null);
+      const onPointerUp = () => {
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('pointerup', onPointerUp);
+        window.removeEventListener('pointercancel', onPointerUp);
 
-    try {
-      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
-    } catch {
-      // ignore
-    }
+        setDraggingId(null);
 
-    if (hasMoved) {
-      playPopSound(preferences?.soundProfile || 'pop');
-      onUpdateNote(id, { posX: Math.round(currentX), posY: Math.round(currentY) });
-    }
-  };
+        if (hasMoved) {
+          playPopSound(preferences?.soundProfile || 'pop');
+          onUpdateNote(noteId, { posX: Math.round(lastX), posY: Math.round(lastY) });
+        }
+      };
+
+      window.addEventListener('pointermove', onPointerMove, { passive: true });
+      window.addEventListener('pointerup', onPointerUp);
+      window.addEventListener('pointercancel', onPointerUp);
+    },
+    [layoutMode, preferences?.soundProfile, onUpdateNote]
+  );
 
   // Auto-arrange all notes in canvas mode into neat rows
   const handleAutoArrange = () => {
@@ -500,8 +480,6 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
         /* ================= MODE KANVAS BEBAS ================= */
         <div
           ref={canvasRef}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
           className={`relative w-full rounded-3xl border transition-colors duration-200 select-none overflow-x-auto overflow-y-hidden shadow-inner ${
             themeConfig.isDark
               ? 'bg-[#14161f]/50 border-slate-800/80'
@@ -509,6 +487,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
           }`}
           style={{
             minHeight: `${canvasHeight}px`,
+            cursor: draggingId ? 'grabbing' : 'default',
             backgroundImage: themeConfig.isDark
               ? 'radial-gradient(circle, rgba(255, 255, 255, 0.08) 1.5px, transparent 1.5px)'
               : 'radial-gradient(circle, rgba(0, 0, 0, 0.07) 1.5px, transparent 1.5px)',
@@ -528,6 +507,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                   top: `${pos.y}px`,
                   width: '310px',
                   zIndex: isDragging ? 50 : note.isPinned ? 30 : 20,
+                  pointerEvents: draggingId && !isDragging ? 'none' : 'auto',
                   transition: isDragging ? 'none' : 'box-shadow 0.2s ease, transform 0.2s ease',
                 }}
               >
