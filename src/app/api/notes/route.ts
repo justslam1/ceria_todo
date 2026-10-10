@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, content, color, isPinned } = body;
+    const { title, content, color, isPinned, posX, posY, order } = body;
 
     const trimmedTitle = typeof title === 'string' ? title.trim().slice(0, 200) : '';
     const trimmedContent = typeof content === 'string' ? content.trim().slice(0, 20000) : '';
@@ -89,6 +89,9 @@ export async function POST(request: NextRequest) {
         content: trimmedContent,
         color: validColor,
         isPinned: Boolean(isPinned),
+        posX: typeof posX === 'number' && Number.isFinite(posX) ? posX : null,
+        posY: typeof posY === 'number' && Number.isFinite(posY) ? posY : null,
+        order: typeof order === 'number' ? Math.max(0, Math.floor(order)) : 0,
       },
     });
 

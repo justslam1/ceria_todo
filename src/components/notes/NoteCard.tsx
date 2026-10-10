@@ -14,6 +14,9 @@ interface NoteCardProps {
   onChangeColor: (id: string, color: NoteColor) => void;
   onConvertToTask: (note: NoteItem) => void;
   onUpdateContent?: (id: string, newContent: string) => void;
+  isCanvasMode?: boolean;
+  onDragStart?: (e: React.PointerEvent) => void;
+  isDragging?: boolean;
 }
 
 export const NoteCard: React.FC<NoteCardProps> = ({
@@ -24,6 +27,9 @@ export const NoteCard: React.FC<NoteCardProps> = ({
   onChangeColor,
   onConvertToTask,
   onUpdateContent,
+  isCanvasMode = false,
+  onDragStart,
+  isDragging = false,
 }) => {
   const [showColorMenu, setShowColorMenu] = useState(false);
   const style = NOTE_COLOR_STYLES[note.color] || NOTE_COLOR_STYLES.yellow;
@@ -62,18 +68,47 @@ export const NoteCard: React.FC<NoteCardProps> = ({
     }
   };
 
+  const handleCardPointerDown = (e: React.PointerEvent) => {
+    if (!isCanvasMode || !onDragStart) return;
+    const target = e.target as HTMLElement;
+    if (
+      target.closest('button') ||
+      target.closest('input') ||
+      target.closest('textarea') ||
+      target.closest('a') ||
+      target.closest('.group\\/chk')
+    ) {
+      return;
+    }
+    onDragStart(e);
+  };
+
   const lines = note.content.split('\n');
 
   return (
     <div
-      className={`group relative rounded-2xl border p-4 sm:p-4.5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between ${style.bg} ${style.border}`}
+      onPointerDown={handleCardPointerDown}
+      className={`group relative rounded-2xl border p-4 sm:p-4.5 transition-all duration-150 flex flex-col justify-between ${
+        isCanvasMode
+          ? isDragging
+            ? 'shadow-2xl scale-[1.03] cursor-grabbing ring-2 ring-amber-400/50'
+            : 'shadow-md hover:shadow-xl cursor-grab'
+          : 'shadow-sm hover:shadow-md'
+      } ${style.bg} ${style.border}`}
       style={{
         minHeight: '180px',
+        touchAction: isCanvasMode ? 'none' : 'auto',
       }}
     >
-      {/* Decorative Washi Tape on top */}
+      {/* Decorative Washi Tape on top (Drag handle in canvas mode) */}
       <div
-        className={`absolute -top-2.5 left-1/2 -translate-x-1/2 w-20 h-4 rounded-xs border opacity-75 shadow-2xs rotate-[-1.5deg] pointer-events-none ${style.tapeColor}`}
+        onPointerDown={isCanvasMode && onDragStart ? onDragStart : undefined}
+        className={`absolute -top-2.5 left-1/2 -translate-x-1/2 w-20 h-4 rounded-xs border opacity-85 shadow-2xs rotate-[-1.5deg] ${
+          isCanvasMode
+            ? 'cursor-grab active:cursor-grabbing hover:opacity-100 hover:scale-105 transition-transform'
+            : 'pointer-events-none'
+        } ${style.tapeColor}`}
+        title={isCanvasMode ? 'Tahan & geser untuk memindahkan catatan bebas' : undefined}
       />
 
       {/* Header: Pin & Color Switcher */}

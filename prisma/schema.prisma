@@ -97,6 +97,9 @@ model Note {
   content   String   @db.Text
   color     String   @default("yellow")
   isPinned  Boolean  @default(false)
+  posX      Float?
+  posY      Float?
+  order     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -1,17 +1,19 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { Search, Plus, Pin, RefreshCw, BookOpen, Filter, X } from 'lucide-react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
+import { Search, Plus, Pin, RefreshCw, BookOpen, Filter, X, LayoutGrid, Wand2, Move } from 'lucide-react';
 import { NoteItem, NoteColor, NOTE_COLOR_STYLES } from '@/types/note';
-import { ThemeConfig } from '@/types/preferences';
+import { ThemeConfig, UserPreferences } from '@/types/preferences';
 import { NoteCard } from '@/components/notes/NoteCard';
 import { NoteModal } from '@/components/notes/NoteModal';
+import { playPopSound } from '@/lib/soundEffects';
 
 interface NotesBoardProps {
   notes: NoteItem[];
   isLoading: boolean;
   themeConfig: ThemeConfig;
-  onCreateNote: (data: { title: string; content: string; color: NoteColor; isPinned: boolean }) => Promise<void>;
+  preferences?: UserPreferences;
+  onCreateNote: (data: { title: string; content: string; color: NoteColor; isPinned: boolean; posX?: number; posY?: number }) => Promise<void>;
   onUpdateNote: (id: string, data: Partial<NoteItem>) => Promise<void>;
   onDeleteNote: (id: string) => Promise<void>;
   onConvertToTask: (note: NoteItem) => void;
@@ -27,6 +29,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
   notes,
   isLoading,
   themeConfig,
+  preferences,
   onCreateNote,
   onUpdateNote,
   onDeleteNote,
@@ -38,10 +41,27 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
   editingNote,
   onSelectEditingNote,
 }) => {
+  const [layoutMode, setLayoutMode] = useState<'canvas' | 'grid'>('canvas');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedColor, setSelectedColor] = useState<'all' | NoteColor>('all');
   const [internalModalOpen, setInternalModalOpen] = useState(false);
   const [internalEditingNote, setInternalEditingNote] = useState<NoteItem | null>(null);
+
+  // Free-form Dragging State
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [livePositions, setLivePositions] = useState<Record<string, { x: number; y: number }>>({});
+  const canvasRef = useRef<HTMLDivElement>(null);
+
+  const dragStateRef = useRef<{
+    id: string;
+    startX: number;
+    startY: number;
+    initialX: number;
+    initialY: number;
+    currentX: number;
+    currentY: number;
+    hasMoved: boolean;
+  } | null>(null);
 
   const activeModalOpen = isModalOpen !== undefined ? isModalOpen : internalModalOpen;
   const activeEditingNote = editingNote !== undefined ? editingNote : internalEditingNote;
@@ -58,7 +78,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
     });
   }, [notes, searchQuery, selectedColor]);
 
-  // Separate pinned and unpinned notes
+  // Separate pinned and unpinned notes for Grid view
   const { pinnedNotes, otherNotes } = useMemo(() => {
     const pinned: NoteItem[] = [];
     const other: NoteItem[] = [];
@@ -71,6 +91,129 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
     });
     return { pinnedNotes: pinned, otherNotes: other };
   }, [filteredNotes]);
+
+  // Compute position for canvas mode
+  const getNotePosition = useCallback(
+    (note: NoteItem, index: number) => {
+      if (livePositions[note.id]) {
+        return livePositions[note.id];
+      }
+      if (typeof note.posX === 'number' && typeof note.posY === 'number') {
+        return { x: note.posX, y: note.posY };
+      }
+      // Default staggered grid layout on canvas
+      const colWidth = 320;
+      const rowHeight = 280;
+      const cols = 3;
+      const col = index % cols;
+      const row = Math.floor(index / cols);
+      return {
+        x: 24 + col * (colWidth + 24),
+        y: 24 + row * rowHeight,
+      };
+    },
+    [livePositions]
+  );
+
+  // Dynamic canvas height to fit all moved notes
+  const canvasHeight = useMemo(() => {
+    if (filteredNotes.length === 0) return 480;
+    let maxY = 450;
+    filteredNotes.forEach((n, idx) => {
+      const pos = getNotePosition(n, idx);
+      if (pos.y + 360 > maxY) {
+        maxY = pos.y + 360;
+      }
+    });
+    return Math.max(650, maxY + 40);
+  }, [filteredNotes, getNotePosition]);
+
+  // Start drag handler
+  const handleStartDrag = (e: React.PointerEvent, note: NoteItem, currentX: number, currentY: number) => {
+    if (layoutMode !== 'canvas') return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    dragStateRef.current = {
+      id: note.id,
+      startX: e.clientX,
+      startY: e.clientY,
+      initialX: currentX,
+      initialY: currentY,
+      currentX,
+      currentY,
+      hasMoved: false,
+    };
+    setDraggingId(note.id);
+
+    try {
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
+  };
+
+  // Move handler
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!dragStateRef.current) return;
+    const dx = e.clientX - dragStateRef.current.startX;
+    const dy = e.clientY - dragStateRef.current.startY;
+
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+      dragStateRef.current.hasMoved = true;
+    }
+
+    const canvasWidth = canvasRef.current?.clientWidth || 1100;
+    const newX = Math.max(12, Math.min(canvasWidth - 324, dragStateRef.current.initialX + dx));
+    const newY = Math.max(12, dragStateRef.current.initialY + dy);
+
+    dragStateRef.current.currentX = newX;
+    dragStateRef.current.currentY = newY;
+
+    setLivePositions((prev) => ({
+      ...prev,
+      [dragStateRef.current!.id]: { x: newX, y: newY },
+    }));
+  };
+
+  // Up/Drop handler
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (!dragStateRef.current) return;
+    const { id, currentX, currentY, hasMoved } = dragStateRef.current;
+    dragStateRef.current = null;
+    setDraggingId(null);
+
+    try {
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
+
+    if (hasMoved) {
+      playPopSound(preferences?.soundProfile || 'pop');
+      onUpdateNote(id, { posX: Math.round(currentX), posY: Math.round(currentY) });
+    }
+  };
+
+  // Auto-arrange all notes in canvas mode into neat rows
+  const handleAutoArrange = () => {
+    playPopSound(preferences?.soundProfile || 'pop');
+    const canvasWidth = canvasRef.current?.clientWidth || 1100;
+    const colWidth = 320;
+    const cols = Math.max(1, Math.min(4, Math.floor((canvasWidth - 24) / (colWidth + 24))));
+    const newPosMap: Record<string, { x: number; y: number }> = {};
+
+    filteredNotes.forEach((n, idx) => {
+      const col = idx % cols;
+      const row = Math.floor(idx / cols);
+      const x = 24 + col * (colWidth + 24);
+      const y = 24 + row * 290;
+      newPosMap[n.id] = { x, y };
+      onUpdateNote(n.id, { posX: x, posY: y });
+    });
+
+    setLivePositions((prev) => ({ ...prev, ...newPosMap }));
+  };
 
   const handleOpenCreateModal = () => {
     if (onOpenCreateModal) {
@@ -103,7 +246,17 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
     if (activeEditingNote) {
       await onUpdateNote(activeEditingNote.id, data);
     } else {
-      await onCreateNote(data);
+      // Determine initial placement for new note on canvas
+      const canvasWidth = canvasRef.current?.clientWidth || 1100;
+      const colWidth = 320;
+      const cols = Math.max(1, Math.min(3, Math.floor((canvasWidth - 48) / colWidth)));
+      const idx = filteredNotes.length;
+      const col = idx % cols;
+      const row = Math.floor(idx / cols);
+      const posX = 24 + col * (colWidth + 24);
+      const posY = 24 + row * 290;
+
+      await onCreateNote({ ...data, posX, posY });
     }
     handleCloseModal();
   };
@@ -127,7 +280,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-5">
       {/* Top Banner & Action Controls */}
       <div
         className={`rounded-3xl border p-4 sm:p-5 shadow-xs backdrop-blur-md transition-colors ${
@@ -150,15 +303,77 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Tulis ide bebas, daftar belanja, draft, atau rangkuman. Bisa diubah jadi tugas kapan saja! ✨
+                {layoutMode === 'canvas'
+                  ? 'Tahan dan geser memo ke mana saja secara bebas di atas meja! 📌✨'
+                  : 'Tulis ide bebas, daftar belanja, draft, atau rangkuman. Bisa diubah jadi tugas kapan saja! ✨'}
               </p>
             </div>
           </div>
 
-          {/* Action Tools: Search, Filter, Refresh, Add */}
+          {/* Action Tools: Layout Switcher, Auto-arrange, Search, Add */}
           <div className="flex items-center flex-wrap gap-2">
+            {/* View Mode Toggle: Kanvas Bebas ↔ Grid Rapi */}
+            <div
+              className={`flex items-center p-0.5 rounded-xl border text-xs ${
+                themeConfig.isDark
+                  ? 'bg-slate-800/80 border-slate-700 text-slate-300'
+                  : 'bg-slate-100 border-slate-200 text-slate-600'
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  playPopSound(preferences?.soundProfile || 'pop');
+                  setLayoutMode('canvas');
+                }}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                  layoutMode === 'canvas'
+                    ? 'bg-amber-500 text-white shadow-2xs'
+                    : 'hover:text-slate-900 dark:hover:text-white'
+                }`}
+                title="Mode Kanvas Bebas (Bisa digeser ke mana saja)"
+              >
+                <Move className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Kanvas Bebas</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playPopSound(preferences?.soundProfile || 'pop');
+                  setLayoutMode('grid');
+                }}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                  layoutMode === 'grid'
+                    ? 'bg-amber-500 text-white shadow-2xs'
+                    : 'hover:text-slate-900 dark:hover:text-white'
+                }`}
+                title="Mode Grid Rapi"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Grid Rapi</span>
+              </button>
+            </div>
+
+            {/* Auto-arrange button (visible on canvas mode) */}
+            {layoutMode === 'canvas' && filteredNotes.length > 0 && (
+              <button
+                type="button"
+                onClick={handleAutoArrange}
+                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs ${
+                  themeConfig.isDark
+                    ? 'bg-slate-800 border-slate-700 text-amber-300 hover:bg-slate-700'
+                    : 'bg-white border-slate-200 text-amber-700 hover:bg-amber-50'
+                }`}
+                title="Tata ulang semua memo secara rapi & berbaris"
+              >
+                <Wand2 className="w-3.5 h-3.5 text-amber-500" />
+                <span className="hidden md:inline">Rapikan Posisi</span>
+              </button>
+            )}
+
             {/* Search Input */}
-            <div className="relative flex-1 sm:w-56 min-w-[140px]">
+            <div className="relative flex-1 sm:w-48 min-w-[130px]">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
@@ -166,7 +381,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Cari catatan..."
                 style={{ color: themeConfig.isDark ? '#ffffff' : '#0f172a' }}
-                className={`w-full pl-9 pr-7 py-2 rounded-xl border text-xs transition-all outline-hidden ${
+                className={`w-full pl-9 pr-7 py-1.5 rounded-xl border text-xs transition-all outline-hidden ${
                   themeConfig.isDark
                     ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-400 focus:border-amber-500'
                     : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white focus:border-amber-500'
@@ -202,7 +417,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
             <button
               type="button"
               onClick={handleOpenCreateModal}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white shadow-md active:scale-95 transition-all cursor-pointer whitespace-nowrap ${themeConfig.primaryButton}`}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white shadow-md active:scale-95 transition-all cursor-pointer whitespace-nowrap ${themeConfig.primaryButton}`}
             >
               <Plus className="w-4 h-4" />
               <span>Tambah Catatan</span>
@@ -252,7 +467,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
         </div>
       </div>
 
-      {/* Main Grid View */}
+      {/* Main View Area */}
       {filteredNotes.length === 0 ? (
         <div
           className={`text-center py-16 px-4 rounded-3xl border border-dashed flex flex-col items-center justify-center ${
@@ -281,7 +496,60 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
             <span>Tulis Catatan Pertamamu</span>
           </button>
         </div>
+      ) : layoutMode === 'canvas' ? (
+        /* ================= MODE KANVAS BEBAS ================= */
+        <div
+          ref={canvasRef}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          className={`relative w-full rounded-3xl border transition-colors duration-200 select-none overflow-x-auto overflow-y-hidden shadow-inner ${
+            themeConfig.isDark
+              ? 'bg-[#14161f]/50 border-slate-800/80'
+              : 'bg-amber-50/25 border-slate-200/80'
+          }`}
+          style={{
+            minHeight: `${canvasHeight}px`,
+            backgroundImage: themeConfig.isDark
+              ? 'radial-gradient(circle, rgba(255, 255, 255, 0.08) 1.5px, transparent 1.5px)'
+              : 'radial-gradient(circle, rgba(0, 0, 0, 0.07) 1.5px, transparent 1.5px)',
+            backgroundSize: '24px 24px',
+          }}
+        >
+          {filteredNotes.map((note, index) => {
+            const pos = getNotePosition(note, index);
+            const isDragging = draggingId === note.id;
+
+            return (
+              <div
+                key={note.id}
+                style={{
+                  position: 'absolute',
+                  left: `${pos.x}px`,
+                  top: `${pos.y}px`,
+                  width: '310px',
+                  zIndex: isDragging ? 50 : note.isPinned ? 30 : 20,
+                  transition: isDragging ? 'none' : 'box-shadow 0.2s ease, transform 0.2s ease',
+                }}
+              >
+                <NoteCard
+                  note={note}
+                  themeConfig={themeConfig}
+                  isCanvasMode={true}
+                  isDragging={isDragging}
+                  onDragStart={(e) => handleStartDrag(e, note, pos.x, pos.y)}
+                  onEdit={handleOpenEditModal}
+                  onDelete={handleDeleteWithConfirm}
+                  onTogglePin={handleTogglePin}
+                  onChangeColor={handleChangeColor}
+                  onConvertToTask={onConvertToTask}
+                  onUpdateContent={handleUpdateContent}
+                />
+              </div>
+            );
+          })}
+        </div>
       ) : (
+        /* ================= MODE GRID RAPI ================= */
         <div className="space-y-6">
           {/* Pinned Notes Section */}
           {pinnedNotes.length > 0 && (
@@ -298,6 +566,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                     key={note.id}
                     note={note}
                     themeConfig={themeConfig}
+                    isCanvasMode={false}
                     onEdit={handleOpenEditModal}
                     onDelete={handleDeleteWithConfirm}
                     onTogglePin={handleTogglePin}
@@ -326,6 +595,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                     key={note.id}
                     note={note}
                     themeConfig={themeConfig}
+                    isCanvasMode={false}
                     onEdit={handleOpenEditModal}
                     onDelete={handleDeleteWithConfirm}
                     onTogglePin={handleTogglePin}

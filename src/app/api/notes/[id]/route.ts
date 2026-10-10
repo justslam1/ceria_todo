@@ -95,6 +95,15 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     if (body.isPinned !== undefined) {
       updateData.isPinned = Boolean(body.isPinned);
     }
+    if (body.posX !== undefined) {
+      updateData.posX = typeof body.posX === 'number' && Number.isFinite(body.posX) ? body.posX : null;
+    }
+    if (body.posY !== undefined) {
+      updateData.posY = typeof body.posY === 'number' && Number.isFinite(body.posY) ? body.posY : null;
+    }
+    if (body.order !== undefined && typeof body.order === 'number') {
+      updateData.order = Math.max(0, Math.floor(body.order));
+    }
 
     const updatedNote = await prisma.note.update({
       where: { id },

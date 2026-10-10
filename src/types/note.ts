@@ -7,6 +7,9 @@ export interface NoteItem {
   content: string;
   color: NoteColor;
   isPinned: boolean;
+  posX?: number | null;
+  posY?: number | null;
+  order?: number;
   createdAt: string;
   updatedAt: string;
 }
