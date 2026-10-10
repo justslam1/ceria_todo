@@ -1321,11 +1321,10 @@ export const KanbanBoard: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => handleStatusChange(task.id, 'TODO')}
-                        className="px-1.5 py-0.5 rounded-lg bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-bold shadow-2xs active:scale-95 transition-all cursor-pointer flex items-center gap-0.5"
-                        title="Kembalikan ke Rencana"
+                        className="w-5 h-5 rounded-lg flex items-center justify-center bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 shadow-2xs active:scale-95 transition-all cursor-pointer"
+                        title="Kembalikan ke Rencana (←)"
                       >
-                        <ArrowLeft className="w-2.5 h-2.5" />
-                        <span>Rencana</span>
+                        <ArrowLeft className="w-3 h-3" />
                       </button>
                     )}
                     <button
@@ -1340,19 +1339,25 @@ export const KanbanBoard: React.FC = () => {
                             : 'DONE'
                         )
                       }
-                      className="px-2 py-0.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-bold shadow-2xs active:scale-95 transition-all cursor-pointer flex items-center gap-0.5"
+                      className={`rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-2xs active:scale-95 transition-all cursor-pointer flex items-center justify-center ${
+                        task.status === 'TODO' && preferences.activeColumnCount !== 2
+                          ? 'w-5 h-5 p-0'
+                          : 'px-2 py-0.5 text-[10px] gap-0.5'
+                      }`}
                       title={
                         task.status === 'TODO' && preferences.activeColumnCount !== 2
-                          ? 'Mulai Kerjakan'
+                          ? 'Mulai Kerjakan (→)'
                           : 'Selesaikan Misi'
                       }
                     >
-                      <span>
-                        {task.status === 'TODO' && preferences.activeColumnCount !== 2
-                          ? 'Aksi'
-                          : 'Selesai'}
-                      </span>
-                      <ArrowRight className="w-2.5 h-2.5" />
+                      {task.status === 'TODO' && preferences.activeColumnCount !== 2 ? (
+                        <ArrowRight className="w-3 h-3" />
+                      ) : (
+                        <>
+                          <span>Selesai</span>
+                          <ArrowRight className="w-2.5 h-2.5" />
+                        </>
+                      )}
                     </button>
                     <button
                       type="button"
