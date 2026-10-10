@@ -19,6 +19,7 @@ import {
   DeskBuddyType,
   PaperTexture,
   BoardSticker,
+  ActiveColumnCount,
 } from '@/types/preferences';
 
 export type {
@@ -33,6 +34,7 @@ export type {
   DeskBuddyType,
   PaperTexture,
   BoardSticker,
+  ActiveColumnCount,
 };
 
 export const DEFAULT_STICKERS: BoardSticker[] = [
@@ -98,6 +100,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   stickers: DEFAULT_STICKERS,
   showBoardHeader: true,
   showDailyGoalBanner: true,
+  activeColumnCount: 3,
 };
 
 export const APP_ICON_PRESETS = [
@@ -739,6 +742,7 @@ export function loadUserPreferences(): UserPreferences {
       stickers: Array.isArray(parsed.stickers) ? parsed.stickers : DEFAULT_PREFERENCES.stickers,
       showBoardHeader: parsed.showBoardHeader !== false,
       showDailyGoalBanner: parsed.showDailyGoalBanner !== false,
+      activeColumnCount: ([1, 2, 3].includes(parsed.activeColumnCount) ? parsed.activeColumnCount : 3) as ActiveColumnCount,
       customLogoUrl: isSafeUrl(parsed.customLogoUrl),
       customBgUrl: isSafeUrl(parsed.customBgUrl),
       columns: {

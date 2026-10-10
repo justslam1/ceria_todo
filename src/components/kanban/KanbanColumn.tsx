@@ -11,6 +11,7 @@ import {
   StampColor,
   ViewDensity,
   PaperTexture,
+  ActiveColumnCount,
 } from '@/types/preferences';
 import { TaskCard } from './TaskCard';
 import { Lightbulb, Zap, Trophy, Plus, Sparkles, Archive } from 'lucide-react';
@@ -31,6 +32,7 @@ interface KanbanColumnProps {
   stampColor?: StampColor;
   viewDensity?: ViewDensity;
   paperTexture?: PaperTexture;
+  activeColumnCount?: ActiveColumnCount;
   onEditTask: (task: Task) => void;
   onDeleteTask: (id: string) => void;
   onStatusChange: (id: string, newStatus: TaskStatus) => void;
@@ -57,6 +59,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
   stampColor = 'red',
   viewDensity = 'cozy',
   paperTexture = 'plain',
+  activeColumnCount = 3,
   onEditTask,
   onDeleteTask,
   onStatusChange,
@@ -227,6 +230,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
                   stampColor={stampColor}
                   viewDensity={viewDensity}
                   paperTexture={paperTexture}
+                  activeColumnCount={activeColumnCount}
                   onEdit={onEditTask}
                   onDelete={onDeleteTask}
                   onStatusChange={onStatusChange}

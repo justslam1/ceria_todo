@@ -45,6 +45,7 @@ import {
   ArrowUpDown,
   LayoutGrid,
   Rows3,
+  Columns3,
 } from 'lucide-react';
 
 export const KanbanBoard: React.FC = () => {
@@ -79,6 +80,7 @@ export const KanbanBoard: React.FC = () => {
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [defaultStatusForNew, setDefaultStatusForNew] = useState<TaskStatus>('TODO');
+  const [singleColumnTab, setSingleColumnTab] = useState<TaskStatus>('TODO');
 
   const [currentDate, setCurrentDate] = useState('');
   const [currentTime, setCurrentTime] = useState('');
@@ -286,11 +288,17 @@ export const KanbanBoard: React.FC = () => {
     return list;
   }, [filteredTasks, preferences.sortBy]);
 
+  const effectiveColumnCount = preferences.activeColumnCount || 3;
+
   // Group tasks by status
-  const todoTasks = useMemo(
-    () => sortedFilteredTasks.filter((t) => t.status === 'TODO'),
-    [sortedFilteredTasks]
-  );
+  const todoTasks = useMemo(() => {
+    if (effectiveColumnCount === 2) {
+      // In 2-column mode, both TODO and any existing IN_PROGRESS tasks are shown in Column 1 (TODO)
+      return sortedFilteredTasks.filter((t) => t.status === 'TODO' || t.status === 'IN_PROGRESS');
+    }
+    return sortedFilteredTasks.filter((t) => t.status === 'TODO');
+  }, [sortedFilteredTasks, effectiveColumnCount]);
+
   const inProgressTasks = useMemo(
     () => sortedFilteredTasks.filter((t) => t.status === 'IN_PROGRESS'),
     [sortedFilteredTasks]
@@ -1181,6 +1189,47 @@ export const KanbanBoard: React.FC = () => {
               )}
             </button>
 
+            {/* Active Column Count Quick Toggle (1, 2, 3 Kolom) */}
+            <div
+              className={`flex items-center p-0.5 rounded-xl border text-xs ${
+                themeConfig.isDark
+                  ? 'bg-slate-900/40 border-slate-700/60 text-slate-300'
+                  : 'bg-white/50 border-slate-200 text-slate-600'
+              }`}
+              title="Pilih jumlah kolom papan (1, 2, atau 3 kolom)"
+            >
+              <div className="flex items-center gap-1 px-1.5 py-0.5 text-slate-400">
+                <Columns3 className="w-3.5 h-3.5" />
+                <span className="text-[11px] font-medium hidden lg:inline">Kolom:</span>
+              </div>
+              <div className="flex items-center gap-0.5">
+                {([1, 2, 3] as const).map((num) => {
+                  const isActive = (preferences.activeColumnCount || 3) === num;
+                  return (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => {
+                        playPopSound(preferences.soundProfile);
+                        handleSavePreferences({
+                          ...preferences,
+                          activeColumnCount: num,
+                        });
+                      }}
+                      className={`w-6 h-6 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center ${
+                        isActive
+                          ? 'bg-orange-500 text-white shadow-2xs scale-105'
+                          : 'hover:bg-slate-200/50 text-slate-500 dark:text-slate-400'
+                      }`}
+                      title={`Tampilkan ${num} Kolom`}
+                    >
+                      {num}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Refresh Button */}
             <button
               onClick={handleRefreshTasks}
@@ -1296,88 +1345,326 @@ export const KanbanBoard: React.FC = () => {
           </div>
         )}
 
-        {/* DragDrop Board Grid with 3 Columns */}
+        {/* DragDrop Board Grid with 1, 2, or 3 Columns */}
         <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 items-start pb-8">
-            {/* Kolom 1: TODO */}
-            <KanbanColumn
-              id="TODO"
-              title={preferences.columns?.TODO?.title || 'Rencana Brilian'}
-              subtitle={preferences.columns?.TODO?.subtitle || 'Ide & tugas baru yang siap dieksekusi'}
-              emoji={preferences.columns?.TODO?.emoji || '💡'}
-              status="TODO"
-              tasks={todoTasks}
-              washiTapeStyle={preferences.washiTapeStyle}
-              customCategories={preferences.customCategories}
-              fontMood={preferences.fontMood}
-              noteColorMode={preferences.noteColorMode}
-              pinStyle={preferences.pinStyle}
-              completionStamp={preferences.completionStamp}
-              stampColor={preferences.stampColor}
-              viewDensity={preferences.viewDensity}
-              paperTexture={preferences.paperTexture}
-              onEditTask={handleOpenEdit}
-              onDeleteTask={handleDeleteTask}
-              onStatusChange={handleStatusChange}
-              onAddTaskToColumn={handleOpenNewInColumn}
-              onToggleSubtask={handleToggleSubtask}
-              onTogglePin={handleTogglePin}
-              onStartPomodoro={handleStartPomodoro}
-            />
+          {effectiveColumnCount === 3 && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 items-start pb-8">
+              {/* Kolom 1: TODO */}
+              <KanbanColumn
+                id="TODO"
+                title={preferences.columns?.TODO?.title || 'Rencana Brilian'}
+                subtitle={preferences.columns?.TODO?.subtitle || 'Ide & tugas baru yang siap dieksekusi'}
+                emoji={preferences.columns?.TODO?.emoji || '💡'}
+                status="TODO"
+                tasks={todoTasks}
+                washiTapeStyle={preferences.washiTapeStyle}
+                customCategories={preferences.customCategories}
+                fontMood={preferences.fontMood}
+                noteColorMode={preferences.noteColorMode}
+                pinStyle={preferences.pinStyle}
+                completionStamp={preferences.completionStamp}
+                stampColor={preferences.stampColor}
+                viewDensity={preferences.viewDensity}
+                paperTexture={preferences.paperTexture}
+                activeColumnCount={3}
+                onEditTask={handleOpenEdit}
+                onDeleteTask={handleDeleteTask}
+                onStatusChange={handleStatusChange}
+                onAddTaskToColumn={handleOpenNewInColumn}
+                onToggleSubtask={handleToggleSubtask}
+                onTogglePin={handleTogglePin}
+                onStartPomodoro={handleStartPomodoro}
+              />
 
-            {/* Kolom 2: IN_PROGRESS */}
-            <KanbanColumn
-              id="IN_PROGRESS"
-              title={preferences.columns?.IN_PROGRESS?.title || 'Aksi Seru'}
-              subtitle={preferences.columns?.IN_PROGRESS?.subtitle || 'Sedang dikerjakan dengan semangat'}
-              emoji={preferences.columns?.IN_PROGRESS?.emoji || '⚡'}
-              status="IN_PROGRESS"
-              tasks={inProgressTasks}
-              washiTapeStyle={preferences.washiTapeStyle}
-              customCategories={preferences.customCategories}
-              fontMood={preferences.fontMood}
-              noteColorMode={preferences.noteColorMode}
-              pinStyle={preferences.pinStyle}
-              completionStamp={preferences.completionStamp}
-              stampColor={preferences.stampColor}
-              viewDensity={preferences.viewDensity}
-              paperTexture={preferences.paperTexture}
-              onEditTask={handleOpenEdit}
-              onDeleteTask={handleDeleteTask}
-              onStatusChange={handleStatusChange}
-              onAddTaskToColumn={handleOpenNewInColumn}
-              onToggleSubtask={handleToggleSubtask}
-              onTogglePin={handleTogglePin}
-              onStartPomodoro={handleStartPomodoro}
-            />
+              {/* Kolom 2: IN_PROGRESS */}
+              <KanbanColumn
+                id="IN_PROGRESS"
+                title={preferences.columns?.IN_PROGRESS?.title || 'Aksi Seru'}
+                subtitle={preferences.columns?.IN_PROGRESS?.subtitle || 'Sedang dikerjakan dengan semangat'}
+                emoji={preferences.columns?.IN_PROGRESS?.emoji || '⚡'}
+                status="IN_PROGRESS"
+                tasks={inProgressTasks}
+                washiTapeStyle={preferences.washiTapeStyle}
+                customCategories={preferences.customCategories}
+                fontMood={preferences.fontMood}
+                noteColorMode={preferences.noteColorMode}
+                pinStyle={preferences.pinStyle}
+                completionStamp={preferences.completionStamp}
+                stampColor={preferences.stampColor}
+                viewDensity={preferences.viewDensity}
+                paperTexture={preferences.paperTexture}
+                activeColumnCount={3}
+                onEditTask={handleOpenEdit}
+                onDeleteTask={handleDeleteTask}
+                onStatusChange={handleStatusChange}
+                onAddTaskToColumn={handleOpenNewInColumn}
+                onToggleSubtask={handleToggleSubtask}
+                onTogglePin={handleTogglePin}
+                onStartPomodoro={handleStartPomodoro}
+              />
 
-            {/* Kolom 3: DONE */}
-            <KanbanColumn
-              id="DONE"
-              title={preferences.columns?.DONE?.title || 'Misi Sukses'}
-              subtitle={preferences.columns?.DONE?.subtitle || 'Telah selesai dengan hasil gemilang! 🎉'}
-              emoji={preferences.columns?.DONE?.emoji || '🏆'}
-              status="DONE"
-              tasks={doneTasks}
-              washiTapeStyle={preferences.washiTapeStyle}
-              customCategories={preferences.customCategories}
-              fontMood={preferences.fontMood}
-              noteColorMode={preferences.noteColorMode}
-              pinStyle={preferences.pinStyle}
-              completionStamp={preferences.completionStamp}
-              stampColor={preferences.stampColor}
-              viewDensity={preferences.viewDensity}
-              paperTexture={preferences.paperTexture}
-              onEditTask={handleOpenEdit}
-              onDeleteTask={handleDeleteTask}
-              onStatusChange={handleStatusChange}
-              onAddTaskToColumn={handleOpenNewInColumn}
-              onToggleSubtask={handleToggleSubtask}
-              onTogglePin={handleTogglePin}
-              onStartPomodoro={handleStartPomodoro}
-              onArchiveDone={handleArchiveDoneTasks}
-            />
-          </div>
+              {/* Kolom 3: DONE */}
+              <KanbanColumn
+                id="DONE"
+                title={preferences.columns?.DONE?.title || 'Misi Sukses'}
+                subtitle={preferences.columns?.DONE?.subtitle || 'Telah selesai dengan hasil gemilang! 🎉'}
+                emoji={preferences.columns?.DONE?.emoji || '🏆'}
+                status="DONE"
+                tasks={doneTasks}
+                washiTapeStyle={preferences.washiTapeStyle}
+                customCategories={preferences.customCategories}
+                fontMood={preferences.fontMood}
+                noteColorMode={preferences.noteColorMode}
+                pinStyle={preferences.pinStyle}
+                completionStamp={preferences.completionStamp}
+                stampColor={preferences.stampColor}
+                viewDensity={preferences.viewDensity}
+                paperTexture={preferences.paperTexture}
+                activeColumnCount={3}
+                onEditTask={handleOpenEdit}
+                onDeleteTask={handleDeleteTask}
+                onStatusChange={handleStatusChange}
+                onAddTaskToColumn={handleOpenNewInColumn}
+                onToggleSubtask={handleToggleSubtask}
+                onTogglePin={handleTogglePin}
+                onStartPomodoro={handleStartPomodoro}
+                onArchiveDone={handleArchiveDoneTasks}
+              />
+            </div>
+          )}
+
+          {effectiveColumnCount === 2 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-start pb-8 max-w-5xl mx-auto w-full">
+              {/* Kolom 1: TODO (Simple Checklist) */}
+              <KanbanColumn
+                id="TODO"
+                title={preferences.columns?.TODO?.title || 'Rencana Brilian'}
+                subtitle={preferences.columns?.TODO?.subtitle || 'Ide & tugas baru yang siap dieksekusi'}
+                emoji={preferences.columns?.TODO?.emoji || '💡'}
+                status="TODO"
+                tasks={todoTasks}
+                washiTapeStyle={preferences.washiTapeStyle}
+                customCategories={preferences.customCategories}
+                fontMood={preferences.fontMood}
+                noteColorMode={preferences.noteColorMode}
+                pinStyle={preferences.pinStyle}
+                completionStamp={preferences.completionStamp}
+                stampColor={preferences.stampColor}
+                viewDensity={preferences.viewDensity}
+                paperTexture={preferences.paperTexture}
+                activeColumnCount={2}
+                onEditTask={handleOpenEdit}
+                onDeleteTask={handleDeleteTask}
+                onStatusChange={handleStatusChange}
+                onAddTaskToColumn={handleOpenNewInColumn}
+                onToggleSubtask={handleToggleSubtask}
+                onTogglePin={handleTogglePin}
+                onStartPomodoro={handleStartPomodoro}
+              />
+
+              {/* Kolom 2: DONE */}
+              <KanbanColumn
+                id="DONE"
+                title={preferences.columns?.DONE?.title || 'Misi Sukses'}
+                subtitle={preferences.columns?.DONE?.subtitle || 'Telah selesai dengan hasil gemilang! 🎉'}
+                emoji={preferences.columns?.DONE?.emoji || '🏆'}
+                status="DONE"
+                tasks={doneTasks}
+                washiTapeStyle={preferences.washiTapeStyle}
+                customCategories={preferences.customCategories}
+                fontMood={preferences.fontMood}
+                noteColorMode={preferences.noteColorMode}
+                pinStyle={preferences.pinStyle}
+                completionStamp={preferences.completionStamp}
+                stampColor={preferences.stampColor}
+                viewDensity={preferences.viewDensity}
+                paperTexture={preferences.paperTexture}
+                activeColumnCount={2}
+                onEditTask={handleOpenEdit}
+                onDeleteTask={handleDeleteTask}
+                onStatusChange={handleStatusChange}
+                onAddTaskToColumn={handleOpenNewInColumn}
+                onToggleSubtask={handleToggleSubtask}
+                onTogglePin={handleTogglePin}
+                onStartPomodoro={handleStartPomodoro}
+                onArchiveDone={handleArchiveDoneTasks}
+              />
+            </div>
+          )}
+
+          {effectiveColumnCount === 1 && (
+            <div className="max-w-2xl mx-auto w-full pb-8 flex flex-col gap-3.5">
+              {/* Single Column Tab Switcher */}
+              <div
+                className={`p-1.5 rounded-2xl border flex items-center justify-between gap-1 shadow-xs transition-colors ${
+                  themeConfig.isDark
+                    ? 'bg-[#1b1e28]/60 backdrop-blur-md border-slate-700/60'
+                    : 'bg-white/60 backdrop-blur-md border-slate-200/80 shadow-slate-200/30'
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    playPopSound(preferences.soundProfile);
+                    setSingleColumnTab('TODO');
+                  }}
+                  className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    singleColumnTab === 'TODO'
+                      ? 'bg-amber-500 text-white shadow-2xs scale-[1.02]'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100/60 dark:hover:bg-slate-800/50'
+                  }`}
+                >
+                  <span>{preferences.columns?.TODO?.emoji || '💡'}</span>
+                  <span className="truncate">{preferences.columns?.TODO?.title || 'Rencana'}</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                      singleColumnTab === 'TODO'
+                        ? 'bg-amber-600 text-white'
+                        : 'bg-slate-200/80 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
+                    }`}
+                  >
+                    {todoTasks.length}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    playPopSound(preferences.soundProfile);
+                    setSingleColumnTab('IN_PROGRESS');
+                  }}
+                  className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    singleColumnTab === 'IN_PROGRESS'
+                      ? 'bg-sky-500 text-white shadow-2xs scale-[1.02]'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100/60 dark:hover:bg-slate-800/50'
+                  }`}
+                >
+                  <span>{preferences.columns?.IN_PROGRESS?.emoji || '⚡'}</span>
+                  <span className="truncate">{preferences.columns?.IN_PROGRESS?.title || 'Aksi'}</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                      singleColumnTab === 'IN_PROGRESS'
+                        ? 'bg-sky-600 text-white'
+                        : 'bg-slate-200/80 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
+                    }`}
+                  >
+                    {inProgressTasks.length}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    playPopSound(preferences.soundProfile);
+                    setSingleColumnTab('DONE');
+                  }}
+                  className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    singleColumnTab === 'DONE'
+                      ? 'bg-emerald-500 text-white shadow-2xs scale-[1.02]'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100/60 dark:hover:bg-slate-800/50'
+                  }`}
+                >
+                  <span>{preferences.columns?.DONE?.emoji || '🏆'}</span>
+                  <span className="truncate">{preferences.columns?.DONE?.title || 'Selesai'}</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                      singleColumnTab === 'DONE'
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-slate-200/80 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
+                    }`}
+                  >
+                    {doneTasks.length}
+                  </span>
+                </button>
+              </div>
+
+              {/* Single Column Body */}
+              {singleColumnTab === 'TODO' && (
+                <KanbanColumn
+                  id="TODO"
+                  title={preferences.columns?.TODO?.title || 'Rencana Brilian'}
+                  subtitle={preferences.columns?.TODO?.subtitle || 'Ide & tugas baru yang siap dieksekusi'}
+                  emoji={preferences.columns?.TODO?.emoji || '💡'}
+                  status="TODO"
+                  tasks={todoTasks}
+                  washiTapeStyle={preferences.washiTapeStyle}
+                  customCategories={preferences.customCategories}
+                  fontMood={preferences.fontMood}
+                  noteColorMode={preferences.noteColorMode}
+                  pinStyle={preferences.pinStyle}
+                  completionStamp={preferences.completionStamp}
+                  stampColor={preferences.stampColor}
+                  viewDensity={preferences.viewDensity}
+                  paperTexture={preferences.paperTexture}
+                  activeColumnCount={1}
+                  onEditTask={handleOpenEdit}
+                  onDeleteTask={handleDeleteTask}
+                  onStatusChange={handleStatusChange}
+                  onAddTaskToColumn={handleOpenNewInColumn}
+                  onToggleSubtask={handleToggleSubtask}
+                  onTogglePin={handleTogglePin}
+                  onStartPomodoro={handleStartPomodoro}
+                />
+              )}
+
+              {singleColumnTab === 'IN_PROGRESS' && (
+                <KanbanColumn
+                  id="IN_PROGRESS"
+                  title={preferences.columns?.IN_PROGRESS?.title || 'Aksi Seru'}
+                  subtitle={preferences.columns?.IN_PROGRESS?.subtitle || 'Sedang dikerjakan dengan semangat'}
+                  emoji={preferences.columns?.IN_PROGRESS?.emoji || '⚡'}
+                  status="IN_PROGRESS"
+                  tasks={inProgressTasks}
+                  washiTapeStyle={preferences.washiTapeStyle}
+                  customCategories={preferences.customCategories}
+                  fontMood={preferences.fontMood}
+                  noteColorMode={preferences.noteColorMode}
+                  pinStyle={preferences.pinStyle}
+                  completionStamp={preferences.completionStamp}
+                  stampColor={preferences.stampColor}
+                  viewDensity={preferences.viewDensity}
+                  paperTexture={preferences.paperTexture}
+                  activeColumnCount={1}
+                  onEditTask={handleOpenEdit}
+                  onDeleteTask={handleDeleteTask}
+                  onStatusChange={handleStatusChange}
+                  onAddTaskToColumn={handleOpenNewInColumn}
+                  onToggleSubtask={handleToggleSubtask}
+                  onTogglePin={handleTogglePin}
+                  onStartPomodoro={handleStartPomodoro}
+                />
+              )}
+
+              {singleColumnTab === 'DONE' && (
+                <KanbanColumn
+                  id="DONE"
+                  title={preferences.columns?.DONE?.title || 'Misi Sukses'}
+                  subtitle={preferences.columns?.DONE?.subtitle || 'Telah selesai dengan hasil gemilang! 🎉'}
+                  emoji={preferences.columns?.DONE?.emoji || '🏆'}
+                  status="DONE"
+                  tasks={doneTasks}
+                  washiTapeStyle={preferences.washiTapeStyle}
+                  customCategories={preferences.customCategories}
+                  fontMood={preferences.fontMood}
+                  noteColorMode={preferences.noteColorMode}
+                  pinStyle={preferences.pinStyle}
+                  completionStamp={preferences.completionStamp}
+                  stampColor={preferences.stampColor}
+                  viewDensity={preferences.viewDensity}
+                  paperTexture={preferences.paperTexture}
+                  activeColumnCount={1}
+                  onEditTask={handleOpenEdit}
+                  onDeleteTask={handleDeleteTask}
+                  onStatusChange={handleStatusChange}
+                  onAddTaskToColumn={handleOpenNewInColumn}
+                  onToggleSubtask={handleToggleSubtask}
+                  onTogglePin={handleTogglePin}
+                  onStartPomodoro={handleStartPomodoro}
+                  onArchiveDone={handleArchiveDoneTasks}
+                />
+              )}
+            </div>
+          )}
         </DragDropContext>
       </main>
 

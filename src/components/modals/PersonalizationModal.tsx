@@ -3,6 +3,7 @@ import {
   UserPreferences,
   ThemeId,
   PaperTexture,
+  ActiveColumnCount,
 } from '@/types/preferences';
 import {
   THEME_LIST,
@@ -56,6 +57,7 @@ import {
   Smile,
   Layers,
   Pin,
+  Columns3,
 } from 'lucide-react';
 import { playPopSound, playVictoryChime } from '@/lib/soundEffects';
 import { Task } from '@/types/task';
@@ -293,6 +295,7 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
           stickers: Array.isArray(rawPrefs.stickers) ? rawPrefs.stickers : DEFAULT_PREFERENCES.stickers,
           showBoardHeader: rawPrefs.showBoardHeader !== false,
           showDailyGoalBanner: rawPrefs.showDailyGoalBanner !== false,
+          activeColumnCount: ([1, 2, 3].includes(rawPrefs.activeColumnCount) ? rawPrefs.activeColumnCount : 3) as ActiveColumnCount,
           customLogoUrl: isSafeUrl(rawPrefs.customLogoUrl),
           customBgUrl: isSafeUrl(rawPrefs.customBgUrl),
         };
@@ -1659,6 +1662,92 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
           {/* TAB 4: ALUR & KOLOM */}
           {activeTab === 'workflow' && (
             <div className="space-y-5">
+              {/* Jumlah Kolom Papan Aktif (1, 2, atau 3 Kolom) */}
+              <div className="p-4 rounded-2xl bg-orange-50/40 border border-orange-200/80 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-orange-950 uppercase tracking-wider flex items-center gap-1.5">
+                    <Columns3 className="w-4 h-4 text-orange-600" />
+                    Jumlah Kolom Papan Aktif
+                  </label>
+                  <span className="text-[11px] text-orange-600 font-medium">1, 2, atau 3 Kolom 📋</span>
+                </div>
+
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Pilih struktur alur kerja yang paling nyaman untuk gayamu. Kamu bisa beralih kapan saja tanpa kehilangan tugas.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {/* 3 Kolom */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playPopSound(formData.soundProfile);
+                      setFormData({ ...formData, activeColumnCount: 3 });
+                    }}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                      (formData.activeColumnCount || 3) === 3
+                        ? 'border-orange-500 bg-white ring-2 ring-orange-300 shadow-xs'
+                        : 'border-orange-200/70 bg-white/70 hover:bg-white hover:border-orange-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xl">📊</span>
+                      {(formData.activeColumnCount || 3) === 3 && <Check className="w-4 h-4 text-orange-600" />}
+                    </div>
+                    <div className="mt-2">
+                      <div className="font-bold text-xs text-slate-800">3 Kolom (Standar)</div>
+                      <p className="text-[10px] text-slate-500 mt-0.5">Rencana ➔ Aksi ➔ Selesai (Kanban Penuh)</p>
+                    </div>
+                  </button>
+
+                  {/* 2 Kolom */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playPopSound(formData.soundProfile);
+                      setFormData({ ...formData, activeColumnCount: 2 });
+                    }}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                      formData.activeColumnCount === 2
+                        ? 'border-orange-500 bg-white ring-2 ring-orange-300 shadow-xs'
+                        : 'border-orange-200/70 bg-white/70 hover:bg-white hover:border-orange-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xl">✌️</span>
+                      {formData.activeColumnCount === 2 && <Check className="w-4 h-4 text-orange-600" />}
+                    </div>
+                    <div className="mt-2">
+                      <div className="font-bold text-xs text-slate-800">2 Kolom (Sederhana)</div>
+                      <p className="text-[10px] text-slate-500 mt-0.5">Rencana & Selesai (Langsung checklist)</p>
+                    </div>
+                  </button>
+
+                  {/* 1 Kolom */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playPopSound(formData.soundProfile);
+                      setFormData({ ...formData, activeColumnCount: 1 });
+                    }}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                      formData.activeColumnCount === 1
+                        ? 'border-orange-500 bg-white ring-2 ring-orange-300 shadow-xs'
+                        : 'border-orange-200/70 bg-white/70 hover:bg-white hover:border-orange-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xl">🎯</span>
+                      {formData.activeColumnCount === 1 && <Check className="w-4 h-4 text-orange-600" />}
+                    </div>
+                    <div className="mt-2">
+                      <div className="font-bold text-xs text-slate-800">1 Kolom (Fokus Penuh)</div>
+                      <p className="text-[10px] text-slate-500 mt-0.5">Tampilan lapang dengan tab status</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-xs font-bold text-slate-700">

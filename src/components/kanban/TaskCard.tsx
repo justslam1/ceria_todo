@@ -12,6 +12,7 @@ import {
   StampColor,
   ViewDensity,
   PaperTexture,
+  ActiveColumnCount,
 } from '@/types/preferences';
 import { getStickyNoteStyle, getStampStyle, getPaperTextureStyle } from '@/lib/userPreferences';
 import { PriorityBadge, CategoryBadge, DateBadge, TimeEstimateBadge } from '@/components/ui/Badge';
@@ -49,6 +50,7 @@ interface TaskCardProps {
   stampColor?: StampColor;
   viewDensity?: ViewDensity;
   paperTexture?: PaperTexture;
+  activeColumnCount?: ActiveColumnCount;
 }
 
 export const TaskCard: React.FC<TaskCardProps> = ({
@@ -69,11 +71,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   stampColor = 'red',
   viewDensity = 'cozy',
   paperTexture = 'plain',
+  activeColumnCount = 3,
 }) => {
   const [isSubtasksExpanded, setIsSubtasksExpanded] = useState(false);
 
   const getNextStatus = (current: TaskStatus): TaskStatus | null => {
-    if (current === 'TODO') return 'IN_PROGRESS';
+    if (current === 'TODO') return activeColumnCount === 2 ? 'DONE' : 'IN_PROGRESS';
     if (current === 'IN_PROGRESS') return 'DONE';
     return null;
   };
@@ -208,6 +211,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 <span className="inline-flex items-center gap-0.5 px-2 py-0.2 rounded-full text-[10px] font-extrabold bg-amber-400 text-amber-950 border border-amber-500 shadow-2xs">
                   <Sparkles className="w-2.5 h-2.5" />
                   <span>Fokus</span>
+                </span>
+              )}
+              {activeColumnCount === 2 && task.status === 'IN_PROGRESS' && (
+                <span className="inline-flex items-center gap-0.5 px-2 py-0.2 rounded-full text-[10px] font-extrabold bg-sky-200 text-sky-950 border border-sky-300 shadow-2xs">
+                  ⚡ Aksi
                 </span>
               )}
             </div>

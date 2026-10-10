@@ -13,6 +13,7 @@ export type ViewDensity = 'cozy' | 'compact';
 export type SortByOption = 'manual' | 'priority' | 'dueDate' | 'title';
 export type DeskBuddyType = 'cat' | 'dog' | 'plant' | 'coffee' | 'none';
 export type PaperTexture = 'plain' | 'grid' | 'lined' | 'dots' | 'kraft';
+export type ActiveColumnCount = 1 | 2 | 3;
 
 export interface BoardSticker {
   id: string;
@@ -83,6 +84,8 @@ export interface UserPreferences {
   // New: Banner Visibility Toggles
   showBoardHeader: boolean;
   showDailyGoalBanner: boolean;
+  // New: Active Column Layout Count (1, 2, or 3)
+  activeColumnCount: ActiveColumnCount;
 }
 
 export interface ThemeConfig {
