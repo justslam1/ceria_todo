@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useRef, useCallback } from 'react';
-import { Search, Plus, Pin, RefreshCw, BookOpen, Filter, X, LayoutGrid, Wand2, Move, Minimize2, Maximize2 } from 'lucide-react';
+import { Search, Plus, Pin, RefreshCw, BookOpen, Filter, X, LayoutGrid, Wand2, Move, ChevronDown, ChevronUp } from 'lucide-react';
 import { NoteItem, NoteColor, NOTE_COLOR_STYLES } from '@/types/note';
 import { ThemeConfig, UserPreferences } from '@/types/preferences';
 import { NoteCard } from '@/components/notes/NoteCard';
@@ -282,41 +282,80 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-5">
-      {/* Top Banner & Action Controls */}
+      {/* Top Banner & Action Controls (Dapat diminimalkan agar ruang kanvas lebih maksimal) */}
       <div
-        className={`rounded-3xl border p-4 sm:p-5 shadow-xs backdrop-blur-md transition-colors ${
+        className={`rounded-3xl border transition-all duration-200 shadow-xs backdrop-blur-md ${
+          effectiveMinimized ? 'py-2.5 px-3.5 sm:px-5' : 'p-4 sm:p-5'
+        } ${
           themeConfig.isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white/80 border-slate-200/80'
         }`}
       >
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3.5">
-          {/* Title & Stats */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-400 to-orange-500 text-white flex items-center justify-center shadow-md shrink-0">
-              <BookOpen className="w-5 h-5" />
-            </div>
-            <div>
+        {effectiveMinimized ? (
+          /* ================= TAMPILAN MINIMIZED (SLIM HEADER RIBBON) ================= */
+          <div className="flex items-center justify-between gap-3">
+            <div
+              onClick={toggleMinimize}
+              className="flex items-center gap-2.5 cursor-pointer select-none group"
+              title="Klik untuk membuka panel alat & filter"
+            >
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-tr from-amber-400 to-orange-500 text-white flex items-center justify-center shadow-xs shrink-0 group-hover:scale-105 transition-transform">
+                <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-black text-slate-800 dark:text-slate-100">
+                <h2 className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 group-hover:text-amber-500 transition-colors">
                   Papan Catatan Bebas
                 </h2>
-                <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-200/60 dark:border-amber-700/60">
+                <span className="text-[11px] px-2 py-0.5 rounded-full font-bold bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-200/60 dark:border-amber-700/60">
                   {notes.length} Catatan
                 </span>
+                <span className="hidden sm:inline-block text-[10px] px-2 py-0.5 rounded-full font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80">
+                  Mode: {layoutMode === 'canvas' ? 'Kanvas Bebas' : 'Grid Rapi'}
+                </span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                {effectiveMinimized
-                  ? 'Papan catatan sedang diminimalkan. Klik tombol untuk membuka kembali. 📌'
-                  : layoutMode === 'canvas'
-                  ? 'Tahan dan geser memo ke mana saja secara bebas di atas meja! 📌✨'
-                  : 'Tulis ide bebas, daftar belanja, draft, atau rangkuman. Bisa diubah jadi tugas kapan saja! ✨'}
-              </p>
             </div>
-          </div>
 
-          {/* Action Tools: Layout Switcher, Auto-arrange, Search, Minimize */}
-          <div className="flex items-center flex-wrap gap-2">
-            {!effectiveMinimized && (
-              <>
+            <button
+              type="button"
+              onClick={toggleMinimize}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs shrink-0 ${
+                themeConfig.isDark
+                  ? 'bg-slate-800 border-slate-700 text-amber-300 hover:bg-slate-700'
+                  : 'bg-white border-slate-200 text-amber-800 hover:bg-amber-50'
+              }`}
+              title="Perluas panel alat & filter papan catatan"
+            >
+              <ChevronDown className="w-4 h-4 text-amber-500" />
+              <span>Perluas</span>
+            </button>
+          </div>
+        ) : (
+          /* ================= TAMPILAN LENGKAP (EXPANDED) ================= */
+          <>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3.5">
+              {/* Title & Stats */}
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-400 to-orange-500 text-white flex items-center justify-center shadow-md shrink-0">
+                  <BookOpen className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-black text-slate-800 dark:text-slate-100">
+                      Papan Catatan Bebas
+                    </h2>
+                    <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-200/60 dark:border-amber-700/60">
+                      {notes.length} Catatan
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {layoutMode === 'canvas'
+                      ? 'Tahan dan geser memo ke mana saja secara bebas di atas meja! 📌✨'
+                      : 'Tulis ide bebas, daftar belanja, draft, atau rangkuman. Bisa diubah jadi tugas kapan saja! ✨'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Action Tools: Layout Switcher, Auto-arrange, Search, Minimize */}
+              <div className="flex items-center flex-wrap gap-2">
                 {/* View Mode Toggle: Kanvas Bebas ↔ Grid Rapi */}
                 <div
                   className={`flex items-center p-0.5 rounded-xl border text-xs ${
@@ -417,84 +456,70 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                 >
                   <RefreshCw className="w-4 h-4" />
                 </button>
-              </>
-            )}
 
-            {/* Minimize / Maximize Board Button */}
-            <button
-              type="button"
-              onClick={toggleMinimize}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs shrink-0 ${
-                effectiveMinimized
-                  ? 'bg-amber-500 hover:bg-amber-600 border-amber-500 text-white shadow-md'
-                  : themeConfig.isDark
-                  ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white'
-                  : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900'
-              }`}
-              title={effectiveMinimized ? 'Perluas Papan Catatan' : 'Minimalkan Papan Catatan'}
-            >
-              {effectiveMinimized ? (
-                <>
-                  <Maximize2 className="w-3.5 h-3.5" />
-                  <span>Perluas Papan</span>
-                </>
-              ) : (
-                <>
-                  <Minimize2 className="w-3.5 h-3.5 text-slate-400 dark:text-slate-400" />
+                {/* Minimize Button */}
+                <button
+                  type="button"
+                  onClick={toggleMinimize}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs shrink-0 ${
+                    themeConfig.isDark
+                      ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white'
+                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                  title="Minimalkan panel papan catatan agar area kanvas lebih luas"
+                >
+                  <ChevronUp className="w-4 h-4 text-slate-400" />
                   <span className="hidden sm:inline">Minimalkan</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
+                </button>
+              </div>
+            </div>
 
-        {/* Color Palette Filter Bar */}
-        {!effectiveMinimized && (
-          <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1.5 flex-wrap">
-          <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1 mr-1">
-            <Filter className="w-3 h-3" />
-            <span>Warna:</span>
-          </span>
+            {/* Color Palette Filter Bar */}
+            <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1.5 flex-wrap">
+              <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1 mr-1">
+                <Filter className="w-3 h-3" />
+                <span>Warna:</span>
+              </span>
 
-          <button
-            type="button"
-            onClick={() => setSelectedColor('all')}
-            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
-              selectedColor === 'all'
-                ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 shadow-2xs'
-                : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            Semua ({notes.length})
-          </button>
-
-          {(['yellow', 'pink', 'blue', 'green', 'purple', 'cream'] as NoteColor[]).map((c) => {
-            const count = notes.filter((n) => n.color === c).length;
-            if (count === 0 && selectedColor !== c) return null;
-            const style = NOTE_COLOR_STYLES[c];
-            return (
               <button
-                key={c}
                 type="button"
-                onClick={() => setSelectedColor(selectedColor === c ? 'all' : c)}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
-                  style.bg
-                } ${style.border} ${
-                  selectedColor === c ? 'ring-2 ring-amber-500 font-bold scale-105' : 'opacity-80 hover:opacity-100'
+                onClick={() => setSelectedColor('all')}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                  selectedColor === 'all'
+                    ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 shadow-2xs'
+                    : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
-                <span className="capitalize">{c}</span>
-                <span className="text-[10px] opacity-75">({count})</span>
+                Semua ({notes.length})
               </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
+
+              {(['yellow', 'pink', 'blue', 'green', 'purple', 'cream'] as NoteColor[]).map((c) => {
+                const count = notes.filter((n) => n.color === c).length;
+                if (count === 0 && selectedColor !== c) return null;
+                const style = NOTE_COLOR_STYLES[c];
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setSelectedColor(selectedColor === c ? 'all' : c)}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
+                      style.bg
+                    } ${style.border} ${
+                      selectedColor === c ? 'ring-2 ring-amber-500 font-bold scale-105' : 'opacity-80 hover:opacity-100'
+                    }`}
+                  >
+                    <span className="capitalize">{c}</span>
+                    <span className="text-[10px] opacity-75">({count})</span>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </div>
 
     {/* Main View Area */}
-    {!effectiveMinimized && (
-      filteredNotes.length === 0 ? (
+    {filteredNotes.length === 0 ? (
         <div
           className={`text-center py-16 px-4 rounded-3xl border border-dashed flex flex-col items-center justify-center ${
             themeConfig.isDark ? 'border-slate-800 bg-slate-900/30' : 'border-slate-200 bg-white/40'
@@ -634,8 +659,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
             </div>
           )}
         </div>
-      )
-    )}
+      )}
 
       {/* Note Creation / Editing Modal */}
       <NoteModal
