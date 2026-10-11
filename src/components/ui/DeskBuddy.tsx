@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { DeskBuddyType, DeskBuddyPosition, DeskBuddySize, SoundProfile } from '@/types/preferences';
 import { DESK_BUDDY_OPTIONS } from '@/lib/userPreferences';
 import { playPopSound, playVictoryChime } from '@/lib/soundEffects';
-import { X, Sparkles, MessageCircleHeart, Heart, Moon, Zap } from 'lucide-react';
+import { X, Sparkles, Heart, Moon, Zap } from 'lucide-react';
 
 interface DeskBuddyProps {
   buddyType: DeskBuddyType;
@@ -185,8 +185,6 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
       sleepBadge: '-top-1 -right-1 text-[10px] px-1',
       treatBtn: 'h-8 px-2 text-xs',
       treatEmoji: 'text-xs',
-      toggleBtn: 'p-1.5',
-      toggleIcon: 'w-3.5 h-3.5',
     },
     large: {
       btn: 'w-[60px] h-[60px] rounded-2xl text-3xl',
@@ -194,8 +192,6 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
       sleepBadge: '-top-1 -right-1 text-xs px-1.5',
       treatBtn: 'h-9 px-2.5 text-xs',
       treatEmoji: 'text-sm',
-      toggleBtn: 'p-2',
-      toggleIcon: 'w-4 h-4',
     },
     jumbo: {
       btn: 'w-[72px] h-[72px] rounded-3xl text-4xl',
@@ -203,8 +199,6 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
       sleepBadge: '-top-1.5 -right-1.5 text-sm px-2 py-0.5',
       treatBtn: 'h-10 px-3 text-sm',
       treatEmoji: 'text-base',
-      toggleBtn: 'p-2.5',
-      toggleIcon: 'w-4.5 h-4.5',
     },
   }[size] || {
     btn: 'w-[60px] h-[60px] rounded-2xl text-3xl',
@@ -212,8 +206,6 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
     sleepBadge: '-top-1 -right-1 text-xs px-1.5',
     treatBtn: 'h-9 px-2.5 text-xs',
     treatEmoji: 'text-sm',
-    toggleBtn: 'p-2',
-    toggleIcon: 'w-4 h-4',
   };
 
   const [bubbleText, setBubbleText] = useState<string>(() => config?.defaultQuote || '');
@@ -595,17 +587,6 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
             </span>
 
             <Heart className="w-2.5 h-2.5 text-rose-500 fill-rose-500 shrink-0" />
-          </button>
-        )}
-
-        {/* Toggle Speech bubble button if hidden */}
-        {!isBubbleVisible && (
-          <button
-            onClick={handleBuddyClick}
-            className={`${sizeStyles.toggleBtn} rounded-full bg-white/90 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 shadow-sm text-slate-500 hover:text-amber-600 transition-colors cursor-pointer`}
-            title="Buka obrolan teman meja"
-          >
-            <MessageCircleHeart className={`${sizeStyles.toggleIcon} text-amber-500`} />
           </button>
         )}
       </div>
