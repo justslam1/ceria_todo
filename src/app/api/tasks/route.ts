@@ -37,9 +37,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Auto-claim any legacy tasks without owner to the logged in user
+    // Auto-claim any tasks that might belong to legacy user IDs or null
     await prisma.task.updateMany({
-      where: { userId: null },
+      where: {
+        OR: [
+          { userId: null },
+          { userId: { not: userId } },
+        ],
+      },
       data: { userId },
     });
 
