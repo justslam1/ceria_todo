@@ -38,6 +38,8 @@ export interface BoardSticker {
   y: number; // percentage (0 - 95%)
   rotation: number; // degrees, -25 to 25
   scale?: number; // scale multiplier e.g. 1
+  flipH?: boolean; // pencerminan horizontal
+  flipV?: boolean; // pencerminan vertikal
 }
 
 export interface ColumnSetting {

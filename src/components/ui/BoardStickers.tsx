@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { BoardSticker, SoundProfile } from '@/types/preferences';
 import { STICKER_PRESETS } from '@/lib/userPreferences';
 import { playPopSound } from '@/lib/soundEffects';
-import { X, RotateCw, Smile, Trash2 } from 'lucide-react';
+import { X, RotateCw, Smile, Trash2, FlipHorizontal } from 'lucide-react';
 
 let stickerCounter = 0;
 function createStickerId(count: number): string {
@@ -157,6 +157,17 @@ export const BoardStickers: React.FC<BoardStickersProps> = ({
     onChangeStickers(updated);
   };
 
+  // Flip sticker horizontally
+  const handleFlipSticker = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    playPopSound(soundProfile);
+    const updated = stickers.map((s) => {
+      if (s.id !== id) return s;
+      return { ...s, flipH: !s.flipH };
+    });
+    onChangeStickers(updated);
+  };
+
   // Delete sticker
   const handleDeleteSticker = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -205,7 +216,12 @@ export const BoardStickers: React.FC<BoardStickersProps> = ({
           >
             {isImage ? (
               /* Quote Sticker Image Card */
-              <div className="relative rounded-2xl overflow-hidden shadow-2xl border-2 border-white/80 dark:border-slate-700/80 bg-white/90 dark:bg-slate-900/90 transition-transform active:scale-[0.98]">
+              <div
+                className="relative rounded-2xl overflow-hidden shadow-2xl border-2 border-white/80 dark:border-slate-700/80 bg-white/90 dark:bg-slate-900/90 transition-transform duration-200 active:scale-[0.98]"
+                style={{
+                  transform: `scaleX(${sticker.flipH ? -1 : 1})`,
+                }}
+              >
                 {/* Washi Tape Accent at Top Center */}
                 <div
                   className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-16 h-4 bg-amber-200/80 dark:bg-amber-600/60 backdrop-blur-xs rounded-xs border-y border-dashed border-amber-400/50 shadow-xs z-20 pointer-events-none -rotate-2"
@@ -223,7 +239,12 @@ export const BoardStickers: React.FC<BoardStickersProps> = ({
               </div>
             ) : (
               /* Standard Emoji Sticker */
-              <div className="relative text-3xl sm:text-4xl drop-shadow-[0_4px_6px_rgba(0,0,0,0.22)] filter transition-all active:scale-95">
+              <div
+                className="relative text-3xl sm:text-4xl drop-shadow-[0_4px_6px_rgba(0,0,0,0.22)] filter transition-all duration-200 active:scale-95"
+                style={{
+                  transform: `scaleX(${sticker.flipH ? -1 : 1})`,
+                }}
+              >
                 {sticker.emoji}
               </div>
             )}
@@ -241,6 +262,16 @@ export const BoardStickers: React.FC<BoardStickersProps> = ({
                 title="Putar stiker"
               >
                 <RotateCw className="w-3 h-3" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => handleFlipSticker(sticker.id, e)}
+                className={`p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer ${
+                  sticker.flipH ? 'text-amber-600 font-bold bg-amber-50 dark:bg-amber-950/40' : 'text-slate-500 hover:text-amber-600'
+                }`}
+                title={sticker.flipH ? 'Batalkan cermin horizontal' : 'Cermin horizontal (kiri-kanan)'}
+              >
+                <FlipHorizontal className="w-3 h-3" />
               </button>
               <button
                 type="button"

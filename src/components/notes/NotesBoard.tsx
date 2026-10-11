@@ -429,7 +429,10 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
     await onUpdateNote(id, { isSticker });
   };
 
-  const handleUpdateTransform = async (id: string, transform: { width?: number; rotation?: number }) => {
+  const handleUpdateTransform = async (
+    id: string,
+    transform: { width?: number; rotation?: number; flipH?: boolean; flipV?: boolean; content?: string }
+  ) => {
     await onUpdateNote(id, transform);
   };
 

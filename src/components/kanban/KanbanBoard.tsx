@@ -223,7 +223,13 @@ export const KanbanBoard: React.FC = () => {
         const res = await fetch('/api/notes', { signal: AbortSignal.timeout(8000) });
         const data = await res.json();
         if (!ignore && data.success && Array.isArray(data.data)) {
-          setNotes(data.data);
+          setNotes(
+            data.data.map((n: NoteItem) => ({
+              ...n,
+              flipH: n.flipH !== undefined ? n.flipH : Boolean(n.content?.includes('[FLIP_H]')),
+              flipV: n.flipV !== undefined ? n.flipV : Boolean(n.content?.includes('[FLIP_V]')),
+            }))
+          );
         }
       } catch (err) {
         if (!ignore) {
@@ -325,7 +331,13 @@ export const KanbanBoard: React.FC = () => {
       const res = await fetch('/api/notes', { signal: AbortSignal.timeout(8000) });
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
-        setNotes(data.data);
+        setNotes(
+          data.data.map((n: NoteItem) => ({
+            ...n,
+            flipH: n.flipH !== undefined ? n.flipH : Boolean(n.content?.includes('[FLIP_H]')),
+            flipV: n.flipV !== undefined ? n.flipV : Boolean(n.content?.includes('[FLIP_V]')),
+          }))
+        );
       }
     } catch (err) {
       console.error('Gagal mengambil data catatan:', err);
@@ -352,7 +364,15 @@ export const KanbanBoard: React.FC = () => {
       });
       const resData = await res.json();
       if (resData.success && resData.data) {
-        setNotes((prev) => [resData.data, ...prev]);
+        const created = resData.data;
+        setNotes((prev) => [
+          {
+            ...created,
+            flipH: created.flipH !== undefined ? created.flipH : Boolean(created.content?.includes('[FLIP_H]')),
+            flipV: created.flipV !== undefined ? created.flipV : Boolean(created.content?.includes('[FLIP_V]')),
+          },
+          ...prev,
+        ]);
         playPopSound(preferences.soundProfile);
       }
     } catch (err) {
@@ -372,8 +392,17 @@ export const KanbanBoard: React.FC = () => {
       });
       const resData = await res.json();
       if (resData.success && resData.data) {
+        const updated = resData.data;
         setNotes((prev) =>
-          prev.map((n) => (n.id === id ? resData.data : n))
+          prev.map((n) =>
+            n.id === id
+              ? {
+                  ...updated,
+                  flipH: updated.flipH !== undefined ? updated.flipH : Boolean(updated.content?.includes('[FLIP_H]')),
+                  flipV: updated.flipV !== undefined ? updated.flipV : Boolean(updated.content?.includes('[FLIP_V]')),
+                }
+              : n
+          )
         );
       }
     } catch (err) {

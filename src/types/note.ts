@@ -13,6 +13,8 @@ export interface NoteItem {
   posY?: number | null;
   width?: number | null;
   rotation?: number | null;
+  flipH?: boolean;
+  flipV?: boolean;
   order?: number;
   createdAt: string;
   updatedAt: string;

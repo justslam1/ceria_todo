@@ -2,15 +2,53 @@
 
 import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Pin, Trash2, ZoomIn, StickyNote, X, RotateCw, RotateCcw, Maximize2, Rotate3d, BringToFront, SendToBack } from 'lucide-react';
+import {
+  Pin,
+  Trash2,
+  ZoomIn,
+  StickyNote,
+  X,
+  RotateCw,
+  RotateCcw,
+  Maximize2,
+  Rotate3d,
+  BringToFront,
+  SendToBack,
+  FlipHorizontal,
+  FlipVertical,
+} from 'lucide-react';
 import { NoteItem } from '@/types/note';
+
+export function parseNoteFlip(content?: string | null): { flipH: boolean; flipV: boolean } {
+  if (!content) return { flipH: false, flipV: false };
+  return {
+    flipH: content.includes('[FLIP_H]'),
+    flipV: content.includes('[FLIP_V]'),
+  };
+}
+
+export function updateNoteFlipContent(
+  content: string | null | undefined,
+  flipH: boolean,
+  flipV: boolean
+): string {
+  const base = (content || '').replace(/\[FLIP_H\]|\[FLIP_V\]/g, '').trim();
+  const tags: string[] = [];
+  if (flipH) tags.push('[FLIP_H]');
+  if (flipV) tags.push('[FLIP_V]');
+  if (tags.length === 0) return base;
+  return base ? `${base} ${tags.join(' ')}` : tags.join(' ');
+}
 
 interface NoteStickerProps {
   note: NoteItem;
   onDelete: (id: string) => void;
   onTogglePin?: (id: string, currentPinned: boolean) => void;
   onToggleSticker?: (id: string, isSticker: boolean) => void;
-  onUpdateTransform?: (id: string, transform: { width?: number; rotation?: number }) => void;
+  onUpdateTransform?: (
+    id: string,
+    transform: { width?: number; rotation?: number; flipH?: boolean; flipV?: boolean; content?: string }
+  ) => void;
   onUpdateOrder?: (id: string, direction: 'front' | 'back') => void;
   isCanvasMode?: boolean;
   onDragStart?: (e: React.PointerEvent) => void;
@@ -43,6 +81,33 @@ export const NoteSticker: React.FC<NoteStickerProps> = ({
   // Current values
   const effectiveWidth = liveWidth !== null ? liveWidth : note.width || 280;
   const effectiveRotation = liveRotation !== null ? liveRotation : note.rotation || 0;
+
+  // Mirroring / Flip state (parsed from content or direct prop)
+  const parsedFlip = parseNoteFlip(note.content);
+  const effectiveFlipH = note.flipH !== undefined ? note.flipH : parsedFlip.flipH;
+  const effectiveFlipV = note.flipV !== undefined ? note.flipV : parsedFlip.flipV;
+
+  const handleToggleFlipH = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const nextFlipH = !effectiveFlipH;
+    const newContent = updateNoteFlipContent(note.content, nextFlipH, effectiveFlipV);
+    onUpdateTransform?.(note.id, {
+      flipH: nextFlipH,
+      flipV: effectiveFlipV,
+      content: newContent,
+    });
+  };
+
+  const handleToggleFlipV = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const nextFlipV = !effectiveFlipV;
+    const newContent = updateNoteFlipContent(note.content, effectiveFlipH, nextFlipV);
+    onUpdateTransform?.(note.id, {
+      flipH: effectiveFlipH,
+      flipV: nextFlipV,
+      content: newContent,
+    });
+  };
 
   // Pointer down on main sticker body (drag start)
   const handleBodyPointerDown = (e: React.PointerEvent) => {
@@ -157,9 +222,16 @@ export const NoteSticker: React.FC<NoteStickerProps> = ({
     onUpdateTransform?.(note.id, { rotation: nextRot });
   };
 
-  // Quick Reset back to 280px & 0°
+  // Quick Reset back to 280px & 0° without flip
   const handleResetTransform = () => {
-    onUpdateTransform?.(note.id, { width: 280, rotation: 0 });
+    const newContent = updateNoteFlipContent(note.content, false, false);
+    onUpdateTransform?.(note.id, {
+      width: 280,
+      rotation: 0,
+      flipH: false,
+      flipV: false,
+      content: newContent,
+    });
   };
 
   if (!note.imageUrl) return null;
@@ -198,7 +270,7 @@ export const NoteSticker: React.FC<NoteStickerProps> = ({
           {isResizing && <span>Lebar: {Math.round(effectiveWidth)}px</span>}
           {isRotating && (
             <span>
-              Rotasi: {effectiveRotation}° {effectiveRotation === 0 ? '✨ (Lurus)' : ''}
+              Rotasi: {effectiveRotation}° {effectiveRotation === 0 ? '(Lurus)' : ''}
             </span>
           )}
         </div>
@@ -232,8 +304,36 @@ export const NoteSticker: React.FC<NoteStickerProps> = ({
           <RotateCw className="w-3.5 h-3.5" />
         </button>
 
-        {/* Reset Transform (0° & 280px) */}
-        {(effectiveRotation !== 0 || effectiveWidth !== 280) && (
+        {/* Flip Horizontal ↔️ */}
+        <button
+          type="button"
+          onClick={handleToggleFlipH}
+          className={`p-1 rounded-lg transition-colors cursor-pointer ${
+            effectiveFlipH
+              ? 'bg-amber-400 text-amber-950 font-bold'
+              : 'text-white/80 hover:text-white hover:bg-white/20'
+          }`}
+          title={effectiveFlipH ? 'Batalkan Cermin Horizontal' : 'Cermin Horizontal (Balik Kiri-Kanan) ↔️'}
+        >
+          <FlipHorizontal className="w-3.5 h-3.5" />
+        </button>
+
+        {/* Flip Vertical ↕️ */}
+        <button
+          type="button"
+          onClick={handleToggleFlipV}
+          className={`p-1 rounded-lg transition-colors cursor-pointer ${
+            effectiveFlipV
+              ? 'bg-amber-400 text-amber-950 font-bold'
+              : 'text-white/80 hover:text-white hover:bg-white/20'
+          }`}
+          title={effectiveFlipV ? 'Batalkan Cermin Vertikal' : 'Cermin Vertikal (Balik Atas-Bawah) ↕️'}
+        >
+          <FlipVertical className="w-3.5 h-3.5" />
+        </button>
+
+        {/* Reset Transform (0° & 280px & No Flip) */}
+        {(effectiveRotation !== 0 || effectiveWidth !== 280 || effectiveFlipH || effectiveFlipV) && (
           <button
             type="button"
             onClick={(e) => {
@@ -241,7 +341,7 @@ export const NoteSticker: React.FC<NoteStickerProps> = ({
               handleResetTransform();
             }}
             className="p-1 text-amber-300 hover:text-amber-200 hover:bg-amber-500/30 rounded-lg transition-colors cursor-pointer"
-            title="Reset ke ukuran standar (280px) & sudut tegak (0°)"
+            title="Reset ke ukuran standar (280px), sudut tegak (0°), & tanpa cermin"
           >
             <Rotate3d className="w-3.5 h-3.5" />
           </button>
@@ -338,7 +438,10 @@ export const NoteSticker: React.FC<NoteStickerProps> = ({
 
       {/* Main Sticker Image */}
       <div
-        className="rounded-2xl overflow-hidden cursor-pointer"
+        className="rounded-2xl overflow-hidden cursor-pointer transition-transform duration-200"
+        style={{
+          transform: `scale(${effectiveFlipH ? -1 : 1}, ${effectiveFlipV ? -1 : 1})`,
+        }}
         onDoubleClick={() => setShowLightbox(true)}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -402,7 +505,10 @@ export const NoteSticker: React.FC<NoteStickerProps> = ({
             <img
               src={note.imageUrl}
               alt={note.title || 'Preview Stiker'}
-              className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-white/20 select-none"
+              className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-white/20 select-none transition-transform duration-200"
+              style={{
+                transform: `scale(${effectiveFlipH ? -1 : 1}, ${effectiveFlipV ? -1 : 1})`,
+              }}
             />
           </div>
         </div>,
