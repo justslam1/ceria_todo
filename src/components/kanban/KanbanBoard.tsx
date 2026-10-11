@@ -2081,6 +2081,7 @@ export const KanbanBoard: React.FC = () => {
         customQuotes={preferences.deskBuddyCustomQuotes}
         position={preferences.deskBuddyPosition}
         size={preferences.deskBuddySize || 'large'}
+        isLoading={isLoading}
       />
       </div>
       </div>
