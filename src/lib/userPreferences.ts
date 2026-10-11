@@ -51,6 +51,8 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   userName: 'Sobat Ceria',
   boardTitle: 'Studio Papan Buletin Kerja',
   boardIcon: '📌',
+  notesBoardTitle: 'Papan Catatan Bebas',
+  notesBoardIcon: '📖',
   dailyMotto: 'Kelola tugas lebih ringan & menyenangkan! ✨',
   theme: 'sunset',
   bgPattern: 'dots',

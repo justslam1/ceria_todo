@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Search, Plus, Pin, RefreshCw, BookOpen, Filter, X, LayoutGrid, Wand2, Move, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Plus, Pin, RefreshCw, Filter, X, LayoutGrid, Wand2, Move, ChevronDown, ChevronUp, Edit2, Check } from 'lucide-react';
 import { NoteItem, NoteColor, NOTE_COLOR_STYLES } from '@/types/note';
 import { ThemeConfig, UserPreferences } from '@/types/preferences';
 import { NoteCard } from '@/components/notes/NoteCard';
@@ -15,6 +15,7 @@ interface NotesBoardProps {
   isLoading: boolean;
   themeConfig: ThemeConfig;
   preferences?: UserPreferences;
+  onSavePreferences?: (prefs: UserPreferences) => void;
   onCreateNote: (data: {
     title: string;
     content: string;
@@ -41,6 +42,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
   isLoading,
   themeConfig,
   preferences,
+  onSavePreferences,
   onCreateNote,
   onUpdateNote,
   onDeleteNote,
@@ -84,6 +86,60 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
 
   const activeModalOpen = isModalOpen !== undefined ? isModalOpen : internalModalOpen;
   const activeEditingNote = editingNote !== undefined ? editingNote : internalEditingNote;
+
+  // Customizable Board Title & Icon
+  const currentTitle = preferences?.notesBoardTitle || 'Papan Catatan Bebas';
+  const currentIcon = preferences?.notesBoardIcon || '📖';
+
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [draftTitle, setDraftTitle] = useState('');
+  const [showIconPicker, setShowIconPicker] = useState(false);
+
+  const ICON_PRESETS = ['📖', '📝', '💡', '📌', '🎨', '🧠', '📋', '⭐', '🚀', '☕'];
+
+  const handleStartEditTitle = () => {
+    setDraftTitle(currentTitle);
+    setIsEditingTitle(true);
+  };
+
+  const handleSaveTitle = () => {
+    const clean = draftTitle.trim() || 'Papan Catatan Bebas';
+    setIsEditingTitle(false);
+    setShowIconPicker(false);
+    playPopSound(preferences?.soundProfile || 'pop');
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ceria_notes_board_title', clean);
+    }
+
+    if (preferences && onSavePreferences) {
+      onSavePreferences({
+        ...preferences,
+        notesBoardTitle: clean,
+      });
+    }
+  };
+
+  const handleSelectIcon = (icon: string) => {
+    setShowIconPicker(false);
+    playPopSound(preferences?.soundProfile || 'pop');
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ceria_notes_board_icon', icon);
+    }
+
+    if (preferences && onSavePreferences) {
+      onSavePreferences({
+        ...preferences,
+        notesBoardIcon: icon,
+      });
+    }
+  };
+
+  const handleCancelTitle = () => {
+    setIsEditingTitle(false);
+    setShowIconPicker(false);
+  };
 
   // Auto expand when modal is active
   const effectiveMinimized = isMinimized && !activeModalOpen;
@@ -373,23 +429,104 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
           /* ================= TAMPILAN MINIMIZED (SLIM HEADER RIBBON) ================= */
           <div className="flex items-center justify-between gap-3">
             <div
-              onClick={toggleMinimize}
-              className="flex items-center gap-2.5 cursor-pointer select-none group"
-              title="Klik untuk membuka panel alat & filter"
+              onClick={() => {
+                if (!isEditingTitle) toggleMinimize();
+              }}
+              className="flex items-center gap-2.5 cursor-pointer select-none group flex-1 min-w-0"
+              title={isEditingTitle ? undefined : 'Klik untuk membuka panel alat & filter'}
             >
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-tr from-amber-400 to-orange-500 text-white flex items-center justify-center shadow-xs shrink-0 group-hover:scale-105 transition-transform">
-                <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              {/* Icon with picker */}
+              <div className="relative">
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowIconPicker((prev) => !prev);
+                  }}
+                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-tr from-amber-400 to-orange-500 text-white flex items-center justify-center shadow-xs shrink-0 group-hover:scale-105 transition-transform text-sm cursor-pointer"
+                  title="Klik untuk mengganti ikon"
+                >
+                  <span>{currentIcon}</span>
+                </div>
+
+                {showIconPicker && (
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute left-0 top-full mt-2 z-50 p-2 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 flex-wrap w-44 animate-in fade-in zoom-in-95"
+                  >
+                    {ICON_PRESETS.map((ic) => (
+                      <button
+                        key={ic}
+                        type="button"
+                        onClick={() => handleSelectIcon(ic)}
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm hover:scale-125 transition-transform cursor-pointer ${
+                          currentIcon === ic
+                            ? 'bg-amber-100 dark:bg-amber-900/50 ring-2 ring-amber-400'
+                            : 'hover:bg-black/5 dark:hover:bg-white/10'
+                        }`}
+                      >
+                        {ic}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 group-hover:text-amber-500 transition-colors">
-                  Papan Catatan Bebas
-                </h2>
-                <span className="text-[11px] px-2 py-0.5 rounded-full font-bold bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-200/60 dark:border-amber-700/60">
-                  {notes.length} Catatan
-                </span>
-                <span className="hidden sm:inline-block text-[10px] px-2 py-0.5 rounded-full font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80">
-                  Mode: {layoutMode === 'canvas' ? 'Kanvas Bebas' : 'Grid Rapi'}
-                </span>
+
+              {/* Title / Inline Edit */}
+              <div className="flex items-center gap-2 flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
+                {isEditingTitle ? (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleSaveTitle();
+                    }}
+                    className="flex items-center gap-1.5 flex-1 max-w-xs"
+                  >
+                    <input
+                      type="text"
+                      value={draftTitle}
+                      onChange={(e) => setDraftTitle(e.target.value)}
+                      autoFocus
+                      maxLength={60}
+                      className="px-2.5 py-1 rounded-xl text-xs sm:text-sm font-bold bg-white dark:bg-slate-800 border border-amber-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500 text-slate-800 dark:text-slate-100 w-full shadow-inner"
+                      placeholder="Nama papan..."
+                    />
+                    <button
+                      type="submit"
+                      className="p-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white transition-colors cursor-pointer shrink-0"
+                      title="Simpan nama"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCancelTitle}
+                      className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer shrink-0"
+                      title="Batal"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </form>
+                ) : (
+                  <>
+                    <h2
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStartEditTitle();
+                      }}
+                      className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 group-hover:text-amber-500 transition-colors truncate cursor-pointer flex items-center gap-1.5"
+                      title="Klik untuk mengubah nama papan catatan"
+                    >
+                      <span>{currentTitle}</span>
+                      <Edit2 className="w-3 h-3 text-slate-400 opacity-60 group-hover:opacity-100 hover:text-amber-500 transition-opacity shrink-0" />
+                    </h2>
+                    <span className="text-[11px] px-2 py-0.5 rounded-full font-bold bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-200/60 dark:border-amber-700/60 shrink-0">
+                      {notes.length} Catatan
+                    </span>
+                    <span className="hidden sm:inline-block text-[10px] px-2 py-0.5 rounded-full font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 shrink-0">
+                      Mode: {layoutMode === 'canvas' ? 'Kanvas Bebas' : 'Grid Rapi'}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
 
@@ -412,20 +549,87 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
           <>
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3.5">
               {/* Title & Stats */}
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-400 to-orange-500 text-white flex items-center justify-center shadow-md shrink-0">
-                  <BookOpen className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-black text-slate-800 dark:text-slate-100">
-                      Papan Catatan Bebas
-                    </h2>
-                    <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-200/60 dark:border-amber-700/60">
-                      {notes.length} Catatan
-                    </span>
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                {/* Icon with picker */}
+                <div className="relative">
+                  <div
+                    onClick={() => setShowIconPicker((prev) => !prev)}
+                    className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-400 to-orange-500 text-white flex items-center justify-center shadow-md shrink-0 text-lg cursor-pointer hover:scale-105 transition-transform"
+                    title="Klik untuk mengganti ikon papan catatan"
+                  >
+                    <span>{currentIcon}</span>
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
+
+                  {showIconPicker && (
+                    <div className="absolute left-0 top-full mt-2 z-50 p-2 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 flex-wrap w-44 animate-in fade-in zoom-in-95">
+                      {ICON_PRESETS.map((ic) => (
+                        <button
+                          key={ic}
+                          type="button"
+                          onClick={() => handleSelectIcon(ic)}
+                          className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm hover:scale-125 transition-transform cursor-pointer ${
+                            currentIcon === ic
+                              ? 'bg-amber-100 dark:bg-amber-900/50 ring-2 ring-amber-400'
+                              : 'hover:bg-black/5 dark:hover:bg-white/10'
+                          }`}
+                        >
+                          {ic}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  {isEditingTitle ? (
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        handleSaveTitle();
+                      }}
+                      className="flex items-center gap-1.5 max-w-sm mb-1"
+                    >
+                      <input
+                        type="text"
+                        value={draftTitle}
+                        onChange={(e) => setDraftTitle(e.target.value)}
+                        autoFocus
+                        maxLength={60}
+                        className="px-3 py-1 rounded-xl text-base font-black bg-white dark:bg-slate-800 border border-amber-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500 text-slate-800 dark:text-slate-100 w-full shadow-inner"
+                        placeholder="Nama papan catatan..."
+                      />
+                      <button
+                        type="submit"
+                        className="p-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white transition-colors cursor-pointer shrink-0"
+                        title="Simpan nama"
+                      >
+                        <Check className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCancelTitle}
+                        className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer shrink-0"
+                        title="Batal"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </form>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <h2
+                        onClick={handleStartEditTitle}
+                        className="text-lg font-black text-slate-800 dark:text-slate-100 hover:text-amber-500 dark:hover:text-amber-400 transition-colors truncate cursor-pointer flex items-center gap-2 group"
+                        title="Klik untuk mengubah nama papan catatan"
+                      >
+                        <span>{currentTitle}</span>
+                        <Edit2 className="w-3.5 h-3.5 text-slate-400 opacity-60 group-hover:opacity-100 hover:text-amber-500 transition-opacity shrink-0" />
+                      </h2>
+                      <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-200/60 dark:border-amber-700/60 shrink-0">
+                        {notes.length} Catatan
+                      </span>
+                    </div>
+                  )}
+                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                     {layoutMode === 'canvas'
                       ? 'Tahan dan geser memo ke mana saja secara bebas di atas meja! 📌✨'
                       : 'Tulis ide bebas, daftar belanja, draft, atau rangkuman. Bisa diubah jadi tugas kapan saja! ✨'}

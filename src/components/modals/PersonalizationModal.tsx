@@ -788,6 +788,41 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    Nama Papan Catatan Bebas
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 p-1 rounded-2xl">
+                      {['📖', '📝', '💡', '📌', '🎨'].map((icon) => (
+                        <button
+                          key={icon}
+                          type="button"
+                          onClick={() => {
+                            playPopSound(formData.soundProfile);
+                            setFormData({ ...formData, notesBoardIcon: icon });
+                          }}
+                          className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm transition-all cursor-pointer ${
+                            (formData.notesBoardIcon || '📖') === icon
+                              ? 'bg-white shadow-xs scale-110 border border-amber-300'
+                              : 'hover:bg-slate-200/50'
+                          }`}
+                        >
+                          {icon}
+                        </button>
+                      ))}
+                    </div>
+                    <input
+                      type="text"
+                      maxLength={40}
+                      value={formData.notesBoardTitle ?? 'Papan Catatan Bebas'}
+                      onChange={(e) => setFormData({ ...formData, notesBoardTitle: e.target.value })}
+                      placeholder="Contoh: Papan Catatan Bebas, Memo Harian"
+                      className="flex-1 px-3.5 py-2 rounded-2xl border border-slate-200 text-sm bg-white text-slate-800 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-orange-400 font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
                     Mantra Harian / Pesan Tagline
                   </label>
                   <input

@@ -979,6 +979,7 @@ export const KanbanBoard: React.FC = () => {
               isLoading={isNotesLoading}
               themeConfig={themeConfig}
               preferences={preferences}
+              onSavePreferences={handleSavePreferences}
               onCreateNote={handleCreateNote}
               onUpdateNote={handleUpdateNote}
               onDeleteNote={handleDeleteNote}
