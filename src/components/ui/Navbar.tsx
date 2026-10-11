@@ -204,24 +204,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Counters & Action Buttons */}
           <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 shrink-0">
-            {/* Quick Summary Pill - only on ultra-wide 2xl screens & on tasks tab */}
-            {activeTab === 'tasks' && (
-              <div className={`hidden 2xl:flex items-center gap-2 ${themeConfig.isDark ? 'bg-slate-900 border-slate-800 text-slate-300' : 'bg-slate-50 border-slate-200/80 text-slate-600'} border px-2.5 py-1 rounded-2xl text-xs shrink-0`}>
-                <span className={`font-semibold ${themeConfig.isDark ? 'text-slate-200' : 'text-slate-700'}`}>Total: {counts.total}</span>
-                <span className="text-slate-300 dark:text-slate-700">|</span>
-                <span className="text-amber-500 font-medium">
-                  {preferences.columns?.TODO?.emoji || '💡'} {preferences.columns?.TODO?.title || 'Rencana'}: {counts.todo}
-                </span>
-                <span className="text-slate-300 dark:text-slate-700">|</span>
-                <span className="text-blue-500 font-medium">
-                  {preferences.columns?.IN_PROGRESS?.emoji || '⚡'} {preferences.columns?.IN_PROGRESS?.title || 'Aksi'}: {counts.inProgress}
-                </span>
-                <span className="text-slate-300 dark:text-slate-700">|</span>
-                <span className="text-emerald-500 font-medium">
-                  {preferences.columns?.DONE?.emoji || '🏆'} {preferences.columns?.DONE?.title || 'Sukses'}: {counts.done}
-                </span>
-              </div>
-            )}
 
             {/* Pomodoro Timer Toggle */}
             {onOpenPomodoro && (
