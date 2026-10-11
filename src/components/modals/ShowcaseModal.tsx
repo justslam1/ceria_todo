@@ -345,12 +345,20 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
     return showcases.filter((s) => s.userId === currentUserId);
   }, [showcases, session]);
 
+  const handleClose = () => {
+    setActiveTab('gallery');
+    setSelectedDetailShowcase(null);
+    setSearchQuery('');
+    setSelectedCategory('ALL');
+    onClose();
+  };
+
   if (!isOpen) return null;
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
         className={`w-full max-w-4xl max-h-[92vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden transition-all duration-200 ${
@@ -387,7 +395,7 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
           <div className="flex items-center gap-2 shrink-0">
             <Link
               href="/gallery"
-              onClick={onClose}
+              onClick={handleClose}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-300/80 dark:border-slate-700 bg-amber-50 dark:bg-slate-800 text-amber-900 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-slate-700 text-xs font-bold transition-all shadow-2xs"
               title="Buka Galeri di Halaman Penuh"
             >
@@ -395,7 +403,7 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
               <span className="hidden sm:inline">Halaman Penuh ↗</span>
             </Link>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             >
               <X className="w-5 h-5" />
@@ -1097,7 +1105,7 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
         >
           <span>💡 Menggunakan setup galeri tidak akan menghapus tugas-tugas aktif Anda.</span>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="px-4 py-1.5 rounded-xl font-semibold border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             Tutup

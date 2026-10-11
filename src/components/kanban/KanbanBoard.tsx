@@ -2152,14 +2152,16 @@ export const KanbanBoard: React.FC = () => {
       />
 
       {/* Community Board Showcase Gallery Modal */}
-      <ShowcaseModal
-        isOpen={isShowcaseOpen}
-        onClose={() => setIsShowcaseOpen(false)}
-        preferences={preferences}
-        onApplyPreferences={handleApplyShowcase}
-        themeConfig={themeConfig}
-        tasks={tasks}
-      />
+      {isShowcaseOpen && (
+        <ShowcaseModal
+          isOpen={isShowcaseOpen}
+          onClose={() => setIsShowcaseOpen(false)}
+          preferences={preferences}
+          onApplyPreferences={handleApplyShowcase}
+          themeConfig={themeConfig}
+          tasks={tasks}
+        />
+      )}
 
       {/* Floating Network Error Toast */}
       {networkError && (
