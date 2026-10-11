@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Search, Plus, Pin, RefreshCw, Filter, X, LayoutGrid, Wand2, Move, ChevronDown, ChevronUp, Edit2, Check } from 'lucide-react';
+import { Search, Plus, Pin, RefreshCw, Filter, X, LayoutGrid, Wand2, Move, ChevronDown, ChevronUp, Check } from 'lucide-react';
 import { NoteItem, NoteColor, NOTE_COLOR_STYLES } from '@/types/note';
 import { ThemeConfig, UserPreferences } from '@/types/preferences';
 import { NoteCard } from '@/components/notes/NoteCard';
@@ -94,6 +94,21 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [draftTitle, setDraftTitle] = useState('');
   const [showIconPicker, setShowIconPicker] = useState(false);
+  const iconPickerRef = useRef<HTMLDivElement>(null);
+
+  // Close icon picker on click outside
+  useEffect(() => {
+    if (!showIconPicker) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (iconPickerRef.current && !iconPickerRef.current.contains(e.target as Node)) {
+        setShowIconPicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showIconPicker]);
 
   const ICON_PRESETS = ['📖', '📝', '💡', '📌', '🎨', '🧠', '📋', '⭐', '🚀', '☕'];
 
@@ -419,10 +434,10 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-5">
       {/* Top Banner & Action Controls (Dapat diminimalkan agar ruang kanvas lebih maksimal) */}
       <div
-        className={`rounded-3xl border transition-all duration-200 shadow-xs backdrop-blur-md ${
+        className={`relative z-30 rounded-3xl border transition-all duration-200 shadow-xs backdrop-blur-md ${
           effectiveMinimized ? 'py-2.5 px-3.5 sm:px-5' : 'p-4 sm:p-5'
         } ${
-          themeConfig.isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white/80 border-slate-200/80'
+          themeConfig.isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white/90 border-slate-200/80'
         }`}
       >
         {effectiveMinimized ? (
@@ -436,13 +451,13 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
               title={isEditingTitle ? undefined : 'Klik untuk membuka panel alat & filter'}
             >
               {/* Icon with picker */}
-              <div className="relative">
+              <div className="relative" ref={iconPickerRef}>
                 <div
                   onClick={(e) => {
                     e.stopPropagation();
                     setShowIconPicker((prev) => !prev);
                   }}
-                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-tr from-amber-400 to-orange-500 text-white flex items-center justify-center shadow-xs shrink-0 group-hover:scale-105 transition-transform text-sm cursor-pointer"
+                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-tr from-amber-400 to-orange-500 text-white flex items-center justify-center shadow-xs shrink-0 group-hover:scale-105 transition-transform text-sm cursor-pointer select-none"
                   title="Klik untuk mengganti ikon"
                 >
                   <span>{currentIcon}</span>
@@ -451,22 +466,30 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                 {showIconPicker && (
                   <div
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute left-0 top-full mt-2 z-50 p-2 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 flex-wrap w-44 animate-in fade-in zoom-in-95"
+                    className="absolute left-0 top-full mt-2 z-50 p-2.5 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-52 animate-in fade-in zoom-in-95"
                   >
-                    {ICON_PRESETS.map((ic) => (
-                      <button
-                        key={ic}
-                        type="button"
-                        onClick={() => handleSelectIcon(ic)}
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm hover:scale-125 transition-transform cursor-pointer ${
-                          currentIcon === ic
-                            ? 'bg-amber-100 dark:bg-amber-900/50 ring-2 ring-amber-400'
-                            : 'hover:bg-black/5 dark:hover:bg-white/10'
-                        }`}
-                      >
-                        {ic}
-                      </button>
-                    ))}
+                    <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 px-1 pb-1.5 mb-1.5 border-b border-slate-100 dark:border-slate-800">
+                      Pilih Ikon Papan
+                    </div>
+                    <div className="grid grid-cols-5 gap-1.5">
+                      {ICON_PRESETS.map((ic) => (
+                        <button
+                          key={ic}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectIcon(ic);
+                          }}
+                          className={`w-8 h-8 rounded-xl flex items-center justify-center text-base hover:scale-110 active:scale-95 transition-all cursor-pointer ${
+                            currentIcon === ic
+                              ? 'bg-amber-100 dark:bg-amber-900/60 ring-2 ring-amber-500 shadow-xs'
+                              : 'hover:bg-slate-100 dark:hover:bg-slate-800'
+                          }`}
+                        >
+                          {ic}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -513,11 +536,10 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                         e.stopPropagation();
                         handleStartEditTitle();
                       }}
-                      className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 group-hover:text-amber-500 transition-colors truncate cursor-pointer flex items-center gap-1.5"
-                      title="Klik untuk mengubah nama papan catatan"
+                      className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 group-hover:text-amber-500 transition-colors truncate cursor-pointer"
+                      title="Klik untuk mengubah nama papan"
                     >
                       <span>{currentTitle}</span>
-                      <Edit2 className="w-3 h-3 text-slate-400 opacity-60 group-hover:opacity-100 hover:text-amber-500 transition-opacity shrink-0" />
                     </h2>
                     <span className="text-[11px] px-2 py-0.5 rounded-full font-bold bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-200/60 dark:border-amber-700/60 shrink-0">
                       {notes.length} Catatan
@@ -551,31 +573,45 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
               {/* Title & Stats */}
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 {/* Icon with picker */}
-                <div className="relative">
+                <div className="relative" ref={iconPickerRef}>
                   <div
-                    onClick={() => setShowIconPicker((prev) => !prev)}
-                    className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-400 to-orange-500 text-white flex items-center justify-center shadow-md shrink-0 text-lg cursor-pointer hover:scale-105 transition-transform"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowIconPicker((prev) => !prev);
+                    }}
+                    className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-400 to-orange-500 text-white flex items-center justify-center shadow-md shrink-0 text-lg cursor-pointer hover:scale-105 transition-transform select-none"
                     title="Klik untuk mengganti ikon papan catatan"
                   >
                     <span>{currentIcon}</span>
                   </div>
 
                   {showIconPicker && (
-                    <div className="absolute left-0 top-full mt-2 z-50 p-2 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 flex-wrap w-44 animate-in fade-in zoom-in-95">
-                      {ICON_PRESETS.map((ic) => (
-                        <button
-                          key={ic}
-                          type="button"
-                          onClick={() => handleSelectIcon(ic)}
-                          className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm hover:scale-125 transition-transform cursor-pointer ${
-                            currentIcon === ic
-                              ? 'bg-amber-100 dark:bg-amber-900/50 ring-2 ring-amber-400'
-                              : 'hover:bg-black/5 dark:hover:bg-white/10'
-                          }`}
-                        >
-                          {ic}
-                        </button>
-                      ))}
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute left-0 top-full mt-2 z-50 p-2.5 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-52 animate-in fade-in zoom-in-95"
+                    >
+                      <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 px-1 pb-1.5 mb-1.5 border-b border-slate-100 dark:border-slate-800">
+                        Pilih Ikon Papan
+                      </div>
+                      <div className="grid grid-cols-5 gap-1.5">
+                        {ICON_PRESETS.map((ic) => (
+                          <button
+                            key={ic}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectIcon(ic);
+                            }}
+                            className={`w-8 h-8 rounded-xl flex items-center justify-center text-base hover:scale-110 active:scale-95 transition-all cursor-pointer ${
+                              currentIcon === ic
+                                ? 'bg-amber-100 dark:bg-amber-900/60 ring-2 ring-amber-500 shadow-xs'
+                                : 'hover:bg-slate-100 dark:hover:bg-slate-800'
+                            }`}
+                          >
+                            {ic}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -618,11 +654,10 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                     <div className="flex items-center gap-2">
                       <h2
                         onClick={handleStartEditTitle}
-                        className="text-lg font-black text-slate-800 dark:text-slate-100 hover:text-amber-500 dark:hover:text-amber-400 transition-colors truncate cursor-pointer flex items-center gap-2 group"
-                        title="Klik untuk mengubah nama papan catatan"
+                        className="text-lg font-black text-slate-800 dark:text-slate-100 hover:text-amber-500 dark:hover:text-amber-400 transition-colors truncate cursor-pointer"
+                        title="Klik untuk mengubah nama papan"
                       >
                         <span>{currentTitle}</span>
-                        <Edit2 className="w-3.5 h-3.5 text-slate-400 opacity-60 group-hover:opacity-100 hover:text-amber-500 transition-opacity shrink-0" />
                       </h2>
                       <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-200/60 dark:border-amber-700/60 shrink-0">
                         {notes.length} Catatan
