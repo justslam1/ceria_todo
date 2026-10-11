@@ -35,7 +35,7 @@ export const UserAuthButton: React.FC = () => {
     const firstName = name ? name.split(' ')[0] : 'Akun';
 
     return (
-      <div className="relative" ref={dropdownRef}>
+      <div className="relative z-50" ref={dropdownRef}>
         <button
           onClick={() => setDropdownOpen((prev) => !prev)}
           className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1.5 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 shadow-2xs hover:shadow-xs transition-all active:scale-95 cursor-pointer shrink-0"
@@ -62,7 +62,7 @@ export const UserAuthButton: React.FC = () => {
 
         {/* Dropdown Menu */}
         {dropdownOpen && (
-          <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 shadow-xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+          <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
             <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700/60">
               <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">{name}</p>
               <p className="text-[11px] text-slate-400 dark:text-slate-400 truncate">{email}</p>

@@ -464,7 +464,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-5">
       {/* Top Banner & Action Controls (Dapat diminimalkan agar ruang kanvas lebih maksimal) */}
       <div
-        className={`relative z-30 rounded-3xl border transition-all duration-200 shadow-xs backdrop-blur-md ${
+        className={`relative z-10 rounded-3xl border transition-all duration-200 shadow-xs backdrop-blur-md ${
           effectiveMinimized ? 'py-2.5 px-3.5 sm:px-5' : 'p-4 sm:p-5'
         } ${
           themeConfig.isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white/90 border-slate-200/80'
