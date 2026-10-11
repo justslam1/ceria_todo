@@ -28,6 +28,17 @@ export const QUOTE_STYLE_PRESETS: QuoteStylePreset[] = [
     fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif',
   },
   {
+    id: 'lined-paper',
+    name: '📝 Kertas Garis',
+    bgGradient: ['#ffffff', '#f8fafc'],
+    bgImage: '/textures/lined-paper.png',
+    textColor: '#0f172a',
+    quoteColor: '#2563eb',
+    authorColor: '#475569',
+    border: 'rgba(0, 0, 0, 0.12)',
+    fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif',
+  },
+  {
     id: 'sunset',
     name: '🌅 Sunset Aura',
     bgGradient: ['#ffecd2', '#fcb69f'],
