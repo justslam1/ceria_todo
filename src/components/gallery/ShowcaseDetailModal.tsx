@@ -5,7 +5,7 @@ import {
   X,
   Heart,
   Palette,
-  Sparkles,
+  Sticker,
   Maximize2,
 } from 'lucide-react';
 import { ShowcaseItem } from '@/types/showcase';
@@ -151,7 +151,7 @@ export const ShowcaseDetailModal: React.FC<ShowcaseDetailModalProps> = ({
                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5" />
+            <Sticker className="w-3.5 h-3.5" />
             <span>Koleksi Stiker ({stickers.length})</span>
           </button>
           <button

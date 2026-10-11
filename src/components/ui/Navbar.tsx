@@ -251,15 +251,14 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={onOpenShowcase}
-                className={`inline-flex items-center gap-1.5 px-2.5 sm:px-2.5 xl:px-3 py-1.5 rounded-xl border transition-all duration-150 cursor-pointer active:scale-95 shadow-2xs shrink-0 ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-150 cursor-pointer active:scale-95 shadow-2xs shrink-0 ${
                   themeConfig.isDark
                     ? 'bg-slate-800/80 hover:bg-slate-800 border-slate-700 text-rose-300'
                     : 'bg-rose-50 hover:bg-rose-100/70 border-rose-200/80 text-rose-900'
                 }`}
                 title="Buka Galeri Komunitas & Pamerkan Mejamu 🏛️"
               >
-                <Sparkles className="w-4 h-4 text-rose-500 shrink-0" />
-                <span className="hidden xl:inline text-xs font-bold">Galeri</span>
+                <span className="text-xs font-bold">Galeri</span>
               </button>
             )}
 

@@ -5,7 +5,6 @@ import Link from 'next/link';
 import {
   ArrowLeft,
   Compass,
-  Sparkles,
   Heart,
   Download,
   Share2,
@@ -455,7 +454,7 @@ export default function GalleryPage() {
                   : 'text-slate-600 dark:text-slate-300 hover:bg-amber-100/60 dark:hover:bg-slate-800'
               }`}
             >
-              <Sparkles className="w-4 h-4" />
+              <Compass className="w-4 h-4" />
               <span>Jelajahi Galeri ({showcases.length})</span>
             </button>
 

@@ -4,7 +4,6 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import Link from 'next/link';
 import {
   X,
-  Sparkles,
   Heart,
   Download,
   Share2,
@@ -442,7 +441,7 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
                   : 'text-slate-600 dark:text-slate-300 hover:bg-amber-100/60 dark:hover:bg-slate-800'
               }`}
             >
-              <Sparkles className="w-4 h-4" />
+              <Compass className="w-4 h-4" />
               <span>Jelajahi Galeri</span>
               <span className="text-[11px] px-1.5 py-0.2 rounded-full bg-white/30 text-white font-bold">
                 {showcases.length}
