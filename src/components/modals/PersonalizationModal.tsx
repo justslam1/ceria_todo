@@ -27,6 +27,7 @@ import {
   PAPER_TEXTURE_OPTIONS,
   DEFAULT_STICKERS,
   getPaperTextureStyle,
+  NOTES_BOARD_ICON_COLORS,
 } from '@/lib/userPreferences';
 import { compressImageToDataUrl, compressWallpaperImageToDataUrl } from '@/lib/imageCompressor';
 import { triggerCelebration } from '@/lib/confetti';
@@ -818,6 +819,33 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
                       placeholder="Contoh: Papan Catatan Bebas, Memo Harian"
                       className="flex-1 px-3.5 py-2 rounded-2xl border border-slate-200 text-sm bg-white text-slate-800 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-orange-400 font-medium"
                     />
+                  </div>
+
+                  {/* Warna Background Ikon Papan Catatan */}
+                  <div className="flex items-center gap-2 pt-1">
+                    <span className="text-[11px] font-semibold text-slate-500 shrink-0">Warna Background:</span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {NOTES_BOARD_ICON_COLORS.map((col) => (
+                        <button
+                          key={col.id}
+                          type="button"
+                          onClick={() => {
+                            playPopSound(formData.soundProfile);
+                            setFormData({ ...formData, notesBoardIconColor: col.id });
+                          }}
+                          className={`w-6 h-6 rounded-lg transition-all cursor-pointer ${col.bgGradient} flex items-center justify-center ${
+                            (formData.notesBoardIconColor || 'amber') === col.id
+                              ? 'ring-2 ring-orange-500 shadow-xs scale-110'
+                              : 'opacity-80 hover:opacity-100 hover:scale-105'
+                          }`}
+                          title={col.name}
+                        >
+                          {(formData.notesBoardIconColor || 'amber') === col.id && (
+                            <Check className="w-3 h-3 text-white drop-shadow-xs" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 

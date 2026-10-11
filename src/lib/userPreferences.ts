@@ -37,6 +37,28 @@ export type {
   ActiveColumnCount,
 };
 
+export interface IconColorPreset {
+  id: string;
+  name: string;
+  bgGradient: string;
+}
+
+export const NOTES_BOARD_ICON_COLORS: IconColorPreset[] = [
+  { id: 'amber', name: 'Kuning Jingga', bgGradient: 'bg-gradient-to-tr from-amber-400 to-orange-500' },
+  { id: 'rose', name: 'Merah Muda', bgGradient: 'bg-gradient-to-tr from-rose-400 to-pink-500' },
+  { id: 'purple', name: 'Ungu Elegan', bgGradient: 'bg-gradient-to-tr from-purple-500 to-indigo-600' },
+  { id: 'blue', name: 'Biru Laut', bgGradient: 'bg-gradient-to-tr from-sky-400 to-blue-600' },
+  { id: 'emerald', name: 'Hijau Daun', bgGradient: 'bg-gradient-to-tr from-emerald-400 to-teal-500' },
+  { id: 'sunset', name: 'Sunset Panas', bgGradient: 'bg-gradient-to-tr from-red-500 to-amber-500' },
+  { id: 'cyan', name: 'Cyan Segar', bgGradient: 'bg-gradient-to-tr from-teal-400 to-cyan-500' },
+  { id: 'dark', name: 'Hitam Elegan', bgGradient: 'bg-gradient-to-tr from-slate-700 to-slate-900' },
+];
+
+export function getNotesBoardIconGradient(colorId?: string): string {
+  const found = NOTES_BOARD_ICON_COLORS.find((c) => c.id === colorId);
+  return found ? found.bgGradient : 'bg-gradient-to-tr from-amber-400 to-orange-500';
+}
+
 export const DEFAULT_STICKERS: BoardSticker[] = [
   { id: 'stk-coffee', emoji: '☕', x: 92, y: 7, rotation: 8, scale: 1 },
   { id: 'stk-star', emoji: '⭐', x: 3.5, y: 15, rotation: -12, scale: 1 },
@@ -53,6 +75,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   boardIcon: '📌',
   notesBoardTitle: 'Papan Catatan Bebas',
   notesBoardIcon: '📖',
+  notesBoardIconColor: 'amber',
   dailyMotto: 'Kelola tugas lebih ringan & menyenangkan! ✨',
   theme: 'sunset',
   bgPattern: 'dots',

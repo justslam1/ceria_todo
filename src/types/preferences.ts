@@ -47,6 +47,7 @@ export interface UserPreferences {
   boardIcon: string;
   notesBoardTitle?: string;
   notesBoardIcon?: string;
+  notesBoardIconColor?: string;
   dailyMotto: string;
   theme: ThemeId;
   bgPattern: BgPatternId;

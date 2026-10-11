@@ -9,6 +9,7 @@ import { NoteSticker } from '@/components/notes/NoteSticker';
 import { NoteModal } from '@/components/notes/NoteModal';
 import { playPopSound } from '@/lib/soundEffects';
 import { compressImage, getImageFileFromClipboard } from '@/lib/imageCompression';
+import { NOTES_BOARD_ICON_COLORS, getNotesBoardIconGradient } from '@/lib/userPreferences';
 
 interface NotesBoardProps {
   notes: NoteItem[];
@@ -90,6 +91,8 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
   // Customizable Board Title & Icon
   const currentTitle = preferences?.notesBoardTitle || 'Papan Catatan Bebas';
   const currentIcon = preferences?.notesBoardIcon || '📖';
+  const currentIconColor = preferences?.notesBoardIconColor || 'amber';
+  const currentIconGradient = getNotesBoardIconGradient(currentIconColor);
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [draftTitle, setDraftTitle] = useState('');
@@ -136,7 +139,6 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
   };
 
   const handleSelectIcon = (icon: string) => {
-    setShowIconPicker(false);
     playPopSound(preferences?.soundProfile || 'pop');
 
     if (typeof window !== 'undefined') {
@@ -147,6 +149,21 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
       onSavePreferences({
         ...preferences,
         notesBoardIcon: icon,
+      });
+    }
+  };
+
+  const handleSelectIconColor = (colorId: string) => {
+    playPopSound(preferences?.soundProfile || 'pop');
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ceria_notes_board_icon_color', colorId);
+    }
+
+    if (preferences && onSavePreferences) {
+      onSavePreferences({
+        ...preferences,
+        notesBoardIconColor: colorId,
       });
     }
   };
@@ -457,8 +474,8 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                     e.stopPropagation();
                     setShowIconPicker((prev) => !prev);
                   }}
-                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-tr from-amber-400 to-orange-500 text-white flex items-center justify-center shadow-xs shrink-0 group-hover:scale-105 transition-transform text-sm cursor-pointer select-none"
-                  title="Klik untuk mengganti ikon"
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl ${currentIconGradient} text-white flex items-center justify-center shadow-xs shrink-0 group-hover:scale-105 transition-all text-sm cursor-pointer select-none`}
+                  title="Klik untuk mengganti ikon & warna background"
                 >
                   <span>{currentIcon}</span>
                 </div>
@@ -466,29 +483,60 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                 {showIconPicker && (
                   <div
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute left-0 top-full mt-2 z-50 p-2.5 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-52 animate-in fade-in zoom-in-95"
+                    className="absolute left-0 top-full mt-2 z-50 p-3 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-56 animate-in fade-in zoom-in-95 space-y-2.5"
                   >
-                    <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 px-1 pb-1.5 mb-1.5 border-b border-slate-100 dark:border-slate-800">
-                      Pilih Ikon Papan
+                    <div>
+                      <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 px-0.5 pb-1 mb-1.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                        <span>Pilih Ikon</span>
+                        <span className="text-xs">{currentIcon}</span>
+                      </div>
+                      <div className="grid grid-cols-5 gap-1.5">
+                        {ICON_PRESETS.map((ic) => (
+                          <button
+                            key={ic}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectIcon(ic);
+                            }}
+                            className={`w-8 h-8 rounded-xl flex items-center justify-center text-base hover:scale-110 active:scale-95 transition-all cursor-pointer ${
+                              currentIcon === ic
+                                ? 'bg-amber-100 dark:bg-amber-900/60 ring-2 ring-amber-500 shadow-xs'
+                                : 'hover:bg-slate-100 dark:hover:bg-slate-800'
+                            }`}
+                          >
+                            {ic}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                    <div className="grid grid-cols-5 gap-1.5">
-                      {ICON_PRESETS.map((ic) => (
-                        <button
-                          key={ic}
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSelectIcon(ic);
-                          }}
-                          className={`w-8 h-8 rounded-xl flex items-center justify-center text-base hover:scale-110 active:scale-95 transition-all cursor-pointer ${
-                            currentIcon === ic
-                              ? 'bg-amber-100 dark:bg-amber-900/60 ring-2 ring-amber-500 shadow-xs'
-                              : 'hover:bg-slate-100 dark:hover:bg-slate-800'
-                          }`}
-                        >
-                          {ic}
-                        </button>
-                      ))}
+
+                    <div>
+                      <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 px-0.5 pb-1 mb-1.5 border-b border-slate-100 dark:border-slate-800">
+                        <span>Warna Background</span>
+                      </div>
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {NOTES_BOARD_ICON_COLORS.map((col) => (
+                          <button
+                            key={col.id}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectIconColor(col.id);
+                            }}
+                            className={`h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer ${col.bgGradient} ${
+                              currentIconColor === col.id
+                                ? 'ring-2 ring-amber-500 dark:ring-amber-400 shadow-md scale-105'
+                                : 'opacity-85 hover:opacity-100 hover:scale-105'
+                            }`}
+                            title={col.name}
+                          >
+                            {currentIconColor === col.id && (
+                              <Check className="w-3.5 h-3.5 text-white drop-shadow-sm" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -579,8 +627,8 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                       e.stopPropagation();
                       setShowIconPicker((prev) => !prev);
                     }}
-                    className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-400 to-orange-500 text-white flex items-center justify-center shadow-md shrink-0 text-lg cursor-pointer hover:scale-105 transition-transform select-none"
-                    title="Klik untuk mengganti ikon papan catatan"
+                    className={`w-10 h-10 rounded-2xl ${currentIconGradient} text-white flex items-center justify-center shadow-md shrink-0 text-lg cursor-pointer hover:scale-105 transition-all select-none`}
+                    title="Klik untuk mengganti ikon & warna background"
                   >
                     <span>{currentIcon}</span>
                   </div>
@@ -588,29 +636,60 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                   {showIconPicker && (
                     <div
                       onClick={(e) => e.stopPropagation()}
-                      className="absolute left-0 top-full mt-2 z-50 p-2.5 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-52 animate-in fade-in zoom-in-95"
+                      className="absolute left-0 top-full mt-2 z-50 p-3 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-56 animate-in fade-in zoom-in-95 space-y-2.5"
                     >
-                      <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 px-1 pb-1.5 mb-1.5 border-b border-slate-100 dark:border-slate-800">
-                        Pilih Ikon Papan
+                      <div>
+                        <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 px-0.5 pb-1 mb-1.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                          <span>Pilih Ikon</span>
+                          <span className="text-xs">{currentIcon}</span>
+                        </div>
+                        <div className="grid grid-cols-5 gap-1.5">
+                          {ICON_PRESETS.map((ic) => (
+                            <button
+                              key={ic}
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSelectIcon(ic);
+                              }}
+                              className={`w-8 h-8 rounded-xl flex items-center justify-center text-base hover:scale-110 active:scale-95 transition-all cursor-pointer ${
+                                currentIcon === ic
+                                  ? 'bg-amber-100 dark:bg-amber-900/60 ring-2 ring-amber-500 shadow-xs'
+                                  : 'hover:bg-slate-100 dark:hover:bg-slate-800'
+                              }`}
+                            >
+                              {ic}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                      <div className="grid grid-cols-5 gap-1.5">
-                        {ICON_PRESETS.map((ic) => (
-                          <button
-                            key={ic}
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSelectIcon(ic);
-                            }}
-                            className={`w-8 h-8 rounded-xl flex items-center justify-center text-base hover:scale-110 active:scale-95 transition-all cursor-pointer ${
-                              currentIcon === ic
-                                ? 'bg-amber-100 dark:bg-amber-900/60 ring-2 ring-amber-500 shadow-xs'
-                                : 'hover:bg-slate-100 dark:hover:bg-slate-800'
-                            }`}
-                          >
-                            {ic}
-                          </button>
-                        ))}
+
+                      <div>
+                        <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 px-0.5 pb-1 mb-1.5 border-b border-slate-100 dark:border-slate-800">
+                          <span>Warna Background</span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-1.5">
+                          {NOTES_BOARD_ICON_COLORS.map((col) => (
+                            <button
+                              key={col.id}
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSelectIconColor(col.id);
+                              }}
+                              className={`h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer ${col.bgGradient} ${
+                                currentIconColor === col.id
+                                  ? 'ring-2 ring-amber-500 dark:ring-amber-400 shadow-md scale-105'
+                                  : 'opacity-85 hover:opacity-100 hover:scale-105'
+                              }`}
+                              title={col.name}
+                            >
+                              {currentIconColor === col.id && (
+                                <Check className="w-3.5 h-3.5 text-white drop-shadow-sm" />
+                              )}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )}
