@@ -1080,19 +1080,39 @@ export const KanbanBoard: React.FC = () => {
 
       {/* Main App Content on top of background */}
       <div className="relative z-1 flex flex-col min-h-screen">
-        {/* Free-floating Corkboard Stickers & Doodles (Hanya aktif di Papan Tugas) */}
-        {activeTab === 'tasks' && (
-          <BoardStickers
-            stickers={preferences.stickers || []}
-            onChangeStickers={(newStickers) =>
-              handleSavePreferences({ ...preferences, stickers: newStickers })
-            }
-            onOpenQuoteSticker={() => setIsQuoteModalOpen(true)}
-            onOpenPixelArt={() => setIsPixelModalOpen(true)}
-            soundProfile={preferences.soundProfile}
-            isDark={themeConfig.isDark}
-          />
-        )}
+        {/* Free-floating Corkboard Stickers, Doodles & Creator Toolbar */}
+        <BoardStickers
+          stickers={preferences.stickers || []}
+          onChangeStickers={(newStickers) =>
+            handleSavePreferences({ ...preferences, stickers: newStickers })
+          }
+          onOpenQuoteSticker={() => setIsQuoteModalOpen(true)}
+          onOpenPixelArt={() => setIsPixelModalOpen(true)}
+          onAddStickerToNotes={async (emoji) => {
+            const colWidth = 320;
+            const cols = 3;
+            const idx = notes.length;
+            const col = idx % cols;
+            const row = Math.floor(idx / cols);
+            const posX = 24 + col * (colWidth + 24);
+            const posY = 24 + row * 290;
+
+            await handleCreateNote({
+              title: `Stiker ${emoji}`,
+              content: emoji,
+              isSticker: false,
+              color: 'yellow',
+              isPinned: false,
+              posX,
+              posY,
+            });
+            triggerCelebration(preferences.celebrationFx);
+            playVictoryChime(preferences.soundProfile);
+          }}
+          soundProfile={preferences.soundProfile}
+          isDark={themeConfig.isDark}
+          isTasksTab={activeTab === 'tasks'}
+        />
 
         {/* Top Navigation with Sound Mute/Unmute & Personalization */}
         <Navbar

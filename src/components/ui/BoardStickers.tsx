@@ -17,8 +17,10 @@ interface BoardStickersProps {
   onChangeStickers: (newStickers: BoardSticker[]) => void;
   onOpenQuoteSticker?: () => void;
   onOpenPixelArt?: () => void;
+  onAddStickerToNotes?: (emoji: string) => void;
   soundProfile?: SoundProfile;
   isDark?: boolean;
+  isTasksTab?: boolean;
 }
 
 export const BoardStickers: React.FC<BoardStickersProps> = ({
@@ -26,8 +28,10 @@ export const BoardStickers: React.FC<BoardStickersProps> = ({
   onChangeStickers,
   onOpenQuoteSticker,
   onOpenPixelArt,
+  onAddStickerToNotes,
   soundProfile = 'pop',
   isDark = false,
+  isTasksTab = true,
 }) => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activeStickerId, setActiveStickerId] = useState<string | null>(null);
@@ -97,6 +101,13 @@ export const BoardStickers: React.FC<BoardStickersProps> = ({
   // Add a new sticker from drawer
   const handleAddSticker = (emoji: string) => {
     playPopSound(soundProfile);
+
+    // If currently on Notes tab, add as a note sticker card
+    if (!isTasksTab && onAddStickerToNotes) {
+      onAddStickerToNotes(emoji);
+      return;
+    }
+
     const newId = createStickerId(stickers.length);
     // Deterministic placement in center area with variation based on current count
     const offsetX = 20 + ((stickers.length * 17) % 55);
@@ -153,10 +164,11 @@ export const BoardStickers: React.FC<BoardStickersProps> = ({
       onPointerUp={handlePointerUp}
       className="absolute inset-0 pointer-events-none z-10 overflow-hidden"
     >
-      {/* Floating Stickers on Corkboard */}
-      {stickers.map((sticker) => {
-        const isActive = activeStickerId === sticker.id;
-        const isImage = Boolean(sticker.imageUrl);
+      {/* Floating Stickers on Corkboard (Hanya di-render di Papan Tugas) */}
+      {isTasksTab &&
+        stickers.map((sticker) => {
+          const isActive = activeStickerId === sticker.id;
+          const isImage = Boolean(sticker.imageUrl);
 
         return (
           <div
