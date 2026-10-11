@@ -164,6 +164,41 @@ function calculateInitialFullness(): number {
   }
 }
 
+// Aturan Inaktivitas: Poin hati berkurang jika tidak ada interaksi dalam 24 jam
+function calculateInactivityHearts(): { initialHearts: number; lostHearts: number } {
+  if (typeof window === 'undefined') return { initialHearts: 0, lostHearts: 0 };
+  try {
+    const storedHearts = localStorage.getItem('ceria_desk_buddy_hearts');
+    const heartsVal = storedHearts ? Number(storedHearts) || 0 : 0;
+
+    const now = Date.now();
+    const storedLast = localStorage.getItem('ceria_desk_buddy_last_interaction_time');
+    if (!storedLast) {
+      localStorage.setItem('ceria_desk_buddy_last_interaction_time', String(now));
+      return { initialHearts: heartsVal, lostHearts: 0 };
+    }
+
+    const lastTime = Number(storedLast);
+    const elapsedHours = (now - lastTime) / (1000 * 60 * 60);
+
+    // Periode tenggang 24 jam: jika lebih dari 24 jam tidak ada interaksi (sapa/makan/tugas)
+    if (elapsedHours >= 24) {
+      const daysInactive = Math.floor(elapsedHours / 24);
+      // Berkurang 2 hati per 24 jam ketidakhadiran
+      const lost = Math.min(heartsVal, daysInactive * 2);
+      const nextHearts = Math.max(0, heartsVal - lost);
+
+      localStorage.setItem('ceria_desk_buddy_last_interaction_time', String(now));
+      localStorage.setItem('ceria_desk_buddy_hearts', String(nextHearts));
+      return { initialHearts: nextHearts, lostHearts: lost };
+    }
+
+    return { initialHearts: heartsVal, lostHearts: 0 };
+  } catch {
+    return { initialHearts: 0, lostHearts: 0 };
+  }
+}
+
 export const DeskBuddy: React.FC<DeskBuddyProps> = ({
   buddyType,
   soundProfile = 'pop',
@@ -208,18 +243,19 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
     treatEmoji: 'text-sm',
   };
 
-  const [bubbleText, setBubbleText] = useState<string>(() => config?.defaultQuote || '');
+  // Inactivity decay evaluation on mount
+  const [inactivityData] = useState(calculateInactivityHearts);
+  const [hearts, setHearts] = useState<number>(inactivityData.initialHearts);
+  const [lostHeartsNotice] = useState<number>(inactivityData.lostHearts);
+
+  const [bubbleText, setBubbleText] = useState<string>(() => {
+    if (inactivityData.lostHearts > 0) {
+      return `Aku kangen kamu! Karena lebih dari 24 jam tanpa sapaan/tugas, poin hati berkurang -${inactivityData.lostHearts} ❤️. Yuk sering berinteraksi lagi! 🥺💔`;
+    }
+    return config?.defaultQuote || '';
+  });
   const [isBubbleVisible, setIsBubbleVisible] = useState<boolean>(true);
   const [isJumping, setIsJumping] = useState<boolean>(false);
-
-  // Gamification States (Option A, B, D)
-  const [hearts, setHearts] = useState<number>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('ceria_desk_buddy_hearts');
-      return stored ? Number(stored) || 0 : 0;
-    }
-    return 0;
-  });
 
   const [treats, setTreats] = useState<number>(() => {
     if (typeof window !== 'undefined') {
@@ -284,6 +320,13 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
     }
   }
 
+  // Update interaction timestamp when tasks are completed
+  useEffect(() => {
+    if (completedTasksCount > 0 && typeof window !== 'undefined') {
+      localStorage.setItem('ceria_desk_buddy_last_interaction_time', String(Date.now()));
+    }
+  }, [completedTasksCount]);
+
   // Jumping animation timeout reset
   useEffect(() => {
     if (isJumping) {
@@ -329,6 +372,9 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
     const randomQuote = pool[Math.floor(Math.random() * pool.length)];
     setBubbleText(randomQuote);
     setIsBubbleVisible(true);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ceria_desk_buddy_last_interaction_time', String(Date.now()));
+    }
   };
 
   // Opsi A & B: Memberi Makan Maskot
@@ -343,6 +389,9 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
         `Stok ${config.treatName} habis! 🥺 Selesaikan tugas di papan untuk dapat camilan lezat ya! 🎯🐾`
       );
       setIsBubbleVisible(true);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('ceria_desk_buddy_last_interaction_time', String(Date.now()));
+      }
       return;
     }
 
@@ -363,6 +412,7 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
       localStorage.setItem('ceria_desk_buddy_hearts', String(newHearts));
       localStorage.setItem('ceria_desk_buddy_fullness', String(newFullness));
       localStorage.setItem('ceria_desk_buddy_last_fed_time', String(Date.now()));
+      localStorage.setItem('ceria_desk_buddy_last_interaction_time', String(Date.now()));
     }
 
     setShowHeartFloater(true);
@@ -429,8 +479,13 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
           <Zap className={`w-2.5 h-2.5 ${fullness > 50 ? 'text-amber-500' : 'text-rose-500'}`} />
           {fullness}% Kenyang
         </span>
-        <span className="font-bold text-amber-700 dark:text-amber-300">
-          Stok: {treats} {config.treatEmoji}
+        <span
+          className="font-bold text-amber-700 dark:text-amber-300 flex items-center gap-1 cursor-help"
+          title="Berinteraksi minimal 1x setiap 24 jam (sapa / makan / selesai tugas) agar poin hati tidak berkurang (-2 ❤️ per hari tidak aktif)"
+        >
+          <span>{hearts} ❤️</span>
+          <span>•</span>
+          <span>Stok: {treats} {config.treatEmoji}</span>
         </span>
       </div>
 
@@ -455,6 +510,17 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
           >
             <Heart className="w-4 h-4 fill-rose-500 text-rose-500" />
             <span>+1 ❤️</span>
+          </div>
+        )}
+
+        {/* Floating Broken Heart Notification if Inactive (-X 💔) */}
+        {lostHeartsNotice > 0 && (
+          <div
+            className={`absolute -top-7 ${
+              isRight ? 'right-3' : 'left-3'
+            } z-50 pointer-events-none flex items-center gap-1 text-xs font-black text-rose-600 bg-rose-50 dark:bg-rose-950 px-2 py-0.5 rounded-full border border-rose-300 shadow-md animate-in fade-in slide-out-to-top-6 duration-1000`}
+          >
+            <span>💔 -{lostHeartsNotice} ❤️</span>
           </div>
         )}
 
