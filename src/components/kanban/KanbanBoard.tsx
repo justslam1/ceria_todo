@@ -389,8 +389,9 @@ export const KanbanBoard: React.FC = () => {
   const handleConvertNoteToTask = async (note: NoteItem) => {
     try {
       const newTaskInput: CreateTaskInput = {
-        title: note.title.trim() || 'Catatan Baru',
+        title: note.title.trim() || (note.isSticker ? 'Stiker Catatan' : 'Catatan Baru'),
         description: note.content || '',
+        imageUrl: note.imageUrl || null,
         status: 'TODO',
         priority: 'MEDIUM',
         category: 'Catatan Bebas',
