@@ -211,7 +211,22 @@ export const KanbanBoard: React.FC = () => {
       }
     }
 
+    async function loadInitialNotes() {
+      try {
+        const res = await fetch('/api/notes', { signal: AbortSignal.timeout(8000) });
+        const data = await res.json();
+        if (!ignore && data.success && Array.isArray(data.data)) {
+          setNotes(data.data);
+        }
+      } catch (err) {
+        if (!ignore) {
+          console.error('Gagal mengambil data catatan:', err);
+        }
+      }
+    }
+
     loadInitialTasks();
+    loadInitialNotes();
 
     return () => {
       ignore = true;
