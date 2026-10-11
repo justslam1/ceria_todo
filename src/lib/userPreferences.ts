@@ -81,7 +81,7 @@ export const DEFAULT_CUSTOM_THEME: CustomThemeConfig = {
 export const DEFAULT_PREFERENCES: UserPreferences = {
   appName: 'Papan Catatan',
   customLogoUrl: null,
-  appIconPreset: '✨',
+  appIconPreset: '🚀',
   appBadgeText: 'v1.0',
   userName: 'Sobat Ceria',
   boardTitle: 'Studio Papan Buletin Kerja',
@@ -89,21 +89,21 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   notesBoardTitle: 'Papan Catatan Bebas',
   notesBoardIcon: '📖',
   notesBoardIconColor: 'amber',
-  dailyMotto: 'Kelola tugas lebih ringan & menyenangkan! ✨',
+  dailyMotto: 'Kelola tugas lebih ringan & menyenangkan! 🚀',
   theme: 'sunset',
   customTheme: DEFAULT_CUSTOM_THEME,
   bgPattern: 'dots',
   customBgUrl: null,
   bgDim: 30, // 30% default overlay
   bgBlur: 2, // 2px default soft blur
-  avatarIcon: '✨',
+  avatarIcon: '👤',
   washiTapeStyle: 'soft',
   soundProfile: 'pop',
   fontMood: 'modern',
   celebrationFx: 'confetti',
   noteColorMode: 'column',
   dailyTargetGoal: 4,
-  rewardNote: 'Beli Es Kopi Susu gula aren! ☕✨',
+  rewardNote: 'Beli Es Kopi Susu gula aren! ☕',
   rewardClaimedDate: null,
   customCategories: [
     { id: 'cat-personal', name: 'Personal', color: 'purple', paperTexture: 'plain' },
@@ -148,16 +148,16 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
 };
 
 export const APP_ICON_PRESETS = [
-  { id: '✨', label: 'Sparkles', icon: '✨' },
   { id: '🚀', label: 'Roket', icon: '🚀' },
+  { id: '🎯', label: 'Target', icon: '🎯' },
   { id: '☕', label: 'Kopi', icon: '☕' },
   { id: '🔥', label: 'Api Semangat', icon: '🔥' },
-  { id: '🎯', label: 'Target', icon: '🎯' },
   { id: '🐱', label: 'Kucing', icon: '🐱' },
   { id: '⭐', label: 'Bintang', icon: '⭐' },
   { id: '🥑', label: 'Alpukat', icon: '🥑' },
   { id: '🌈', label: 'Pelangi', icon: '🌈' },
   { id: '⚡', label: 'Kilat', icon: '⚡' },
+  { id: '🍀', label: 'Semanggi', icon: '🍀' },
 ];
 
 export const FONT_MOOD_OPTIONS: { id: FontMood; label: string; previewText: string; desc: string; fontClass: string }[] = [
@@ -187,7 +187,7 @@ export const FONT_MOOD_OPTIONS: { id: FontMood; label: string; previewText: stri
 export const CELEBRATION_OPTIONS: { id: CelebrationFx; label: string; desc: string; icon: string }[] = [
   { id: 'confetti', label: 'Hujan Konfeti Ceria', desc: 'Ledakan warna-warni semarak klasik', icon: '🎊' },
   { id: 'fireworks', label: 'Kembang Api Spektakuler', desc: 'Letupan kembang api ganda kiri-kanan', icon: '🎆' },
-  { id: 'stars', label: 'Taburan Bintang Emas', desc: 'Hujan bintang keemasan berkilauan', icon: '✨' },
+  { id: 'stars', label: 'Taburan Bintang Emas', desc: 'Hujan bintang keemasan berkilauan', icon: '⭐' },
   { id: 'none', label: 'Hening / Tanpa Animasi', desc: 'Tanpa selebrasi untuk fokus tenang', icon: '🔕' },
 ];
 
@@ -862,7 +862,7 @@ export const PATTERN_OPTIONS: { id: BgPatternId; label: string; icon: string; de
   { id: 'custom', label: 'Foto Sendiri 📸', icon: '🖼️', desc: 'Unggah wallpaper dari galeri' },
 ];
 
-export const AVATAR_OPTIONS = ['✨', '🐱', '☕', '🚀', '🌱', '🎨', '🥑', '🦊', '⭐', '🎧'];
+export const AVATAR_OPTIONS = ['👤', '🐱', '☕', '🚀', '🌱', '🎨', '🥑', '🦊', '⭐', '🎧'];
 
 export const BOARD_ICONS = ['📌', '🚀', '☕', '🎨', '🌟', '📚', '💼', '🎯', '💡', '🌈'];
 

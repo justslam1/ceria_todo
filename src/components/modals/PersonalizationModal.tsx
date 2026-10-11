@@ -37,7 +37,7 @@ import {
 import { compressImageToDataUrl, compressWallpaperImageToDataUrl } from '@/lib/imageCompressor';
 import { triggerCelebration } from '@/lib/confetti';
 import {
-  Sparkles,
+  Volume2,
   Palette,
   User,
   Check,
@@ -351,7 +351,7 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
               <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                 Personalisasi Ruang Kerja
                 <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-normal">
-                  Khusus Untukmu ✨
+                  Khusus Untukmu
                 </span>
               </h2>
               <p className="text-xs text-slate-500">
@@ -370,7 +370,6 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
         {/* Live Preview Box */}
         <div className="px-6 pt-4 pb-2">
           <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
             Pratinjau Langsung (Live Preview)
           </div>
           <div
@@ -395,7 +394,7 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
                       className="w-full h-full object-cover rounded-lg"
                     />
                   ) : (
-                    <span className="text-sm leading-none">{formData.appIconPreset || '✨'}</span>
+                    <span className="text-sm leading-none">{formData.appIconPreset && formData.appIconPreset !== '✨' ? formData.appIconPreset : '🚀'}</span>
                   )}
                 </div>
                 <div className="min-w-0 flex items-center gap-2">
@@ -415,7 +414,7 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
               </div>
 
               <div className="flex items-center gap-1.5 shrink-0 text-xs">
-                <span className="text-base" title="Avatar Kamu">{formData.avatarIcon}</span>
+                <span className="text-base" title="Avatar Kamu">{formData.avatarIcon === '✨' ? '👤' : (formData.avatarIcon || '👤')}</span>
                 <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold border ${currentThemeConfig.badgeBg} ${currentThemeConfig.badgeText} ${currentThemeConfig.badgeBorder}`}>
                   {currentThemeConfig.name}
                 </span>
@@ -601,7 +600,6 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
               <div className="p-4 rounded-2xl bg-orange-50/40 border border-orange-200/80 space-y-3.5">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-bold text-orange-950 uppercase tracking-wider flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-orange-500" />
                     Branding & Logo Aplikasi (Navbar Atas)
                   </h3>
                   <span className="text-[11px] text-orange-600/80 font-medium">Bisa upload foto sendiri 📸</span>
@@ -657,7 +655,7 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
                             className="w-full h-full object-cover rounded-xl"
                           />
                         ) : (
-                          <span>{formData.appIconPreset || '✨'}</span>
+                          <span>{formData.appIconPreset && formData.appIconPreset !== '✨' ? formData.appIconPreset : '🚀'}</span>
                         )}
                       </div>
 
@@ -1456,7 +1454,6 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
                         <div className="p-3 bg-white rounded-xl border border-orange-100 shadow-2xs space-y-2">
                           <div className="flex items-center justify-between text-xs">
                             <label className="font-bold text-slate-700 flex items-center gap-1.5">
-                              <Sparkles className="w-3.5 h-3.5 text-orange-500" />
                               Efek Buram (Blur)
                             </label>
                             <span className="font-mono font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md">
@@ -2870,7 +2867,6 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
                     }}
                     className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100/80 hover:bg-emerald-200 px-2.5 py-1 rounded-xl cursor-pointer active:scale-95 transition-all"
                   >
-                    <Sparkles className="w-3 h-3" />
                     <span>Tes Selebrasi 🎉</span>
                   </button>
                 </div>
@@ -2960,7 +2956,7 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
                             className="px-2.5 py-1.5 rounded-xl border border-slate-200 hover:bg-white text-[11px] font-semibold text-slate-600 flex items-center gap-1 active:scale-95 cursor-pointer shadow-2xs"
                             title="Tes suara misi selesai"
                           >
-                            <Sparkles className="w-3 h-3 text-emerald-500" />
+                            <Volume2 className="w-3 h-3 text-emerald-500" />
                             <span>Fanfare</span>
                           </button>
                         </div>
@@ -3061,7 +3057,7 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
                 type="submit"
                 className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs font-bold shadow-md transition-all cursor-pointer ${currentThemeConfig.primaryButton}`}
               >
-                <Sparkles className="w-3.5 h-3.5" />
+                <Check className="w-3.5 h-3.5" />
                 <span>Simpan & Terapkan</span>
               </button>
             </div>
