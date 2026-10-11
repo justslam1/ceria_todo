@@ -1,13 +1,12 @@
-'use client';
-
-import React, { useState } from 'react';
-import { X, Sparkles, Shuffle, Check, Quote as QuoteIcon, Palette } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { X, Sparkles, Shuffle, Check, Quote as QuoteIcon, Palette, Image as ImageIcon, Trash2 } from 'lucide-react';
 import {
   QUOTE_STYLE_PRESETS,
   INSPIRING_QUOTES,
   renderQuoteToImage,
 } from '@/lib/quoteGenerator';
 import { playPopSound } from '@/lib/soundEffects';
+import { compressImage } from '@/lib/imageCompression';
 import { SoundProfile } from '@/types/preferences';
 
 interface QuoteStickerModalProps {
@@ -27,8 +26,10 @@ export const QuoteStickerModal: React.FC<QuoteStickerModalProps> = ({
 }) => {
   const [quoteText, setQuoteText] = useState('Fokus pada langkah kecil hari ini, hasil besar akan mengikuti.');
   const [author, setAuthor] = useState('Semangat Diri');
-  const [selectedStyle, setSelectedStyle] = useState('sunset');
+  const [selectedStyle, setSelectedStyle] = useState('crumpled-paper');
+  const [customBgImage, setCustomBgImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
@@ -39,13 +40,33 @@ export const QuoteStickerModal: React.FC<QuoteStickerModalProps> = ({
     setAuthor(rand.author);
   };
 
+  const handleUploadBg = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const compressed = await compressImage(file, 800, 800, 0.85);
+        setCustomBgImage(compressed);
+        setSelectedStyle('custom');
+        playPopSound(soundProfile);
+      } catch (err) {
+        console.error('Gagal memproses gambar:', err);
+      }
+      e.target.value = '';
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!quoteText.trim()) return;
 
     try {
       setIsGenerating(true);
-      const dataUrl = await renderQuoteToImage(quoteText, author, selectedStyle);
+      const dataUrl = await renderQuoteToImage(
+        quoteText,
+        author,
+        selectedStyle === 'custom' ? 'crumpled-paper' : selectedStyle,
+        customBgImage
+      );
       await onSubmit(dataUrl, quoteText.trim());
       playPopSound(soundProfile);
       onClose();
@@ -143,10 +164,46 @@ export const QuoteStickerModal: React.FC<QuoteStickerModalProps> = ({
 
           {/* Style Presets */}
           <div>
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1.5">
-              <Palette className="w-3.5 h-3.5 text-amber-500" />
-              <span>Pilihan Gaya Stiker</span>
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Palette className="w-3.5 h-3.5 text-amber-500" />
+                <span>Pilihan Gaya Stiker</span>
+              </label>
+
+              {/* Custom Image Upload trigger */}
+              <div className="flex items-center gap-1">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleUploadBg}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-purple-600 dark:text-purple-400 hover:text-purple-700 hover:bg-purple-50 dark:hover:bg-purple-950/40 px-2 py-0.5 rounded-lg border border-purple-200 dark:border-purple-800 transition-colors cursor-pointer"
+                  title="Gunakan gambar background sendiri dari komputer"
+                >
+                  <ImageIcon className="w-3 h-3" />
+                  <span>+ Background Sendiri</span>
+                </button>
+                {customBgImage && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCustomBgImage(null);
+                      setSelectedStyle('crumpled-paper');
+                    }}
+                    className="p-1 text-rose-500 hover:text-rose-600 rounded-lg hover:bg-rose-50 cursor-pointer"
+                    title="Hapus background kustom"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {QUOTE_STYLE_PRESETS.map((preset) => {
                 const isSelected = selectedStyle === preset.id;
@@ -159,7 +216,9 @@ export const QuoteStickerModal: React.FC<QuoteStickerModalProps> = ({
                       setSelectedStyle(preset.id);
                     }}
                     style={{
-                      background: `linear-gradient(135deg, ${preset.bgGradient[0]}, ${preset.bgGradient[1]})`,
+                      background: preset.bgImage
+                        ? `url(${preset.bgImage}) center/cover no-repeat`
+                        : `linear-gradient(135deg, ${preset.bgGradient[0]}, ${preset.bgGradient[1]})`,
                       color: preset.textColor,
                     }}
                     className={`p-2.5 rounded-xl border text-left text-xs font-bold transition-all shadow-2xs relative flex items-center justify-between cursor-pointer ${
@@ -177,6 +236,33 @@ export const QuoteStickerModal: React.FC<QuoteStickerModalProps> = ({
                   </button>
                 );
               })}
+
+              {/* Custom Uploaded Background Card if present */}
+              {customBgImage && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    playPopSound(soundProfile);
+                    setSelectedStyle('custom');
+                  }}
+                  style={{
+                    background: `url(${customBgImage}) center/cover no-repeat`,
+                    color: '#0f172a',
+                  }}
+                  className={`p-2.5 rounded-xl border text-left text-xs font-bold transition-all shadow-2xs relative flex items-center justify-between cursor-pointer ${
+                    selectedStyle === 'custom'
+                      ? 'ring-2 ring-amber-500 ring-offset-2 scale-[1.02] border-transparent'
+                      : 'border-black/10 hover:scale-[1.01]'
+                  }`}
+                >
+                  <span className="truncate">🖼️ Gambar Kustom</span>
+                  {selectedStyle === 'custom' && (
+                    <span className="w-4 h-4 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 ml-1">
+                      <Check className="w-2.5 h-2.5 stroke-[3]" />
+                    </span>
+                  )}
+                </button>
+              )}
             </div>
           </div>
 
@@ -187,10 +273,16 @@ export const QuoteStickerModal: React.FC<QuoteStickerModalProps> = ({
             </label>
             <div
               style={{
-                background: `linear-gradient(135deg, ${activePreset.bgGradient[0]}, ${activePreset.bgGradient[1]})`,
+                backgroundImage: customBgImage && selectedStyle === 'custom'
+                  ? `url(${customBgImage})`
+                  : activePreset.bgImage
+                  ? `url(${activePreset.bgImage})`
+                  : `linear-gradient(135deg, ${activePreset.bgGradient[0]}, ${activePreset.bgGradient[1]})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
                 borderColor: activePreset.border,
               }}
-              className="p-5 rounded-3xl border-2 shadow-lg transition-all"
+              className="p-5 rounded-3xl border-2 shadow-lg transition-all relative overflow-hidden"
             >
               <div
                 style={{ color: activePreset.quoteColor }}
@@ -203,14 +295,14 @@ export const QuoteStickerModal: React.FC<QuoteStickerModalProps> = ({
                   color: activePreset.textColor,
                   fontFamily: activePreset.fontFamily,
                 }}
-                className="text-sm sm:text-base font-bold leading-snug whitespace-pre-wrap break-words"
+                className="text-sm sm:text-base font-bold leading-snug whitespace-pre-wrap break-words drop-shadow-[0_1px_1px_rgba(255,255,255,0.7)]"
               >
                 {quoteText.trim() || 'Ketik quote Anda di atas...'}
               </p>
               {author.trim() && (
                 <p
                   style={{ color: activePreset.authorColor }}
-                  className="mt-2 text-xs font-semibold italic"
+                  className="mt-2 text-xs font-semibold italic drop-shadow-[0_1px_1px_rgba(255,255,255,0.7)]"
                 >
                   — {author.trim()}
                 </p>

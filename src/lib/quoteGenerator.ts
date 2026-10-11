@@ -7,6 +7,7 @@ export interface QuoteStylePreset {
   id: string;
   name: string;
   bgGradient: [string, string];
+  bgImage?: string;
   textColor: string;
   quoteColor: string;
   authorColor: string;
@@ -15,6 +16,17 @@ export interface QuoteStylePreset {
 }
 
 export const QUOTE_STYLE_PRESETS: QuoteStylePreset[] = [
+  {
+    id: 'crumpled-paper',
+    name: '📄 Kertas Lecek',
+    bgGradient: ['#ffffff', '#f4f4f5'],
+    bgImage: '/textures/crumpled-paper.png',
+    textColor: '#18181b',
+    quoteColor: '#d97706',
+    authorColor: '#52525b',
+    border: 'rgba(0, 0, 0, 0.12)',
+    fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif',
+  },
   {
     id: 'sunset',
     name: '🌅 Sunset Aura',
@@ -93,7 +105,8 @@ export const INSPIRING_QUOTES = [
 export async function renderQuoteToImage(
   text: string,
   author: string,
-  styleId = 'sunset'
+  styleId = 'crumpled-paper',
+  customBgImageUrl?: string | null
 ): Promise<string> {
   const preset = QUOTE_STYLE_PRESETS.find((p) => p.id === styleId) || QUOTE_STYLE_PRESETS[0];
 
@@ -149,35 +162,76 @@ export async function renderQuoteToImage(
 
   ctx.scale(scale, scale);
 
-  // Gambar background dengan rounded rectangle
+  // Rounded rectangle path definition
   const radius = 28;
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(radius, 0);
-  ctx.lineTo(width - radius, 0);
-  ctx.quadraticCurveTo(width, 0, width, radius);
-  ctx.lineTo(width, height - radius);
-  ctx.quadraticCurveTo(width, height, width - radius, height);
-  ctx.lineTo(radius, height);
-  ctx.quadraticCurveTo(0, height, 0, height - radius);
-  ctx.lineTo(0, radius);
-  ctx.quadraticCurveTo(0, 0, radius, 0);
-  ctx.closePath();
+  const defineRoundedRect = () => {
+    ctx.beginPath();
+    ctx.moveTo(radius, 0);
+    ctx.lineTo(width - radius, 0);
+    ctx.quadraticCurveTo(width, 0, width, radius);
+    ctx.lineTo(width, height - radius);
+    ctx.quadraticCurveTo(width, height, width - radius, height);
+    ctx.lineTo(radius, height);
+    ctx.quadraticCurveTo(0, height, 0, height - radius);
+    ctx.lineTo(0, radius);
+    ctx.quadraticCurveTo(0, 0, radius, 0);
+    ctx.closePath();
+  };
 
   // Shadow lembut di sekitar stiker
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.12)';
-  ctx.shadowBlur = 12;
+  ctx.save();
+  defineRoundedRect();
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.16)';
+  ctx.shadowBlur = 14;
   ctx.shadowOffsetY = 6;
-
-  // Background gradient
-  const gradient = ctx.createLinearGradient(0, 0, width, height);
-  gradient.addColorStop(0, preset.bgGradient[0]);
-  gradient.addColorStop(1, preset.bgGradient[1]);
-  ctx.fillStyle = gradient;
+  ctx.fillStyle = '#ffffff';
   ctx.fill();
+  ctx.restore();
+
+  // Background rendering (Gambar atau Gradient)
+  const bgImgSrc = customBgImageUrl || preset.bgImage;
+  if (bgImgSrc) {
+    try {
+      const bgImg = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Gagal memuat background image'));
+        img.src = bgImgSrc;
+      });
+
+      ctx.save();
+      defineRoundedRect();
+      ctx.clip();
+      // Draw image to cover whole rect
+      ctx.drawImage(bgImg, 0, 0, width, height);
+      ctx.restore();
+    } catch {
+      // Fallback to gradient if image fails
+      ctx.save();
+      defineRoundedRect();
+      const gradient = ctx.createLinearGradient(0, 0, width, height);
+      gradient.addColorStop(0, preset.bgGradient[0]);
+      gradient.addColorStop(1, preset.bgGradient[1]);
+      ctx.fillStyle = gradient;
+      ctx.fill();
+      ctx.restore();
+    }
+  } else {
+    ctx.save();
+    defineRoundedRect();
+    const gradient = ctx.createLinearGradient(0, 0, width, height);
+    gradient.addColorStop(0, preset.bgGradient[0]);
+    gradient.addColorStop(1, preset.bgGradient[1]);
+    ctx.fillStyle = gradient;
+    ctx.fill();
+    ctx.restore();
+  }
 
   // Border stiker
-  ctx.lineWidth = 3;
+  ctx.save();
+  defineRoundedRect();
+  ctx.lineWidth = 2.5;
   ctx.strokeStyle = preset.border;
   ctx.stroke();
   ctx.restore();
