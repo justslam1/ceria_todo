@@ -93,6 +93,13 @@ export default function LoginPage() {
           Masuk dengan aman & instan tanpa perlu mendaftar kata sandi manual.
         </p>
       </div>
+
+      {/* Footer Branding */}
+      <footer className="mt-6 sm:mt-8 text-center z-10">
+        <p className="text-xs font-medium tracking-wide text-slate-400 select-none">
+          Slam Area &copy; 2026
+        </p>
+      </footer>
     </div>
   );
 }
