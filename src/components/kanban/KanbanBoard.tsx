@@ -950,6 +950,7 @@ export const KanbanBoard: React.FC = () => {
           isSoundMuted={soundMuted}
           onToggleSound={handleToggleSound}
           preferences={preferences}
+          onSavePreferences={handleSavePreferences}
           themeConfig={themeConfig}
           counts={{
             total: totalCount,
