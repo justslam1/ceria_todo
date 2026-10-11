@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Pin, Trash2, Edit3, Sparkles, MoreHorizontal, X, ZoomIn } from 'lucide-react';
+import { Pin, Trash2, Edit3, Sparkles, MoreHorizontal, X, ZoomIn, Sticker } from 'lucide-react';
 import { NoteItem, NoteColor, NOTE_COLOR_STYLES } from '@/types/note';
 import { ThemeConfig } from '@/types/preferences';
 
@@ -15,6 +15,7 @@ interface NoteCardProps {
   onChangeColor: (id: string, color: NoteColor) => void;
   onConvertToTask: (note: NoteItem) => void;
   onUpdateContent?: (id: string, newContent: string) => void;
+  onToggleSticker?: (id: string, isSticker: boolean) => void;
   isCanvasMode?: boolean;
   onDragStart?: (e: React.PointerEvent) => void;
   isDragging?: boolean;
@@ -28,6 +29,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
   onChangeColor,
   onConvertToTask,
   onUpdateContent,
+  onToggleSticker,
   isCanvasMode = false,
   onDragStart,
   isDragging = false,
@@ -264,6 +266,18 @@ export const NoteCard: React.FC<NoteCardProps> = ({
             <Sparkles className="w-3 h-3 text-amber-500 group-hover:text-white" />
             <span className="hidden sm:inline">Jadikan Tugas</span>
           </button>
+
+          {/* Convert to Sticker (Lepas Kotak) */}
+          {note.imageUrl && onToggleSticker && (
+            <button
+              type="button"
+              onClick={() => onToggleSticker(note.id, true)}
+              className="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-slate-500 hover:text-purple-600 dark:text-slate-300 dark:hover:text-purple-400 transition-colors cursor-pointer"
+              title="Lepas Kotak (Jadikan Stiker Bebas) 🎨"
+            >
+              <Sticker className="w-3.5 h-3.5" />
+            </button>
+          )}
 
           {/* Edit Note */}
           <button

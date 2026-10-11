@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, content, imageUrl, color, isPinned, posX, posY, order } = body;
+    const { title, content, imageUrl, isSticker, color, isPinned, posX, posY, order } = body;
 
     const trimmedTitle = typeof title === 'string' ? title.trim().slice(0, 200) : '';
     const trimmedContent = typeof content === 'string' ? content.trim().slice(0, 20000) : '';
@@ -86,9 +86,10 @@ export async function POST(request: NextRequest) {
     const note = await prisma.note.create({
       data: {
         userId,
-        title: trimmedTitle || (validImageUrl ? 'Catatan Gambar' : 'Catatan Baru'),
+        title: trimmedTitle || (isSticker ? '' : validImageUrl ? 'Catatan Gambar' : 'Catatan Baru'),
         content: trimmedContent,
         imageUrl: validImageUrl,
+        isSticker: Boolean(isSticker),
         color: validColor,
         isPinned: Boolean(isPinned),
         posX: typeof posX === 'number' && Number.isFinite(posX) ? posX : null,

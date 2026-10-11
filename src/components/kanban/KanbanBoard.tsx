@@ -282,6 +282,7 @@ export const KanbanBoard: React.FC = () => {
     title: string;
     content: string;
     imageUrl?: string | null;
+    isSticker?: boolean;
     color: NoteColor;
     isPinned: boolean;
     posX?: number;

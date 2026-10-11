@@ -100,6 +100,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     if (body.isPinned !== undefined) {
       updateData.isPinned = Boolean(body.isPinned);
     }
+    if (body.isSticker !== undefined) {
+      updateData.isSticker = Boolean(body.isSticker);
+    }
     if (body.posX !== undefined) {
       updateData.posX = typeof body.posX === 'number' && Number.isFinite(body.posX) ? body.posX : null;
     }

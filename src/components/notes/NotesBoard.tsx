@@ -5,6 +5,7 @@ import { Search, Plus, Pin, RefreshCw, BookOpen, Filter, X, LayoutGrid, Wand2, M
 import { NoteItem, NoteColor, NOTE_COLOR_STYLES } from '@/types/note';
 import { ThemeConfig, UserPreferences } from '@/types/preferences';
 import { NoteCard } from '@/components/notes/NoteCard';
+import { NoteSticker } from '@/components/notes/NoteSticker';
 import { NoteModal } from '@/components/notes/NoteModal';
 import { playPopSound } from '@/lib/soundEffects';
 import { compressImage, getImageFileFromClipboard } from '@/lib/imageCompression';
@@ -18,6 +19,7 @@ interface NotesBoardProps {
     title: string;
     content: string;
     imageUrl?: string | null;
+    isSticker?: boolean;
     color: NoteColor;
     isPinned: boolean;
     posX?: number;
@@ -260,7 +262,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
     isPinned: boolean;
   }) => {
     if (activeEditingNote) {
-      await onUpdateNote(activeEditingNote.id, data);
+      await onUpdateNote(activeEditingNote.id, { ...data, isSticker: false });
     } else {
       // Determine initial placement for new note on canvas
       const canvasWidth = canvasRef.current?.clientWidth || 1100;
@@ -272,7 +274,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
       const posX = 24 + col * (colWidth + 24);
       const posY = 24 + row * 290;
 
-      await onCreateNote({ ...data, posX, posY });
+      await onCreateNote({ ...data, isSticker: false, posX, posY });
     }
     handleCloseModal();
   };
@@ -309,9 +311,10 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
         const posY = 24 + row * 290;
 
         await onCreateNote({
-          title: 'Catatan Gambar',
+          title: '',
           content: '',
           imageUrl: compressedBase64,
+          isSticker: true,
           color: 'yellow',
           isPinned: false,
           posX,
@@ -331,6 +334,11 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
 
   const handleTogglePin = async (id: string, currentPinned: boolean) => {
     await onUpdateNote(id, { isPinned: !currentPinned });
+  };
+
+  const handleToggleSticker = async (id: string, isSticker: boolean) => {
+    playPopSound(preferences?.soundProfile || 'pop');
+    await onUpdateNote(id, { isSticker });
   };
 
   const handleChangeColor = async (id: string, color: NoteColor) => {
@@ -649,19 +657,32 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                   transition: isDragging ? 'none' : 'box-shadow 0.2s ease, transform 0.2s ease',
                 }}
               >
-                <NoteCard
-                  note={note}
-                  themeConfig={themeConfig}
-                  isCanvasMode={true}
-                  isDragging={isDragging}
-                  onDragStart={(e) => handleStartDrag(e, note, pos.x, pos.y)}
-                  onEdit={handleOpenEditModal}
-                  onDelete={handleDeleteWithConfirm}
-                  onTogglePin={handleTogglePin}
-                  onChangeColor={handleChangeColor}
-                  onConvertToTask={onConvertToTask}
-                  onUpdateContent={handleUpdateContent}
-                />
+                {note.isSticker && note.imageUrl ? (
+                  <NoteSticker
+                    note={note}
+                    onDelete={handleDeleteWithConfirm}
+                    onTogglePin={handleTogglePin}
+                    onToggleSticker={handleToggleSticker}
+                    isCanvasMode={true}
+                    isDragging={isDragging}
+                    onDragStart={(e) => handleStartDrag(e, note, pos.x, pos.y)}
+                  />
+                ) : (
+                  <NoteCard
+                    note={note}
+                    themeConfig={themeConfig}
+                    isCanvasMode={true}
+                    isDragging={isDragging}
+                    onDragStart={(e) => handleStartDrag(e, note, pos.x, pos.y)}
+                    onEdit={handleOpenEditModal}
+                    onDelete={handleDeleteWithConfirm}
+                    onTogglePin={handleTogglePin}
+                    onChangeColor={handleChangeColor}
+                    onConvertToTask={onConvertToTask}
+                    onUpdateContent={handleUpdateContent}
+                    onToggleSticker={handleToggleSticker}
+                  />
+                )}
               </div>
             );
           })}
@@ -680,18 +701,30 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
                 {pinnedNotes.map((note) => (
-                  <NoteCard
-                    key={note.id}
-                    note={note}
-                    themeConfig={themeConfig}
-                    isCanvasMode={false}
-                    onEdit={handleOpenEditModal}
-                    onDelete={handleDeleteWithConfirm}
-                    onTogglePin={handleTogglePin}
-                    onChangeColor={handleChangeColor}
-                    onConvertToTask={onConvertToTask}
-                    onUpdateContent={handleUpdateContent}
-                  />
+                  note.isSticker && note.imageUrl ? (
+                    <NoteSticker
+                      key={note.id}
+                      note={note}
+                      onDelete={handleDeleteWithConfirm}
+                      onTogglePin={handleTogglePin}
+                      onToggleSticker={handleToggleSticker}
+                      isCanvasMode={false}
+                    />
+                  ) : (
+                    <NoteCard
+                      key={note.id}
+                      note={note}
+                      themeConfig={themeConfig}
+                      isCanvasMode={false}
+                      onEdit={handleOpenEditModal}
+                      onDelete={handleDeleteWithConfirm}
+                      onTogglePin={handleTogglePin}
+                      onChangeColor={handleChangeColor}
+                      onConvertToTask={onConvertToTask}
+                      onUpdateContent={handleUpdateContent}
+                      onToggleSticker={handleToggleSticker}
+                    />
+                  )
                 ))}
               </div>
             </div>
@@ -709,18 +742,30 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
                 {otherNotes.map((note) => (
-                  <NoteCard
-                    key={note.id}
-                    note={note}
-                    themeConfig={themeConfig}
-                    isCanvasMode={false}
-                    onEdit={handleOpenEditModal}
-                    onDelete={handleDeleteWithConfirm}
-                    onTogglePin={handleTogglePin}
-                    onChangeColor={handleChangeColor}
-                    onConvertToTask={onConvertToTask}
-                    onUpdateContent={handleUpdateContent}
-                  />
+                  note.isSticker && note.imageUrl ? (
+                    <NoteSticker
+                      key={note.id}
+                      note={note}
+                      onDelete={handleDeleteWithConfirm}
+                      onTogglePin={handleTogglePin}
+                      onToggleSticker={handleToggleSticker}
+                      isCanvasMode={false}
+                    />
+                  ) : (
+                    <NoteCard
+                      key={note.id}
+                      note={note}
+                      themeConfig={themeConfig}
+                      isCanvasMode={false}
+                      onEdit={handleOpenEditModal}
+                      onDelete={handleDeleteWithConfirm}
+                      onTogglePin={handleTogglePin}
+                      onChangeColor={handleChangeColor}
+                      onConvertToTask={onConvertToTask}
+                      onUpdateContent={handleUpdateContent}
+                      onToggleSticker={handleToggleSticker}
+                    />
+                  )
                 ))}
               </div>
             </div>

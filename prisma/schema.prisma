@@ -96,6 +96,7 @@ model Note {
   title     String
   content   String   @db.Text
   imageUrl  String?  @db.LongText
+  isSticker Boolean  @default(false)
   color     String   @default("yellow")
   isPinned  Boolean  @default(false)
   posX      Float?
