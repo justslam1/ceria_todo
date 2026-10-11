@@ -637,22 +637,6 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
             >
               x{treats}
             </span>
-
-            {/* Mini Mood & Energy Meter Pill */}
-            <span
-              className={`text-[9px] font-mono px-1 rounded-md font-bold hidden sm:inline-flex items-center gap-0.5 ${
-                fullness >= 70
-                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
-                  : fullness >= 30
-                  ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
-                  : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
-              }`}
-            >
-              <Zap className="w-2.5 h-2.5" />
-              {fullness}%
-            </span>
-
-            <Heart className="w-2.5 h-2.5 text-rose-500 fill-rose-500 shrink-0" />
           </button>
         )}
       </div>
