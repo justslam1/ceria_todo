@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import {
   X,
@@ -18,11 +18,15 @@ import {
   RefreshCw,
   Eye,
   Maximize2,
+  Camera,
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { UserPreferences, ThemeConfig } from '@/types/preferences';
+import { Task } from '@/types/task';
 import { ShowcaseItem, SHOWCASE_CATEGORIES } from '@/types/showcase';
 import { ShowcaseDetailModal } from '@/components/gallery/ShowcaseDetailModal';
+import { BoardSnapshotRenderer } from '@/components/gallery/BoardSnapshotRenderer';
+import { captureNodeAsJpeg } from '@/lib/boardCapture';
 import { triggerCelebration } from '@/lib/confetti';
 import { playPopSound, playVictoryChime } from '@/lib/soundEffects';
 
@@ -32,6 +36,7 @@ interface ShowcaseModalProps {
   preferences: UserPreferences;
   onApplyPreferences: (prefs: Partial<UserPreferences>, showcaseTitle: string) => void;
   themeConfig: ThemeConfig;
+  tasks?: Task[];
 }
 
 export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
@@ -40,6 +45,7 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
   preferences,
   onApplyPreferences,
   themeConfig,
+  tasks = [],
 }) => {
   const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState<'gallery' | 'publish' | 'mine'>('gallery');
@@ -66,6 +72,38 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
 
   // Selected showcase for detailed inspection
   const [selectedDetailShowcase, setSelectedDetailShowcase] = useState<ShowcaseItem | null>(null);
+
+  // Snapshot Capture State
+  const [privacyMode, setPrivacyMode] = useState<'cheerful' | 'original'>('cheerful');
+  const [capturedThumbnail, setCapturedThumbnail] = useState<string | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const snapshotRef = useRef<HTMLDivElement>(null);
+
+  const generateSnapshot = useCallback(async () => {
+    if (!snapshotRef.current) return;
+    setIsCapturing(true);
+    try {
+      await new Promise((r) => setTimeout(r, 120));
+      if (snapshotRef.current) {
+        const dataUrl = await captureNodeAsJpeg(snapshotRef.current);
+        setCapturedThumbnail(dataUrl);
+      }
+    } catch (err) {
+      console.error('Gagal mengambil tangkapan layar meja:', err);
+    } finally {
+      setIsCapturing(false);
+    }
+  }, []);
+
+  // Auto capture snapshot when entering publish tab or changing privacyMode
+  useEffect(() => {
+    if (isOpen && activeTab === 'publish') {
+      const timer = setTimeout(() => {
+        generateSnapshot();
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, activeTab, privacyMode, generateSnapshot]);
 
   // Fetch gallery showcases
   const fetchShowcases = useCallback(async () => {
@@ -247,6 +285,7 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
           title: publishTitle.trim(),
           description: publishDesc.trim() || undefined,
           category: publishCategory,
+          thumbnail: capturedThumbnail || undefined,
           configJson: JSON.stringify(visualConfigSnapshot),
         }),
       });
@@ -581,16 +620,27 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
                       >
                         {/* Visual Banner Preview */}
                         <div
-                          className="h-28 w-full relative overflow-hidden flex flex-col justify-between p-3 select-none"
-                          style={{
-                            backgroundColor: parsed.customTheme?.bgHex || '#fffbeb',
-                            backgroundImage: parsed.customBgUrl ? `url(${parsed.customBgUrl})` : undefined,
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                          }}
+                          className="h-36 w-full relative overflow-hidden flex flex-col justify-between p-3 select-none bg-slate-900"
                         >
-                          {/* Dim overlay */}
-                          <div className="absolute inset-0 bg-black/10 backdrop-blur-[0.5px]" />
+                          {item.thumbnail ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={item.thumbnail}
+                              alt={item.title}
+                              className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
+                          ) : (
+                            <div
+                              className="absolute inset-0"
+                              style={{
+                                backgroundColor: parsed.customTheme?.bgHex || '#fffbeb',
+                                backgroundImage: parsed.customBgUrl ? `url(${parsed.customBgUrl})` : undefined,
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                              }}
+                            />
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-black/30 pointer-events-none" />
 
                           {/* Top Badges */}
                           <div className="relative z-10 flex items-center justify-between">
@@ -754,45 +804,88 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
                 </div>
               ) : (
                 <form onSubmit={handlePublish} className="space-y-4">
-                  {/* Current Board Preview Box */}
-                  <div
-                    className={`p-4 rounded-2xl border ${
-                      themeConfig.isDark
-                        ? 'bg-slate-800/80 border-slate-700'
-                        : 'bg-gradient-to-r from-amber-50/80 to-orange-50/60 border-amber-200/80'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <Sparkles className="w-4 h-4 text-amber-500" />
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
-                        Pratinjau Snapshot yang Akan Dibagikan
-                      </h4>
+                  {/* Pilihan Privasi Tangkapan Layar */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                      Pilihan Privasi Teks Tangkapan Layar:
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setPrivacyMode('cheerful')}
+                        className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                          privacyMode === 'cheerful'
+                            ? 'bg-amber-500/10 border-amber-500 ring-2 ring-amber-400'
+                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 font-bold text-xs text-amber-700 dark:text-amber-400 mb-1">
+                          <span>🎭 Samarkan dengan Teks Ceria</span>
+                          <span className="text-[9px] bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-100 px-1.5 py-0.2 rounded-full font-extrabold">
+                            Aman
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+                          Tugas asli diganti otomatis dengan contoh kegiatan santai & produktif. Privasi 100% terjaga.
+                        </p>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setPrivacyMode('original')}
+                        className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                          privacyMode === 'original'
+                            ? 'bg-rose-500/10 border-rose-500 ring-2 ring-rose-400'
+                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 font-bold text-xs text-slate-800 dark:text-slate-200 mb-1">
+                          <span>🔓 Tampilkan Apa Adanya</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+                          Memotret papan dengan seluruh teks judul dan catatan asli tanpa disensor.
+                        </p>
+                      </button>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-                      <div className="p-2 rounded-xl bg-white/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800">
-                        <span className="text-slate-400 text-[10px] block">Tema Aktif</span>
-                        <span className="font-bold capitalize">{preferences.theme}</span>
-                      </div>
-                      <div className="p-2 rounded-xl bg-white/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800">
-                        <span className="text-slate-400 text-[10px] block">Maskot Meja</span>
-                        <span className="font-bold capitalize">{preferences.deskBuddy || 'None'}</span>
-                      </div>
-                      <div className="p-2 rounded-xl bg-white/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800">
-                        <span className="text-slate-400 text-[10px] block">Stiker Ditempel</span>
-                        <span className="font-bold">{(preferences.stickers || []).length} Stiker</span>
-                      </div>
-                      <div className="p-2 rounded-xl bg-white/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800">
-                        <span className="text-slate-400 text-[10px] block">Selotip Washi</span>
-                        <span className="font-bold capitalize">{preferences.washiTapeStyle}</span>
-                      </div>
-                      <div className="p-2 rounded-xl bg-white/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800">
-                        <span className="text-slate-400 text-[10px] block">Gaya Pin</span>
-                        <span className="font-bold capitalize">{preferences.pinStyle}</span>
-                      </div>
-                      <div className="p-2 rounded-xl bg-white/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800">
-                        <span className="text-slate-400 text-[10px] block">Kategori Khusus</span>
-                        <span className="font-bold">{(preferences.customCategories || []).length} Kategori</span>
-                      </div>
+                  </div>
+
+                  {/* Pratinjau Tangkapan Layar Penuh (16:9 Studio Snapshot) */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                        <Camera className="w-4 h-4 text-amber-500" />
+                        <span>Pratinjau Foto Meja (16:9 Penuh):</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={generateSnapshot}
+                        disabled={isCapturing}
+                        className="text-[11px] font-bold text-amber-600 hover:text-amber-700 flex items-center gap-1 cursor-pointer"
+                      >
+                        <RefreshCw className={`w-3 h-3 ${isCapturing ? 'animate-spin' : ''}`} />
+                        <span>Ambil Ulang Foto</span>
+                      </button>
+                    </div>
+
+                    <div className="relative rounded-2xl overflow-hidden border-2 border-amber-200/80 dark:border-slate-700 bg-slate-900 shadow-md aspect-video flex items-center justify-center">
+                      {capturedThumbnail ? (
+                        <>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={capturedThumbnail}
+                            alt="Pratinjau Meja"
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-xs font-semibold">
+                            <span>{privacyMode === 'cheerful' ? '🎭 Teks Ceria' : '🔓 Konten Asli'}</span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-xs text-slate-400 flex items-center gap-2">
+                          <RefreshCw className="w-4 h-4 animate-spin text-amber-400" />
+                          <span>Menyiapkan tangkapan layar meja...</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1010,6 +1103,27 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
         onApply={handleApply}
         onToggleLike={handleToggleLike}
       />
+
+      {/* Hidden Off-Screen Studio Renderer for Snapshot Capture */}
+      <div
+        style={{
+          position: 'fixed',
+          left: -9999,
+          top: -9999,
+          width: 1200,
+          height: 675,
+          pointerEvents: 'none',
+          opacity: 0,
+          zIndex: -100,
+        }}
+      >
+        <BoardSnapshotRenderer
+          ref={snapshotRef}
+          preferences={preferences}
+          tasks={tasks}
+          privacyMode={privacyMode}
+        />
+      </div>
     </div>
   );
 };

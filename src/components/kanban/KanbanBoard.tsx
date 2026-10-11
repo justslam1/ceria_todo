@@ -2136,6 +2136,7 @@ export const KanbanBoard: React.FC = () => {
         preferences={preferences}
         onApplyPreferences={handleApplyShowcase}
         themeConfig={themeConfig}
+        tasks={tasks}
       />
 
       {/* Virtual Desk Buddy Mascot */}

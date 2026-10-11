@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -17,13 +17,17 @@ import {
   Layers,
   RefreshCw,
   ShieldCheck,
+  Camera,
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { UserPreferences } from '@/types/preferences';
+import { Task } from '@/types/task';
 import { ShowcaseItem, SHOWCASE_CATEGORIES } from '@/types/showcase';
 import { loadUserPreferences, saveUserPreferences, getThemeConfig } from '@/lib/userPreferences';
 import { UserAuthButton } from '@/components/ui/UserAuthButton';
 import { ShowcaseDetailModal } from '@/components/gallery/ShowcaseDetailModal';
+import { BoardSnapshotRenderer } from '@/components/gallery/BoardSnapshotRenderer';
+import { captureNodeAsJpeg } from '@/lib/boardCapture';
 import { triggerCelebration } from '@/lib/confetti';
 import { playPopSound, playVictoryChime } from '@/lib/soundEffects';
 
@@ -43,6 +47,13 @@ export default function GalleryPage() {
   // Selected showcase for detailed inspection
   const [selectedShowcase, setSelectedShowcase] = useState<ShowcaseItem | null>(null);
 
+  // Snapshot Capture State
+  const [privacyMode, setPrivacyMode] = useState<'cheerful' | 'original'>('cheerful');
+  const [capturedThumbnail, setCapturedThumbnail] = useState<string | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [userTasks, setUserTasks] = useState<Task[]>([]);
+  const snapshotRef = useRef<HTMLDivElement>(null);
+
   // Applied Toast state
   const [appliedToast, setAppliedToast] = useState<{ title: string; show: boolean }>({
     title: '',
@@ -58,6 +69,43 @@ export default function GalleryPage() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishSuccessMessage, setPublishSuccessMessage] = useState<string | null>(null);
   const [publishError, setPublishError] = useState<string | null>(null);
+
+  // Fetch user's own tasks if authenticated
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetch('/api/tasks')
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.success && Array.isArray(d.data)) setUserTasks(d.data);
+        })
+        .catch(() => {});
+    }
+  }, [session?.user?.id]);
+
+  const generateSnapshot = useCallback(async () => {
+    if (!snapshotRef.current) return;
+    setIsCapturing(true);
+    try {
+      await new Promise((r) => setTimeout(r, 120));
+      if (snapshotRef.current) {
+        const dataUrl = await captureNodeAsJpeg(snapshotRef.current);
+        setCapturedThumbnail(dataUrl);
+      }
+    } catch (err) {
+      console.error('Gagal mengambil tangkapan layar meja:', err);
+    } finally {
+      setIsCapturing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'publish') {
+      const timer = setTimeout(() => {
+        generateSnapshot();
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [activeTab, privacyMode, generateSnapshot]);
 
   // Active theme of current user
   const themeConfig = useMemo(() => {
@@ -253,6 +301,7 @@ export default function GalleryPage() {
           title: publishTitle.trim(),
           description: publishDesc.trim() || undefined,
           category: publishCategory,
+          thumbnail: capturedThumbnail || undefined,
           configJson: JSON.stringify(visualConfigSnapshot),
         }),
       });
@@ -557,15 +606,27 @@ export default function GalleryPage() {
                     >
                       {/* Visual Banner Preview */}
                       <div
-                        className="h-44 w-full relative overflow-hidden flex flex-col justify-between p-4 select-none"
-                        style={{
-                          backgroundColor: parsed.customTheme?.bgHex || '#fffbeb',
-                          backgroundImage: parsed.customBgUrl ? `url(${parsed.customBgUrl})` : undefined,
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center',
-                        }}
+                        className="h-48 w-full relative overflow-hidden flex flex-col justify-between p-4 select-none bg-slate-900"
                       >
-                        <div className="absolute inset-0 bg-black/15 backdrop-blur-[0.5px]" />
+                        {item.thumbnail ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={item.thumbnail}
+                            alt={item.title}
+                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div
+                            className="absolute inset-0"
+                            style={{
+                              backgroundColor: parsed.customTheme?.bgHex || '#fffbeb',
+                              backgroundImage: parsed.customBgUrl ? `url(${parsed.customBgUrl})` : undefined,
+                              backgroundSize: 'cover',
+                              backgroundPosition: 'center',
+                            }}
+                          />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-black/30 pointer-events-none" />
 
                         {/* Top Badges */}
                         <div className="relative z-10 flex items-center justify-between">
@@ -743,6 +804,91 @@ export default function GalleryPage() {
                   </p>
                 </div>
 
+                {/* Pilihan Privasi Tangkapan Layar */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Pilihan Privasi Teks Tangkapan Layar:
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setPrivacyMode('cheerful')}
+                      className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                        privacyMode === 'cheerful'
+                          ? 'bg-amber-500/10 border-amber-500 ring-2 ring-amber-400'
+                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5 font-bold text-xs text-amber-700 dark:text-amber-400 mb-1">
+                        <span>🎭 Samarkan dengan Teks Ceria</span>
+                        <span className="text-[9px] bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-100 px-1.5 py-0.2 rounded-full font-extrabold">
+                          Aman
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+                        Tugas asli diganti otomatis dengan contoh kegiatan santai & produktif. Privasi 100% terjaga.
+                      </p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPrivacyMode('original')}
+                      className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                        privacyMode === 'original'
+                          ? 'bg-rose-500/10 border-rose-500 ring-2 ring-rose-400'
+                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5 font-bold text-xs text-slate-800 dark:text-slate-200 mb-1">
+                        <span>🔓 Tampilkan Apa Adanya</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+                        Memotret papan dengan seluruh teks judul dan catatan asli tanpa disensor.
+                      </p>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Pratinjau Tangkapan Layar Penuh (16:9 Studio Snapshot) */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                      <Camera className="w-4 h-4 text-amber-500" />
+                      <span>Pratinjau Foto Meja (16:9 Penuh):</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={generateSnapshot}
+                      disabled={isCapturing}
+                      className="text-[11px] font-bold text-amber-600 hover:text-amber-700 flex items-center gap-1 cursor-pointer"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${isCapturing ? 'animate-spin' : ''}`} />
+                      <span>Ambil Ulang Foto</span>
+                    </button>
+                  </div>
+
+                  <div className="relative rounded-2xl overflow-hidden border-2 border-amber-200/80 dark:border-slate-700 bg-slate-900 shadow-md aspect-video flex items-center justify-center">
+                    {capturedThumbnail ? (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={capturedThumbnail}
+                          alt="Pratinjau Meja"
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-xs font-semibold">
+                          <span>{privacyMode === 'cheerful' ? '🎭 Teks Ceria' : '🔓 Konten Asli'}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-xs text-slate-400 flex items-center gap-2">
+                        <RefreshCw className="w-4 h-4 animate-spin text-amber-400" />
+                        <span>Menyiapkan tangkapan layar meja...</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 {/* Form fields */}
                 <div>
                   <label className="block text-xs font-bold mb-1.5 text-slate-700 dark:text-slate-300">
@@ -907,6 +1053,28 @@ export default function GalleryPage() {
           </div>
         )}
       </main>
+
+      {/* Hidden Off-screen Studio Renderer for 16:9 Snapshot */}
+      <div
+        style={{
+          position: 'fixed',
+          left: -9999,
+          top: -9999,
+          width: 1200,
+          height: 675,
+          pointerEvents: 'none',
+          opacity: 0,
+          zIndex: -100,
+        }}
+        aria-hidden="true"
+      >
+        <BoardSnapshotRenderer
+          ref={snapshotRef}
+          preferences={preferences}
+          tasks={userTasks}
+          privacyMode={privacyMode}
+        />
+      </div>
 
       {/* Showcase Detail Inspector Modal */}
       <ShowcaseDetailModal
