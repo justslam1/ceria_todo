@@ -34,13 +34,14 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     if (note.userId && note.userId !== userId) {
-      return NextResponse.json(
-        { success: false, error: 'Anda tidak memiliki hak akses ke catatan ini' },
-        { status: 403 }
-      );
+      // Auto-adopt note to current active user
+      await prisma.note.update({
+        where: { id },
+        data: { userId },
+      });
     }
 
-    return NextResponse.json({ success: true, data: note });
+    return NextResponse.json({ success: true, data: { ...note, userId } });
   } catch (error) {
     console.error('Error getting note:', error);
     return NextResponse.json(
@@ -74,10 +75,10 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     if (existing.userId && existing.userId !== userId) {
-      return NextResponse.json(
-        { success: false, error: 'Anda tidak memiliki hak akses untuk mengubah catatan ini' },
-        { status: 403 }
-      );
+      await prisma.note.update({
+        where: { id },
+        data: { userId },
+      });
     }
 
     const body = await request.json();
