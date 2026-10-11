@@ -294,7 +294,7 @@ export const BoardStickers: React.FC<BoardStickersProps> = ({
             </div>
 
             <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-2.5">
-              Klik stiker untuk menempelkannya ke papan, lalu seret bebas sesuka hati! ✨
+              Klik stiker untuk menempelkannya ke papan, lalu seret bebas sesuka hati!
             </p>
 
             {/* Sticker Grid */}
@@ -355,7 +355,7 @@ export const BoardStickers: React.FC<BoardStickersProps> = ({
                     ? 'bg-gradient-to-r from-amber-600/90 to-orange-600/90 hover:from-amber-500 hover:to-orange-500 text-white border-amber-500/50 shadow-amber-950/40'
                     : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-amber-400/80 shadow-orange-200'
                 }`}
-                title="Buat & tempel stiker quote artistik (Ocehanmu) ✨"
+                title="Buat & tempel stiker quote artistik (Ocehanmu)"
               >
                 <span className="text-base">💬</span>
                 <span>Ocehanmu</span>
@@ -400,9 +400,11 @@ export const BoardStickers: React.FC<BoardStickersProps> = ({
           }`}
           title={isSpeedDialOpen ? 'Tutup menu kreasi' : `Buka menu ${menuLabel}`}
         >
-          <span className={`text-base transition-transform duration-200 ${isSpeedDialOpen ? 'rotate-90' : ''}`}>
-            {isSpeedDialOpen ? '✕' : '✨'}
-          </span>
+          {isSpeedDialOpen && (
+            <span className="text-xs transition-transform duration-200">
+              ✕
+            </span>
+          )}
           <span>{isSpeedDialOpen ? 'Tutup' : menuLabel}</span>
           {!isSpeedDialOpen && stickers.length > 0 && (
             <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-amber-400 text-amber-950">
