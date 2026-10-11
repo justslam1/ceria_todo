@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import Link from 'next/link';
 import {
   X,
   Sparkles,
@@ -15,10 +16,13 @@ import {
   Layers,
   Compass,
   RefreshCw,
+  Eye,
+  Maximize2,
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { UserPreferences, ThemeConfig } from '@/types/preferences';
 import { ShowcaseItem, SHOWCASE_CATEGORIES } from '@/types/showcase';
+import { ShowcaseDetailModal } from '@/components/gallery/ShowcaseDetailModal';
 import { triggerCelebration } from '@/lib/confetti';
 import { playPopSound, playVictoryChime } from '@/lib/soundEffects';
 
@@ -59,6 +63,9 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
 
   // Applied notification state
   const [appliedToast, setAppliedToast] = useState<string | null>(null);
+
+  // Selected showcase for detailed inspection
+  const [selectedDetailShowcase, setSelectedDetailShowcase] = useState<ShowcaseItem | null>(null);
 
   // Fetch gallery showcases
   const fetchShowcases = useCallback(async () => {
@@ -329,12 +336,23 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              href="/gallery"
+              onClick={onClose}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-300/80 dark:border-slate-700 bg-amber-50 dark:bg-slate-800 text-amber-900 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-slate-700 text-xs font-bold transition-all shadow-2xs"
+              title="Buka Galeri di Halaman Penuh"
+            >
+              <Maximize2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Halaman Penuh ↗</span>
+            </Link>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Applied Toast Banner */}
@@ -687,14 +705,26 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
                               </div>
                             </div>
 
-                            {/* Action Button: Apply */}
-                            <button
-                              onClick={() => handleApply(item)}
-                              className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:opacity-95 active:scale-98 shadow-sm transition-all cursor-pointer"
-                            >
-                              <Palette className="w-3.5 h-3.5" />
-                              <span>Pakai Setup Ini</span>
-                            </button>
+                            {/* Action Buttons: Detail & Apply */}
+                            <div className="grid grid-cols-2 gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedDetailShowcase(item)}
+                                className="py-2 px-2.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                                <span>Lihat Isi</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleApply(item)}
+                                className="py-2 px-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:opacity-95 active:scale-98 shadow-2xs transition-all flex items-center justify-center gap-1 cursor-pointer"
+                              >
+                                <Palette className="w-3.5 h-3.5" />
+                                <span>Pakai</span>
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -972,6 +1002,14 @@ export const ShowcaseModal: React.FC<ShowcaseModalProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Detail Inspector Modal */}
+      <ShowcaseDetailModal
+        showcase={selectedDetailShowcase}
+        onClose={() => setSelectedDetailShowcase(null)}
+        onApply={handleApply}
+        onToggleLike={handleToggleLike}
+      />
     </div>
   );
 };
