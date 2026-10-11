@@ -223,18 +223,18 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
 
   const positionClasses = {
     'bottom-left': 'fixed bottom-14 left-4 z-40 select-none flex flex-col items-start gap-1.5',
-    'bottom-right': 'fixed bottom-28 right-4 z-40 select-none flex flex-col items-end gap-1.5',
+    'bottom-right': 'fixed bottom-[152px] right-4 z-40 select-none flex flex-col items-end gap-1.5',
     'top-left': 'fixed top-20 left-4 z-40 select-none flex flex-col items-start gap-1.5',
     'top-right': 'fixed top-20 right-4 z-40 select-none flex flex-col items-end gap-1.5',
   }[position] || 'fixed bottom-14 left-4 z-40 select-none flex flex-col items-start gap-1.5';
 
   const bubbleTailClass = isTop
     ? isRight
-      ? 'absolute -top-1.5 right-4 w-3 h-3 bg-white dark:bg-slate-900 border-l border-t border-amber-300 dark:border-amber-500/40 rotate-45'
-      : 'absolute -top-1.5 left-4 w-3 h-3 bg-white dark:bg-slate-900 border-l border-t border-amber-300 dark:border-amber-500/40 rotate-45'
+      ? 'absolute -top-1.5 right-5 w-3 h-3 bg-white dark:bg-slate-900 border-l border-t border-amber-300 dark:border-amber-500/40 rotate-45'
+      : 'absolute -top-1.5 left-5 w-3 h-3 bg-white dark:bg-slate-900 border-l border-t border-amber-300 dark:border-amber-500/40 rotate-45'
     : isRight
-      ? 'absolute -bottom-1.5 right-4 w-3 h-3 bg-white dark:bg-slate-900 border-r border-b border-amber-300 dark:border-amber-500/40 rotate-45'
-      : 'absolute -bottom-1.5 left-4 w-3 h-3 bg-white dark:bg-slate-900 border-r border-b border-amber-300 dark:border-amber-500/40 rotate-45';
+      ? 'absolute -bottom-1.5 right-5 w-3 h-3 bg-white dark:bg-slate-900 border-r border-b border-amber-300 dark:border-amber-500/40 rotate-45'
+      : 'absolute -bottom-1.5 left-5 w-3 h-3 bg-white dark:bg-slate-900 border-r border-b border-amber-300 dark:border-amber-500/40 rotate-45';
 
   const speechBubble = isBubbleVisible && (
     <div className="relative max-w-[220px] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-amber-300 dark:border-amber-500/40 rounded-2xl p-2.5 shadow-xl text-slate-800 dark:text-slate-100 text-xs animate-in fade-in zoom-in-95 duration-200">
@@ -266,10 +266,14 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
       {!isTop && speechBubble}
 
       {/* Mascot Avatar & Actions Bar */}
-      <div className="flex items-center gap-1.5 relative">
+      <div className={`flex items-center gap-1.5 relative ${isRight ? 'flex-row-reverse' : ''}`}>
         {/* Floating Heart Particle Animation on Feed */}
         {showHeartFloater && (
-          <div className="absolute -top-7 left-3 z-50 pointer-events-none flex items-center gap-1 text-xs font-black text-rose-500 animate-in fade-in slide-out-to-top-6 duration-1000">
+          <div
+            className={`absolute -top-7 ${
+              isRight ? 'right-3' : 'left-3'
+            } z-50 pointer-events-none flex items-center gap-1 text-xs font-black text-rose-500 animate-in fade-in slide-out-to-top-6 duration-1000`}
+          >
             <Heart className="w-4 h-4 fill-rose-500 text-rose-500" />
             <span>+1 ❤️</span>
           </div>

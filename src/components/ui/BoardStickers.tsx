@@ -202,7 +202,7 @@ export const BoardStickers: React.FC<BoardStickersProps> = ({
       <div className="fixed bottom-14 right-4 pointer-events-auto z-40 flex flex-col items-end gap-2">
         {/* Drawer Popover */}
         {isDrawerOpen && (
-          <div className="w-72 sm:w-80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-amber-300 dark:border-amber-500/40 rounded-2xl p-3 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+          <div className="w-72 sm:w-80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-amber-300 dark:border-amber-500/40 rounded-2xl p-3 shadow-2xl animate-in fade-in zoom-in-95 duration-150 relative z-50">
             <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-100">
                 <Smile className="w-3.5 h-3.5 text-amber-500" />
