@@ -83,10 +83,19 @@ export default function GalleryPage() {
   }, [session?.user?.id]);
 
   const generateSnapshot = useCallback(async () => {
-    if (!snapshotRef.current) return;
     setIsCapturing(true);
     try {
-      await new Promise((r) => setTimeout(r, 120));
+      await new Promise((r) => setTimeout(r, 150));
+
+      // Jika mode 'original' (Tampilkan Apa Adanya), potret langsung elemen papan yang tampil di layar
+      const liveBoardEl = document.getElementById('kanban-board-canvas');
+      if (privacyMode === 'original' && liveBoardEl) {
+        const dataUrl = await captureNodeAsJpeg(liveBoardEl);
+        setCapturedThumbnail(dataUrl);
+        return;
+      }
+
+      // Jika mode 'cheerful' (Samarkan dengan Teks Ceria) atau kanvas layar tidak ditemukan
       if (snapshotRef.current) {
         const dataUrl = await captureNodeAsJpeg(snapshotRef.current);
         setCapturedThumbnail(dataUrl);
@@ -96,7 +105,7 @@ export default function GalleryPage() {
     } finally {
       setIsCapturing(false);
     }
-  }, []);
+  }, [privacyMode]);
 
   useEffect(() => {
     if (activeTab === 'publish') {

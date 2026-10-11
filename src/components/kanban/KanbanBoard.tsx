@@ -1059,8 +1059,17 @@ export const KanbanBoard: React.FC = () => {
         themeConfig.isDark ? 'text-slate-100' : 'text-slate-800'
       }`}
     >
-      {/* Background Wallpaper / Pattern (Fixed for smooth performance) */}
+      {/* Live Canvas Target for Full Screen Capture (Apa Adanya) */}
       <div
+        id="kanban-board-canvas"
+        className="relative flex flex-col min-h-screen w-full flex-1"
+        style={{
+          ...backgroundPatternStyle,
+          backgroundColor: preferences.customTheme?.bgHex || themeConfig.bgHex || '#faf8f5',
+        }}
+      >
+        {/* Background Wallpaper / Pattern (Fixed for smooth performance) */}
+        <div
         className="fixed inset-0 pointer-events-none z-0 transition-all duration-300 overflow-hidden"
         style={{
           ...backgroundPatternStyle,
@@ -2060,6 +2069,19 @@ export const KanbanBoard: React.FC = () => {
           {preferences.footerText || 'Slam Area © 2026'}
         </p>
       </footer>
+
+      {/* Virtual Desk Buddy Mascot */}
+      <DeskBuddy
+        buddyType={preferences.deskBuddy}
+        soundProfile={preferences.soundProfile}
+        completedTasksCount={doneCount}
+        dailyGoal={preferences.dailyTargetGoal}
+        customName={preferences.deskBuddyCustomName}
+        customQuotes={preferences.deskBuddyCustomQuotes}
+        position={preferences.deskBuddyPosition}
+        size={preferences.deskBuddySize || 'large'}
+      />
+      </div>
       </div>
 
       {/* WhatsApp Quick Paste Modal */}
@@ -2137,18 +2159,6 @@ export const KanbanBoard: React.FC = () => {
         onApplyPreferences={handleApplyShowcase}
         themeConfig={themeConfig}
         tasks={tasks}
-      />
-
-      {/* Virtual Desk Buddy Mascot */}
-      <DeskBuddy
-        buddyType={preferences.deskBuddy}
-        soundProfile={preferences.soundProfile}
-        completedTasksCount={doneCount}
-        dailyGoal={preferences.dailyTargetGoal}
-        customName={preferences.deskBuddyCustomName}
-        customQuotes={preferences.deskBuddyCustomQuotes}
-        position={preferences.deskBuddyPosition}
-        size={preferences.deskBuddySize || 'large'}
       />
 
       {/* Floating Network Error Toast */}
