@@ -115,6 +115,7 @@ export async function POST(request: NextRequest) {
           category: typeof item.category === 'string' ? item.category.trim().slice(0, 50) : 'Personal',
           dueDate: parseDueDate(item.dueDate),
           estimatedTime: typeof item.estimatedTime === 'string' ? item.estimatedTime.trim().slice(0, 50) : null,
+          imageUrl: typeof item.imageUrl === 'string' && item.imageUrl.length > 0 ? item.imageUrl : null,
           order: typeof item.order === 'number' && Number.isFinite(item.order) ? Math.max(0, Math.floor(item.order)) : index,
         }));
 
@@ -136,7 +137,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Single task creation with strict bounds
-    const { title, description, status, priority, category, dueDate, estimatedTime, order } = body;
+    const { title, description, status, priority, category, dueDate, estimatedTime, imageUrl, order } = body;
 
     if (!title || typeof title !== 'string' || !title.trim()) {
       return NextResponse.json(
@@ -155,6 +156,7 @@ export async function POST(request: NextRequest) {
         category: typeof category === 'string' ? category.trim().slice(0, 50) : 'Personal',
         dueDate: parseDueDate(dueDate),
         estimatedTime: typeof estimatedTime === 'string' ? estimatedTime.trim().slice(0, 50) : null,
+        imageUrl: typeof imageUrl === 'string' && imageUrl.length > 0 ? imageUrl : null,
         order: typeof order === 'number' && Number.isFinite(order) ? Math.max(0, Math.floor(order)) : 0,
       },
     });

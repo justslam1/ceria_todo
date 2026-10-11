@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Task, TaskStatus, Priority, CreateTaskInput, UpdateTaskInput } from '@/types/task';
-import { X, Calendar, Clock, AlertCircle, CheckSquare, Plus, Trash2 } from 'lucide-react';
+import { X, Calendar, Clock, AlertCircle, CheckSquare, Plus, Trash2, Image as ImageIcon, Loader2 } from 'lucide-react';
 
 import { CustomCategory, NoteColor } from '@/types/preferences';
 import { getCategoryBadgeClasses, getCategoryDotHex, NOTE_COLOR_OPTIONS } from '@/lib/userPreferences';
 import { CategoryBadge } from '@/components/ui/Badge';
 import { Subtask, parseTaskDescription, stringifyTaskDescription } from '@/lib/subtasks';
+import { compressImage, getImageFileFromClipboard } from '@/lib/imageCompression';
 
 interface TaskFormModalProps {
   isOpen: boolean;
@@ -36,8 +37,11 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
   const [noteColor, setNoteColor] = useState<NoteColor>('auto');
   const [dueDate, setDueDate] = useState('');
   const [estimatedTime, setEstimatedTime] = useState('');
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [isCompressing, setIsCompressing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Helper to convert date to YYYY-MM-DDTHH:mm for datetime-local input
   const toLocalISOString = (dateObj: Date) => {
@@ -69,6 +73,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
       setCategory(taskToEdit.category || 'Personal');
       setDueDate(taskToEdit.dueDate ? toLocalISOString(new Date(taskToEdit.dueDate)) : '');
       setEstimatedTime(taskToEdit.estimatedTime || '');
+      setImageUrl(taskToEdit.imageUrl || null);
     } else {
       setTitle('');
       setDescription('');
@@ -80,6 +85,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
       setCategory('Personal');
       setDueDate('');
       setEstimatedTime('');
+      setImageUrl(null);
     }
     setErrorMsg(null);
   }
@@ -106,6 +112,27 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
 
   if (!isOpen) return null;
 
+  const handleProcessImage = async (file: File | Blob) => {
+    try {
+      setIsCompressing(true);
+      const compressed = await compressImage(file);
+      setImageUrl(compressed);
+    } catch (err) {
+      console.error('Gagal memproses gambar:', err);
+      alert('Gagal memproses gambar. Pastikan format file berupa gambar yang valid.');
+    } finally {
+      setIsCompressing(false);
+    }
+  };
+
+  const handlePaste = async (e: React.ClipboardEvent) => {
+    const imageFile = getImageFileFromClipboard(e);
+    if (imageFile) {
+      e.preventDefault();
+      await handleProcessImage(imageFile);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
@@ -127,6 +154,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
         category: category.trim() || 'Personal',
         dueDate: dueDate ? new Date(dueDate).toISOString() : null,
         estimatedTime: estimatedTime.trim() || null,
+        imageUrl: imageUrl || null,
       };
 
       await onSave(payload, taskToEdit?.id);
@@ -180,17 +208,77 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-              Catatan / Deskripsi (Opsional)
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Catatan / Deskripsi (Opsional)
+              </label>
+              <div className="flex items-center gap-1.5">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      await handleProcessImage(file);
+                      e.target.value = '';
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isCompressing}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-semibold border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors cursor-pointer"
+                  title="Pilih foto/stiker atau tekan Ctrl+V langsung di form"
+                >
+                  {isCompressing ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-500" />
+                  ) : (
+                    <ImageIcon className="w-3.5 h-3.5 text-purple-500" />
+                  )}
+                  <span>{isCompressing ? 'Memproses...' : imageUrl ? 'Ganti Foto' : '+ Gambar/Stiker'}</span>
+                </button>
+              </div>
+            </div>
             <textarea
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Detail tugas atau catatan tambahan..."
+              onPaste={handlePaste}
+              placeholder="Detail tugas atau catatan tambahan (tekan Ctrl+V untuk tempel gambar)..."
               className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-amber-400 focus:border-amber-400 text-sm text-slate-800 resize-none"
             />
           </div>
+
+          {/* Image Attachment Preview */}
+          {imageUrl && (
+            <div className="p-3 rounded-2xl bg-purple-50/50 border border-purple-200/80 space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+                <span className="flex items-center gap-1.5 text-purple-900">
+                  <ImageIcon className="w-3.5 h-3.5 text-purple-600" />
+                  <span>Gambar / Stiker Cover Terpasang:</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setImageUrl(null)}
+                  className="text-[11px] font-semibold text-rose-500 hover:text-rose-600 flex items-center gap-1 cursor-pointer"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Hapus</span>
+                </button>
+              </div>
+              <div className="relative group rounded-xl overflow-hidden border border-purple-100 bg-white max-h-48 flex items-center justify-center p-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={imageUrl}
+                  alt="Cover tugas"
+                  className="w-full max-h-44 object-contain rounded-lg"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Subtask Checklist Section */}
           <div className="p-3.5 rounded-2xl bg-amber-50/50 border border-amber-200/80 space-y-2.5">

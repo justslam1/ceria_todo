@@ -10,6 +10,7 @@ export interface Task {
   category: string;
   dueDate: string | null; // ISO string from JSON
   estimatedTime: string | null;
+  imageUrl?: string | null;
   order: number;
   createdAt: string;
   updatedAt: string;
@@ -23,6 +24,7 @@ export interface CreateTaskInput {
   category?: string;
   dueDate?: string | Date | null;
   estimatedTime?: string | null;
+  imageUrl?: string | null;
   order?: number;
 }
 
@@ -34,6 +36,7 @@ export interface UpdateTaskInput {
   category?: string;
   dueDate?: string | Date | null;
   estimatedTime?: string | null;
+  imageUrl?: string | null;
   order?: number;
 }
 

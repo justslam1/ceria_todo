@@ -28,6 +28,7 @@ import {
   isTaskArchived,
   setTaskArchived,
 } from '@/lib/subtasks';
+import { compressImage, getImageFileFromClipboard } from '@/lib/imageCompression';
 import { triggerCelebration } from '@/lib/confetti';
 import { playPopSound, playVictoryChime, isSoundMuted, setSoundMuted } from '@/lib/soundEffects';
 import {
@@ -237,30 +238,63 @@ export const KanbanBoard: React.FC = () => {
     }
   }, []);
 
-  // Initial notes load
+  // Global paste handler on Kanban Board: Paste image opens TaskForm with image cover
   useEffect(() => {
-    let ignore = false;
+    const handleGlobalPasteOnKanban = async (e: ClipboardEvent) => {
+      // Only active when looking at tasks tab, and not inside input/textarea or open modals
+      if (activeTab !== 'tasks') return;
+      if (isTaskFormOpen || isQuickPasteOpen || isPersonalizationOpen || isArchiveOpen) return;
 
-    async function loadInitialNotes() {
-      try {
-        const res = await fetch('/api/notes', { signal: AbortSignal.timeout(8000) });
-        const data = await res.json();
-        if (!ignore && data.success && Array.isArray(data.data)) {
-          setNotes(data.data);
-        }
-      } catch (err) {
-        if (!ignore) {
-          console.error('Gagal mengambil data catatan:', err);
-        }
+      const target = e.target as HTMLElement | null;
+      if (
+        target?.tagName === 'INPUT' ||
+        target?.tagName === 'TEXTAREA' ||
+        target?.isContentEditable
+      ) {
+        return;
       }
-    }
 
-    loadInitialNotes();
+      const imageFile = getImageFileFromClipboard(e);
+      if (!imageFile) return;
 
-    return () => {
-      ignore = true;
+      e.preventDefault();
+      try {
+        const compressedBase64 = await compressImage(imageFile);
+        // Pre-fill new task with the pasted image cover and open form modal
+        setTaskToEdit({
+          id: '',
+          title: 'Tugas Bergambar',
+          description: null,
+          status: 'TODO',
+          priority: 'MEDIUM',
+          category: 'Personal',
+          dueDate: null,
+          estimatedTime: null,
+          imageUrl: compressedBase64,
+          order: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+        setDefaultStatusForNew('TODO');
+        setIsTaskFormOpen(true);
+        playPopSound(preferences.soundProfile);
+      } catch (err) {
+        console.error('Gagal memproses paste gambar di papan tugas:', err);
+      }
     };
-  }, []);
+
+    window.addEventListener('paste', handleGlobalPasteOnKanban);
+    return () => {
+      window.removeEventListener('paste', handleGlobalPasteOnKanban);
+    };
+  }, [
+    activeTab,
+    isTaskFormOpen,
+    isQuickPasteOpen,
+    isPersonalizationOpen,
+    isArchiveOpen,
+    preferences.soundProfile,
+  ]);
 
   // Fetch notes from API for manual refresh
   const fetchNotes = useCallback(async () => {

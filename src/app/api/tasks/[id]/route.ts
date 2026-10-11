@@ -113,6 +113,7 @@ export async function PATCH(
       category?: string;
       dueDate?: Date | null;
       estimatedTime?: string | null;
+      imageUrl?: string | null;
       order?: number;
     } = {};
 
@@ -156,6 +157,14 @@ export async function PATCH(
         updateData.estimatedTime = null;
       } else if (typeof body.estimatedTime === 'string') {
         updateData.estimatedTime = body.estimatedTime.trim().slice(0, 50);
+      }
+    }
+
+    if (body.imageUrl !== undefined) {
+      if (body.imageUrl === null || body.imageUrl === '') {
+        updateData.imageUrl = null;
+      } else if (typeof body.imageUrl === 'string') {
+        updateData.imageUrl = body.imageUrl;
       }
     }
 

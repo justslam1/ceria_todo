@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Draggable } from '@hello-pangea/dnd';
 import { Task, TaskStatus } from '@/types/task';
 import {
@@ -30,6 +31,8 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
+  ZoomIn,
+  X,
 } from 'lucide-react';
 import { parseTaskDescription } from '@/lib/subtasks';
 
@@ -75,6 +78,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   activeColumnCount = 3,
 }) => {
   const [isSubtasksExpanded, setIsSubtasksExpanded] = useState(false);
+  const [showLightbox, setShowLightbox] = useState(false);
 
   const getNextStatus = (current: TaskStatus): TaskStatus | null => {
     if (current === 'TODO') return activeColumnCount === 2 ? 'DONE' : 'IN_PROGRESS';
@@ -272,6 +276,32 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               </button>
             </div>
           </div>
+
+          {/* Task Image / Sticker Cover */}
+          {task.imageUrl && (
+            <div
+              className="mb-2 rounded-xl overflow-hidden border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 relative group/img cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowLightbox(true);
+              }}
+              title="Klik untuk memperbesar gambar"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={task.imageUrl}
+                alt={task.title || 'Gambar Tugas'}
+                className="w-full max-h-44 object-cover group-hover:scale-[1.02] transition-transform duration-200"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                <span className="text-[11px] font-semibold text-white bg-black/60 px-2.5 py-1 rounded-full backdrop-blur-xs shadow-xs flex items-center gap-1">
+                  <ZoomIn className="w-3 h-3" />
+                  Perbesar
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Sticky Note Title */}
           <h4
@@ -471,6 +501,43 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               )}
             </div>
           </div>
+
+          {/* Lightbox Modal Portal for Full-Size Image */}
+          {showLightbox &&
+            task.imageUrl &&
+            typeof document !== 'undefined' &&
+            createPortal(
+              <div
+                className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
+                onClick={() => setShowLightbox(false)}
+              >
+                <div
+                  className="relative max-w-4xl max-h-[90vh] flex flex-col items-center"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setShowLightbox(false)}
+                    className="absolute -top-12 right-0 p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors cursor-pointer"
+                    title="Tutup (Esc)"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={task.imageUrl}
+                    alt={task.title}
+                    className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-white/20"
+                  />
+                  {task.title && (
+                    <div className="mt-3 px-4 py-1.5 rounded-full bg-black/60 text-white text-xs font-semibold backdrop-blur-xs">
+                      {task.title}
+                    </div>
+                  )}
+                </div>
+              </div>,
+              document.body
+            )}
         </div>
       )}
     </Draggable>
