@@ -19,6 +19,7 @@ import { TaskFormModal } from '@/components/modals/TaskFormModal';
 import { PersonalizationModal } from '@/components/modals/PersonalizationModal';
 import { PomodoroBar } from '@/components/pomodoro/PomodoroBar';
 import { ArchiveModal } from '@/components/modals/ArchiveModal';
+import { QuoteStickerModal } from '@/components/modals/QuoteStickerModal';
 import { DeskBuddy } from '@/components/ui/DeskBuddy';
 import { BoardStickers } from '@/components/ui/BoardStickers';
 import {
@@ -82,6 +83,7 @@ export const KanbanBoard: React.FC = () => {
   // Modals state
   const [isQuickPasteOpen, setIsQuickPasteOpen] = useState(false);
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
+  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [defaultStatusForNew, setDefaultStatusForNew] = useState<TaskStatus>('TODO');
   const [singleColumnTab, setSingleColumnTab] = useState<TaskStatus>('TODO');
@@ -410,6 +412,48 @@ export const KanbanBoard: React.FC = () => {
       }
     } catch (err) {
       console.error('Gagal mengonversi catatan ke tugas:', err);
+    }
+  };
+
+  // Create custom quote sticker via Option 3 (Canvas image sticker)
+  const handleCreateQuoteSticker = async (imageUrl: string, quoteText: string) => {
+    // If user is currently on notes tab, spawn it in notes canvas
+    if (activeTab === 'notes') {
+      const colWidth = 320;
+      const cols = 3;
+      const idx = notes.length;
+      const col = idx % cols;
+      const row = Math.floor(idx / cols);
+      const posX = 24 + col * (colWidth + 24);
+      const posY = 24 + row * 290;
+
+      await handleCreateNote({
+        title: quoteText.slice(0, 50),
+        content: quoteText,
+        imageUrl,
+        isSticker: true,
+        color: 'yellow',
+        isPinned: false,
+        posX,
+        posY,
+      });
+    } else {
+      // If user is on Kanban tasks tab, create a decorative task or switch to notes
+      // Also add as note sticker so it stays persistent and can be viewed anytime
+      await handleCreateNote({
+        title: quoteText.slice(0, 50),
+        content: quoteText,
+        imageUrl,
+        isSticker: true,
+        color: 'yellow',
+        isPinned: false,
+        posX: 50,
+        posY: 50,
+      });
+      // Automatically switch to Notes board so user directly sees their new quote sticker!
+      setActiveTab('notes');
+      triggerCelebration(preferences.celebrationFx);
+      playVictoryChime(preferences.soundProfile);
     }
   };
 
@@ -986,6 +1030,7 @@ export const KanbanBoard: React.FC = () => {
           onChangeStickers={(newStickers) =>
             handleSavePreferences({ ...preferences, stickers: newStickers })
           }
+          onOpenQuoteSticker={() => setIsQuoteModalOpen(true)}
           soundProfile={preferences.soundProfile}
           isDark={themeConfig.isDark}
         />
@@ -1971,6 +2016,15 @@ export const KanbanBoard: React.FC = () => {
         onDeleteArchivedTask={handleDeleteArchivedTask}
         onClearAllArchived={handleClearAllArchived}
         soundProfile={preferences.soundProfile}
+      />
+
+      {/* Quote Sticker Modal (Ocehanmu) */}
+      <QuoteStickerModal
+        isOpen={isQuoteModalOpen}
+        onClose={() => setIsQuoteModalOpen(false)}
+        onSubmit={handleCreateQuoteSticker}
+        soundProfile={preferences.soundProfile}
+        isDark={themeConfig.isDark}
       />
 
       {/* Virtual Desk Buddy Mascot */}

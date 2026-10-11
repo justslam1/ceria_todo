@@ -15,6 +15,7 @@ function createStickerId(count: number): string {
 interface BoardStickersProps {
   stickers: BoardSticker[];
   onChangeStickers: (newStickers: BoardSticker[]) => void;
+  onOpenQuoteSticker?: () => void;
   soundProfile?: SoundProfile;
   isDark?: boolean;
 }
@@ -22,6 +23,7 @@ interface BoardStickersProps {
 export const BoardStickers: React.FC<BoardStickersProps> = ({
   stickers,
   onChangeStickers,
+  onOpenQuoteSticker,
   soundProfile = 'pop',
   isDark = false,
 }) => {
@@ -252,7 +254,7 @@ export const BoardStickers: React.FC<BoardStickersProps> = ({
           </div>
         )}
 
-        {/* Toggle Button */}
+        {/* Toggle Button: Stiker Meja */}
         <button
           type="button"
           onClick={() => {
@@ -276,6 +278,26 @@ export const BoardStickers: React.FC<BoardStickersProps> = ({
             </span>
           )}
         </button>
+
+        {/* Tombol "Ocehanmu" (Quote Sticker Generator) di bawah Stiker Meja */}
+        {onOpenQuoteSticker && (
+          <button
+            type="button"
+            onClick={() => {
+              playPopSound(soundProfile);
+              onOpenQuoteSticker();
+            }}
+            className={`flex items-center gap-2 px-3 py-2 rounded-2xl border shadow-lg font-bold text-xs transition-all cursor-pointer active:scale-95 ${
+              isDark
+                ? 'bg-gradient-to-r from-amber-600/90 to-orange-600/90 hover:from-amber-500 hover:to-orange-500 text-white border-amber-500/50 shadow-amber-950/40'
+                : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-amber-400/80 shadow-orange-200'
+            }`}
+            title="Buat & tempel stiker quote artistik (Ocehanmu) ✨"
+          >
+            <span className="text-base">💬</span>
+            <span className="hidden sm:inline">Ocehanmu</span>
+          </button>
+        )}
       </div>
     </div>
   );
