@@ -21,6 +21,7 @@ import { PomodoroBar } from '@/components/pomodoro/PomodoroBar';
 import { ArchiveModal } from '@/components/modals/ArchiveModal';
 import { QuoteStickerModal } from '@/components/modals/QuoteStickerModal';
 import { PixelArtModal } from '@/components/modals/PixelArtModal';
+import { ImagePasteModal } from '@/components/modals/ImagePasteModal';
 import { DeskBuddy } from '@/components/ui/DeskBuddy';
 import { BoardStickers } from '@/components/ui/BoardStickers';
 import {
@@ -86,6 +87,8 @@ export const KanbanBoard: React.FC = () => {
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [isPixelModalOpen, setIsPixelModalOpen] = useState(false);
+  const [pastedImageUrl, setPastedImageUrl] = useState<string | null>(null);
+  const [isDraggingFileOver, setIsDraggingFileOver] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [defaultStatusForNew, setDefaultStatusForNew] = useState<TaskStatus>('TODO');
   const [singleColumnTab, setSingleColumnTab] = useState<TaskStatus>('TODO');
@@ -182,10 +185,10 @@ export const KanbanBoard: React.FC = () => {
     }
   };
 
-  const handleSavePreferences = (newPrefs: UserPreferences) => {
+  const handleSavePreferences = useCallback((newPrefs: UserPreferences) => {
     setPreferences(newPrefs);
     saveUserPreferences(newPrefs);
-  };
+  }, []);
 
   // Initial load on mount
   useEffect(() => {
@@ -331,31 +334,34 @@ export const KanbanBoard: React.FC = () => {
     }
   }, []);
 
-  const handleCreateNote = async (data: {
-    title: string;
-    content: string;
-    imageUrl?: string | null;
-    isSticker?: boolean;
-    color: NoteColor;
-    isPinned: boolean;
-    posX?: number;
-    posY?: number;
-  }) => {
-    try {
-      const res = await fetch('/api/notes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      const resData = await res.json();
-      if (resData.success && resData.data) {
-        setNotes((prev) => [resData.data, ...prev]);
-        playPopSound(preferences.soundProfile);
+  const handleCreateNote = useCallback(
+    async (data: {
+      title: string;
+      content: string;
+      imageUrl?: string | null;
+      isSticker?: boolean;
+      color: NoteColor;
+      isPinned: boolean;
+      posX?: number;
+      posY?: number;
+    }) => {
+      try {
+        const res = await fetch('/api/notes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        const resData = await res.json();
+        if (resData.success && resData.data) {
+          setNotes((prev) => [resData.data, ...prev]);
+          playPopSound(preferences.soundProfile);
+        }
+      } catch (err) {
+        console.error('Gagal membuat catatan:', err);
       }
-    } catch (err) {
-      console.error('Gagal membuat catatan:', err);
-    }
-  };
+    },
+    [preferences.soundProfile]
+  );
 
   const handleUpdateNote = async (id: string, updateData: Partial<NoteItem>) => {
     setNotes((prev) =>
@@ -512,6 +518,149 @@ export const KanbanBoard: React.FC = () => {
       playVictoryChime(preferences.soundProfile);
     }
   };
+
+  // Process any raw Image File or Blob (from Paste or Drag-and-Drop)
+  const handleProcessPastedImage = useCallback(async (file: File | Blob) => {
+    try {
+      const compressed = await compressImage(file, 1200, 1200, 0.85);
+      setPastedImageUrl(compressed);
+      playPopSound(preferences.soundProfile);
+    } catch (err) {
+      console.error('Gagal memproses gambar yang ditempel:', err);
+    }
+  }, [preferences.soundProfile]);
+
+  // Attach as Desktop Sticker
+  const handleAttachPastedImageAsSticker = useCallback((imgUrl: string) => {
+    const currentStickers = preferences.stickers || [];
+    const newSticker: BoardSticker = {
+      id: `img-stk-${Date.now()}`,
+      imageUrl: imgUrl,
+      text: 'Foto Tempel',
+      width: 240,
+      x: 20 + ((currentStickers.length * 15) % 50),
+      y: 20 + ((currentStickers.length * 18) % 45),
+      rotation: ((currentStickers.length % 5) - 2) * 4,
+      scale: 1,
+    };
+    handleSavePreferences({
+      ...preferences,
+      stickers: [...currentStickers, newSticker],
+    });
+    triggerCelebration(preferences.celebrationFx);
+    playVictoryChime(preferences.soundProfile);
+  }, [preferences, handleSavePreferences]);
+
+  // Attach as Note
+  const handleAttachPastedImageAsNote = useCallback(async (imgUrl: string) => {
+    const colWidth = 320;
+    const cols = 3;
+    const idx = notes.length;
+    const col = idx % cols;
+    const row = Math.floor(idx / cols);
+    const posX = 24 + col * (colWidth + 24);
+    const posY = 24 + row * 290;
+
+    await handleCreateNote({
+      title: 'Catatan Gambar 📷',
+      content: '',
+      imageUrl: imgUrl,
+      isSticker: true,
+      color: 'yellow',
+      isPinned: false,
+      posX,
+      posY,
+    });
+    setActiveTab('notes');
+    triggerCelebration(preferences.celebrationFx);
+    playVictoryChime(preferences.soundProfile);
+  }, [notes.length, handleCreateNote, preferences.celebrationFx, preferences.soundProfile]);
+
+  // Attach as Task
+  const handleAttachPastedImageAsTask = useCallback((imgUrl: string) => {
+    // Open new task modal with image attachment pre-filled
+    setTaskToEdit({
+      id: '',
+      title: 'Tugas dengan Lampiran Foto 📷',
+      description: '',
+      status: 'TODO',
+      priority: 'MEDIUM',
+      category: 'Umum',
+      dueDate: null,
+      estimatedTime: null,
+      imageUrl: imgUrl,
+      order: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+    setDefaultStatusForNew('TODO');
+    setIsTaskFormOpen(true);
+  }, []);
+
+  // Global window Paste & Drag-and-Drop listener
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleWindowPaste = (e: ClipboardEvent) => {
+      // Don't intercept if user is typing inside an input/textarea
+      const activeEl = document.activeElement;
+      if (
+        activeEl &&
+        (activeEl.tagName === 'INPUT' ||
+          activeEl.tagName === 'TEXTAREA' ||
+          (activeEl as HTMLElement).isContentEditable)
+      ) {
+        return;
+      }
+
+      const imgFile = getImageFileFromClipboard(e);
+      if (imgFile) {
+        e.preventDefault();
+        handleProcessPastedImage(imgFile);
+      }
+    };
+
+    const handleWindowDragOver = (e: DragEvent) => {
+      if (e.dataTransfer?.types?.includes('Files')) {
+        e.preventDefault();
+        setIsDraggingFileOver(true);
+      }
+    };
+
+    const handleWindowDragLeave = (e: DragEvent) => {
+      // If moving outside window
+      if (!e.relatedTarget || (e.clientX <= 0 && e.clientY <= 0)) {
+        setIsDraggingFileOver(false);
+      }
+    };
+
+    const handleWindowDrop = (e: DragEvent) => {
+      e.preventDefault();
+      setIsDraggingFileOver(false);
+
+      const files = e.dataTransfer?.files;
+      if (files && files.length > 0) {
+        for (let i = 0; i < files.length; i++) {
+          if (files[i].type.startsWith('image/')) {
+            handleProcessPastedImage(files[i]);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('paste', handleWindowPaste);
+    window.addEventListener('dragover', handleWindowDragOver);
+    window.addEventListener('dragleave', handleWindowDragLeave);
+    window.addEventListener('drop', handleWindowDrop);
+
+    return () => {
+      window.removeEventListener('paste', handleWindowPaste);
+      window.removeEventListener('dragover', handleWindowDragOver);
+      window.removeEventListener('dragleave', handleWindowDragLeave);
+      window.removeEventListener('drop', handleWindowDrop);
+    };
+  }, [handleProcessPastedImage]);
 
   // Active vs Archived tasks
   const activeTasks = useMemo(() => {
@@ -2114,6 +2263,33 @@ export const KanbanBoard: React.FC = () => {
         soundProfile={preferences.soundProfile}
         isDark={themeConfig.isDark}
       />
+
+      {/* Global Image Paste Action Modal */}
+      <ImagePasteModal
+        isOpen={Boolean(pastedImageUrl)}
+        onClose={() => setPastedImageUrl(null)}
+        imageUrl={pastedImageUrl}
+        onAttachAsSticker={handleAttachPastedImageAsSticker}
+        onAttachAsNote={handleAttachPastedImageAsNote}
+        onAttachAsTask={handleAttachPastedImageAsTask}
+        soundProfile={preferences.soundProfile}
+        isDark={themeConfig.isDark}
+      />
+
+      {/* Drag & Drop Visual Overlay */}
+      {isDraggingFileOver && (
+        <div className="fixed inset-0 z-50 pointer-events-none bg-amber-500/20 backdrop-blur-xs border-4 border-dashed border-amber-400 flex items-center justify-center animate-in fade-in duration-150">
+          <div className="bg-white/95 dark:bg-slate-900/95 p-6 rounded-3xl shadow-2xl border border-amber-400 text-center flex flex-col items-center gap-2">
+            <span className="text-4xl animate-bounce">📥</span>
+            <h3 className="font-black text-base text-slate-800 dark:text-slate-100">
+              Lepaskan Gambar di Sini!
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Gambar akan otomatis diproses & ditempelkan ke papan
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Virtual Desk Buddy Mascot */}
       <DeskBuddy
