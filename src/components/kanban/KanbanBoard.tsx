@@ -62,6 +62,7 @@ export const KanbanBoard: React.FC = () => {
     () => false
   );
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [taskCompletedTrigger, setTaskCompletedTrigger] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [soundMuted, setSoundMutedState] = useState(() =>
     typeof window !== 'undefined' ? isSoundMuted() : false
@@ -662,6 +663,7 @@ export const KanbanBoard: React.FC = () => {
     if (isMovingToDone) {
       triggerCelebration(preferences.celebrationFx);
       playVictoryChime(preferences.soundProfile);
+      setTaskCompletedTrigger((prev) => prev + 1);
     } else {
       playPopSound(preferences.soundProfile);
     }
@@ -705,9 +707,13 @@ export const KanbanBoard: React.FC = () => {
 
   // Quick Status change button handler
   const handleStatusChange = async (id: string, newStatus: TaskStatus) => {
-    if (newStatus === 'DONE') {
+    const currentTask = tasks.find((t) => t.id === id);
+    const isMovingToDone = newStatus === 'DONE' && currentTask?.status !== 'DONE';
+
+    if (isMovingToDone) {
       triggerCelebration(preferences.celebrationFx);
       playVictoryChime(preferences.soundProfile);
+      setTaskCompletedTrigger((prev) => prev + 1);
     } else {
       playPopSound(preferences.soundProfile);
     }
@@ -988,7 +994,15 @@ export const KanbanBoard: React.FC = () => {
         if (!res.ok || !data.success) {
           throw new Error(data.error || 'Gagal memperbarui tugas');
         }
-        playPopSound(preferences.soundProfile);
+        const currentTask = tasks.find((t) => t.id === id);
+        const isMovingToDone = taskData.status === 'DONE' && currentTask?.status !== 'DONE';
+        if (isMovingToDone) {
+          triggerCelebration(preferences.celebrationFx);
+          playVictoryChime(preferences.soundProfile);
+          setTaskCompletedTrigger((prev) => prev + 1);
+        } else {
+          playPopSound(preferences.soundProfile);
+        }
         setTasks((prev) => prev.map((t) => (t.id === id ? data.data : t)));
       } else {
         const res = await fetch('/api/tasks', {
@@ -1005,6 +1019,7 @@ export const KanbanBoard: React.FC = () => {
         if (taskData.status === 'DONE') {
           triggerCelebration(preferences.celebrationFx);
           playVictoryChime(preferences.soundProfile);
+          setTaskCompletedTrigger((prev) => prev + 1);
         } else {
           playPopSound(preferences.soundProfile);
         }
@@ -2076,6 +2091,7 @@ export const KanbanBoard: React.FC = () => {
         buddyType={preferences.deskBuddy}
         soundProfile={preferences.soundProfile}
         completedTasksCount={doneCount}
+        taskCompletedTrigger={taskCompletedTrigger}
         dailyGoal={preferences.dailyTargetGoal}
         customName={preferences.deskBuddyCustomName}
         customQuotes={preferences.deskBuddyCustomQuotes}

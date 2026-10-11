@@ -16,6 +16,7 @@ interface DeskBuddyProps {
   position?: DeskBuddyPosition;
   size?: DeskBuddySize;
   isLoading?: boolean;
+  taskCompletedTrigger?: number;
 }
 
 const QUOTES_COLLECTION: Record<string, string[]> = {
@@ -209,14 +210,14 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
   customQuotes = [],
   position = 'bottom-left',
   size = 'large',
-  isLoading = false,
+  taskCompletedTrigger = 0,
 }) => {
   const config = DESK_BUDDY_OPTIONS.find((b) => b.id === buddyType);
 
   const displayName = customName?.trim() || config?.name || 'Maskot';
 
-  // Track previous task count outside of render to prevent false celebrations on load/refresh
-  const prevCountRef = useRef<number | null>(null);
+  // Track task completion trigger ref (starts at current value so page load/refresh never triggers celebration)
+  const prevTriggerRef = useRef<number>(taskCompletedTrigger);
 
   const sizeStyles = {
     normal: {
@@ -291,57 +292,58 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
   }
 
   // Opsi A: Selesaikan tugas memberikan camilan tambahan (+1 Treat / +2 Treat Bonus Target)
+  // Hanya dipicu saat user secara nyata menyelesaikan tugas (taskCompletedTrigger bertambah), BUKAN saat refresh/load awal!
   useEffect(() => {
-    // Saat masih loading awal, sinkronkan baseline count tanpa selebrasi
-    if (isLoading) {
-      prevCountRef.current = completedTasksCount;
-      return;
-    }
-
-    // Pertama kali selesai loading: tetapkan baseline count tanpa selebrasi
-    if (prevCountRef.current === null) {
-      prevCountRef.current = completedTasksCount;
-      return;
-    }
-
-    const prev = prevCountRef.current;
-    if (completedTasksCount > prev && buddyType !== 'none') {
-      prevCountRef.current = completedTasksCount;
-      setIsJumping(true);
-      const earned = completedTasksCount - prev;
-      const isGoalJustReached = completedTasksCount >= dailyGoal && prev < dailyGoal && dailyGoal > 0;
+    if (
+      taskCompletedTrigger > 0 &&
+      taskCompletedTrigger > prevTriggerRef.current &&
+      buddyType !== 'none'
+    ) {
+      prevTriggerRef.current = taskCompletedTrigger;
+      const earned = 1;
+      const isGoalJustReached =
+        completedTasksCount >= dailyGoal &&
+        completedTasksCount - 1 < dailyGoal &&
+        dailyGoal > 0;
       const totalBonus = earned + (isGoalJustReached ? 2 : 0);
 
-      setTreats((prevTreats) => {
-        const next = prevTreats + totalBonus;
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('ceria_desk_buddy_treats', String(next));
+      const triggerTimer = setTimeout(() => {
+        setIsJumping(true);
+        setTreats((prevTreats) => {
+          const next = prevTreats + totalBonus;
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('ceria_desk_buddy_treats', String(next));
+          }
+          return next;
+        });
+
+        setEarnedTreatFloater(totalBonus);
+
+        if (isGoalJustReached) {
+          setBubbleText(
+            `🎉 HORE! Target harian tuntas! Kamu dapat bonus +${totalBonus} ${config?.treatName || 'Camilan'}! Juara sejati! 👑`
+          );
+        } else {
+          const cheerQuotes = [
+            `Mantap! Tugas beres & dapat +${totalBonus} ${config?.treatEmoji} ${config?.treatName || 'Camilan'}! ✨`,
+            `Keren! Stok ${config?.treatEmoji} bertambah! Teruskan momentum positif ini! 🔥`,
+            `Satu langkah lebih dekat ke target harianmu! (+${totalBonus} ${config?.treatEmoji}) 🎯`,
+          ];
+          const picked = cheerQuotes[completedTasksCount % cheerQuotes.length];
+          setBubbleText(picked);
         }
-        return next;
-      });
+        setIsBubbleVisible(true);
+      }, 0);
 
-      setEarnedTreatFloater(totalBonus);
       const floaterTimer = setTimeout(() => setEarnedTreatFloater(0), 1800);
-
-      if (isGoalJustReached) {
-        setBubbleText(
-          `🎉 HORE! Target harian tuntas! Kamu dapat bonus +${totalBonus} ${config?.treatName || 'Camilan'}! Juara sejati! 👑`
-        );
-      } else {
-        const cheerQuotes = [
-          `Mantap! Tugas beres & dapat +${totalBonus} ${config?.treatEmoji} ${config?.treatName || 'Camilan'}! ✨`,
-          `Keren! Stok ${config?.treatEmoji} bertambah! Teruskan momentum positif ini! 🔥`,
-          `Satu langkah lebih dekat ke target harianmu! (+${totalBonus} ${config?.treatEmoji}) 🎯`,
-        ];
-        const picked = cheerQuotes[completedTasksCount % cheerQuotes.length];
-        setBubbleText(picked);
-      }
-      setIsBubbleVisible(true);
-      return () => clearTimeout(floaterTimer);
+      return () => {
+        clearTimeout(triggerTimer);
+        clearTimeout(floaterTimer);
+      };
     } else {
-      prevCountRef.current = completedTasksCount;
+      prevTriggerRef.current = taskCompletedTrigger;
     }
-  }, [completedTasksCount, isLoading, buddyType, dailyGoal, config]);
+  }, [taskCompletedTrigger, buddyType, completedTasksCount, dailyGoal, config]);
 
   // Update interaction timestamp when tasks are completed
   useEffect(() => {
