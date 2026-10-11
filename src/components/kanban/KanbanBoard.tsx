@@ -20,6 +20,7 @@ import { PersonalizationModal } from '@/components/modals/PersonalizationModal';
 import { PomodoroBar } from '@/components/pomodoro/PomodoroBar';
 import { ArchiveModal } from '@/components/modals/ArchiveModal';
 import { QuoteStickerModal } from '@/components/modals/QuoteStickerModal';
+import { PixelArtModal } from '@/components/modals/PixelArtModal';
 import { DeskBuddy } from '@/components/ui/DeskBuddy';
 import { BoardStickers } from '@/components/ui/BoardStickers';
 import {
@@ -84,6 +85,7 @@ export const KanbanBoard: React.FC = () => {
   const [isQuickPasteOpen, setIsQuickPasteOpen] = useState(false);
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+  const [isPixelModalOpen, setIsPixelModalOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [defaultStatusForNew, setDefaultStatusForNew] = useState<TaskStatus>('TODO');
   const [singleColumnTab, setSingleColumnTab] = useState<TaskStatus>('TODO');
@@ -458,6 +460,52 @@ export const KanbanBoard: React.FC = () => {
       handleSavePreferences({
         ...preferences,
         stickers: updatedStickers,
+      });
+
+      triggerCelebration(preferences.celebrationFx);
+      playVictoryChime(preferences.soundProfile);
+    }
+  };
+
+  // Create custom Pixel Art sticker (16x16 canvas export)
+  const handleCreatePixelArtSticker = async (imageUrl: string, title?: string) => {
+    if (activeTab === 'notes') {
+      const colWidth = 320;
+      const cols = 3;
+      const idx = notes.length;
+      const col = idx % cols;
+      const row = Math.floor(idx / cols);
+      const posX = 24 + col * (colWidth + 24);
+      const posY = 24 + row * 290;
+
+      await handleCreateNote({
+        title: title || 'Karya Pixel Art 👾',
+        content: title || 'Karya Pixel Art 👾',
+        imageUrl,
+        isSticker: true,
+        color: 'purple',
+        isPinned: false,
+        posX,
+        posY,
+      });
+      triggerCelebration(preferences.celebrationFx);
+      playVictoryChime(preferences.soundProfile);
+    } else {
+      const currentStickers = preferences.stickers || [];
+      const newPixelSticker: BoardSticker = {
+        id: `pixel-stk-${Date.now()}`,
+        imageUrl,
+        text: title || 'Pixel Art',
+        width: 140, // 140px width makes crisp pixel art look adorable on desktop
+        x: 20 + ((currentStickers.length * 16) % 50),
+        y: 25 + ((currentStickers.length * 19) % 40),
+        rotation: ((currentStickers.length % 5) - 2) * 5,
+        scale: 1,
+      };
+
+      handleSavePreferences({
+        ...preferences,
+        stickers: [...currentStickers, newPixelSticker],
       });
 
       triggerCelebration(preferences.celebrationFx);
@@ -1040,6 +1088,7 @@ export const KanbanBoard: React.FC = () => {
               handleSavePreferences({ ...preferences, stickers: newStickers })
             }
             onOpenQuoteSticker={() => setIsQuoteModalOpen(true)}
+            onOpenPixelArt={() => setIsPixelModalOpen(true)}
             soundProfile={preferences.soundProfile}
             isDark={themeConfig.isDark}
           />
@@ -2033,6 +2082,15 @@ export const KanbanBoard: React.FC = () => {
         isOpen={isQuoteModalOpen}
         onClose={() => setIsQuoteModalOpen(false)}
         onSubmit={handleCreateQuoteSticker}
+        soundProfile={preferences.soundProfile}
+        isDark={themeConfig.isDark}
+      />
+
+      {/* Pixel Art Canvas Modal (16x16) */}
+      <PixelArtModal
+        isOpen={isPixelModalOpen}
+        onClose={() => setIsPixelModalOpen(false)}
+        onSubmit={handleCreatePixelArtSticker}
         soundProfile={preferences.soundProfile}
         isDark={themeConfig.isDark}
       />

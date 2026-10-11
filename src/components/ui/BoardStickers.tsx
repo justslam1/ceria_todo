@@ -16,6 +16,7 @@ interface BoardStickersProps {
   stickers: BoardSticker[];
   onChangeStickers: (newStickers: BoardSticker[]) => void;
   onOpenQuoteSticker?: () => void;
+  onOpenPixelArt?: () => void;
   soundProfile?: SoundProfile;
   isDark?: boolean;
 }
@@ -24,6 +25,7 @@ export const BoardStickers: React.FC<BoardStickersProps> = ({
   stickers,
   onChangeStickers,
   onOpenQuoteSticker,
+  onOpenPixelArt,
   soundProfile = 'pop',
   isDark = false,
 }) => {
@@ -321,6 +323,26 @@ export const BoardStickers: React.FC<BoardStickersProps> = ({
           >
             <span className="text-base">💬</span>
             <span className="hidden sm:inline">Ocehanmu</span>
+          </button>
+        )}
+
+        {/* Tombol "Pixel Art" (16x16 Canvas Studio) */}
+        {onOpenPixelArt && (
+          <button
+            type="button"
+            onClick={() => {
+              playPopSound(soundProfile);
+              onOpenPixelArt();
+            }}
+            className={`flex items-center gap-2 px-3 py-2 rounded-2xl border shadow-lg font-bold text-xs transition-all cursor-pointer active:scale-95 ${
+              isDark
+                ? 'bg-gradient-to-r from-purple-600/90 via-indigo-600/90 to-blue-600/90 hover:from-purple-500 hover:to-blue-500 text-white border-purple-500/50 shadow-purple-950/40'
+                : 'bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white border-purple-400/80 shadow-indigo-200'
+            }`}
+            title="Buka kanvas Pixel Art 16x16 & tempel hasil karyamu! 👾🎨"
+          >
+            <span className="text-base">👾</span>
+            <span className="hidden sm:inline">Pixel Art</span>
           </button>
         )}
       </div>
