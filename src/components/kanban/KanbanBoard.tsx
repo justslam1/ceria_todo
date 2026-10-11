@@ -278,7 +278,15 @@ export const KanbanBoard: React.FC = () => {
     }
   }, []);
 
-  const handleCreateNote = async (data: { title: string; content: string; color: NoteColor; isPinned: boolean; posX?: number; posY?: number }) => {
+  const handleCreateNote = async (data: {
+    title: string;
+    content: string;
+    imageUrl?: string | null;
+    color: NoteColor;
+    isPinned: boolean;
+    posX?: number;
+    posY?: number;
+  }) => {
     try {
       const res = await fetch('/api/notes', {
         method: 'POST',

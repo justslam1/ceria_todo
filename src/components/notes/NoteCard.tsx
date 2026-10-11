@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Pin, Trash2, Edit3, Sparkles, MoreHorizontal } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Pin, Trash2, Edit3, Sparkles, MoreHorizontal, X, ZoomIn } from 'lucide-react';
 import { NoteItem, NoteColor, NOTE_COLOR_STYLES } from '@/types/note';
 import { ThemeConfig } from '@/types/preferences';
 
@@ -32,6 +33,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
   isDragging = false,
 }) => {
   const [showColorMenu, setShowColorMenu] = useState(false);
+  const [showLightbox, setShowLightbox] = useState(false);
   const style = NOTE_COLOR_STYLES[note.color] || NOTE_COLOR_STYLES.yellow;
 
   const formatDate = (isoString: string) => {
@@ -76,7 +78,8 @@ export const NoteCard: React.FC<NoteCardProps> = ({
       target.closest('input') ||
       target.closest('textarea') ||
       target.closest('a') ||
-      target.closest('.group\\/chk')
+      target.closest('.group\\/chk') ||
+      target.closest('.group\\/img')
     ) {
       return;
     }
@@ -169,6 +172,32 @@ export const NoteCard: React.FC<NoteCardProps> = ({
         </div>
       </div>
 
+      {/* Attached Image Thumbnail */}
+      {note.imageUrl && (
+        <div
+          className="mb-3 rounded-xl overflow-hidden border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 relative group/img cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowLightbox(true);
+          }}
+          title="Klik untuk memperbesar gambar"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={note.imageUrl}
+            alt={note.title || 'Gambar Catatan'}
+            className="w-full max-h-48 object-cover group-hover:scale-[1.02] transition-transform duration-200"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+            <span className="text-[11px] font-semibold text-white bg-black/60 px-2.5 py-1 rounded-full backdrop-blur-xs shadow-xs flex items-center gap-1">
+              <ZoomIn className="w-3 h-3" />
+              Perbesar
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Content Area */}
       <div className="flex-1 text-xs sm:text-sm text-slate-700 dark:text-slate-200 space-y-1 mb-3.5 whitespace-pre-wrap break-words leading-relaxed select-text">
         {lines.map((line, idx) => {
@@ -257,6 +286,38 @@ export const NoteCard: React.FC<NoteCardProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Lightbox / Preview Fullscreen Modal */}
+      {showLightbox && note.imageUrl && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowLightbox(false);
+          }}
+        >
+          <div
+            className="relative max-w-4xl max-h-[90vh] flex flex-col items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowLightbox(false)}
+              className="absolute -top-11 right-0 p-2 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full transition-colors cursor-pointer shadow-md"
+              title="Tutup (Esc)"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={note.imageUrl}
+              alt={note.title || 'Preview Gambar'}
+              className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-white/20 select-none"
+            />
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

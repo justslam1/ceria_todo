@@ -68,14 +68,15 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, content, color, isPinned, posX, posY, order } = body;
+    const { title, content, imageUrl, color, isPinned, posX, posY, order } = body;
 
     const trimmedTitle = typeof title === 'string' ? title.trim().slice(0, 200) : '';
     const trimmedContent = typeof content === 'string' ? content.trim().slice(0, 20000) : '';
+    const validImageUrl = typeof imageUrl === 'string' && imageUrl.startsWith('data:image/') ? imageUrl : null;
 
-    if (!trimmedTitle && !trimmedContent) {
+    if (!trimmedTitle && !trimmedContent && !validImageUrl) {
       return NextResponse.json(
-        { success: false, error: 'Judul atau isi catatan tidak boleh kosong' },
+        { success: false, error: 'Judul, isi, atau gambar catatan tidak boleh kosong' },
         { status: 400 }
       );
     }
@@ -85,8 +86,9 @@ export async function POST(request: NextRequest) {
     const note = await prisma.note.create({
       data: {
         userId,
-        title: trimmedTitle || 'Catatan Baru',
+        title: trimmedTitle || (validImageUrl ? 'Catatan Gambar' : 'Catatan Baru'),
         content: trimmedContent,
+        imageUrl: validImageUrl,
         color: validColor,
         isPinned: Boolean(isPinned),
         posX: typeof posX === 'number' && Number.isFinite(posX) ? posX : null,

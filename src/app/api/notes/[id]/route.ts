@@ -89,6 +89,11 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     if (body.content !== undefined) {
       updateData.content = typeof body.content === 'string' ? body.content.trim().slice(0, 20000) : '';
     }
+    if (body.imageUrl !== undefined) {
+      updateData.imageUrl = typeof body.imageUrl === 'string' && body.imageUrl.startsWith('data:image/')
+        ? body.imageUrl
+        : null;
+    }
     if (body.color !== undefined && VALID_COLORS.includes(body.color)) {
       updateData.color = body.color;
     }

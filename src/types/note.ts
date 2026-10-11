@@ -5,6 +5,7 @@ export interface NoteItem {
   userId?: string | null;
   title: string;
   content: string;
+  imageUrl?: string | null;
   color: NoteColor;
   isPinned: boolean;
   posX?: number | null;

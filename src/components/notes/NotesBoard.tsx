@@ -1,19 +1,28 @@
 'use client';
 
-import React, { useState, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Search, Plus, Pin, RefreshCw, BookOpen, Filter, X, LayoutGrid, Wand2, Move, ChevronDown, ChevronUp } from 'lucide-react';
 import { NoteItem, NoteColor, NOTE_COLOR_STYLES } from '@/types/note';
 import { ThemeConfig, UserPreferences } from '@/types/preferences';
 import { NoteCard } from '@/components/notes/NoteCard';
 import { NoteModal } from '@/components/notes/NoteModal';
 import { playPopSound } from '@/lib/soundEffects';
+import { compressImage, getImageFileFromClipboard } from '@/lib/imageCompression';
 
 interface NotesBoardProps {
   notes: NoteItem[];
   isLoading: boolean;
   themeConfig: ThemeConfig;
   preferences?: UserPreferences;
-  onCreateNote: (data: { title: string; content: string; color: NoteColor; isPinned: boolean; posX?: number; posY?: number }) => Promise<void>;
+  onCreateNote: (data: {
+    title: string;
+    content: string;
+    imageUrl?: string | null;
+    color: NoteColor;
+    isPinned: boolean;
+    posX?: number;
+    posY?: number;
+  }) => Promise<void>;
   onUpdateNote: (id: string, data: Partial<NoteItem>) => Promise<void>;
   onDeleteNote: (id: string) => Promise<void>;
   onConvertToTask: (note: NoteItem) => void;
@@ -243,7 +252,13 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
     }
   };
 
-  const handleSaveModal = async (data: { title: string; content: string; color: NoteColor; isPinned: boolean }) => {
+  const handleSaveModal = async (data: {
+    title: string;
+    content: string;
+    imageUrl?: string | null;
+    color: NoteColor;
+    isPinned: boolean;
+  }) => {
     if (activeEditingNote) {
       await onUpdateNote(activeEditingNote.id, data);
     } else {
@@ -261,6 +276,58 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
     }
     handleCloseModal();
   };
+
+  // Listen for global image paste directly on canvas/board
+  useEffect(() => {
+    const handleGlobalPaste = async (e: ClipboardEvent) => {
+      // Ignore if user is typing inside an input, textarea, or contentEditable element, or if modal is open
+      const target = e.target as HTMLElement | null;
+      if (
+        activeModalOpen ||
+        target?.tagName === 'INPUT' ||
+        target?.tagName === 'TEXTAREA' ||
+        target?.isContentEditable
+      ) {
+        return;
+      }
+
+      const imageFile = getImageFileFromClipboard(e);
+      if (!imageFile) return;
+
+      e.preventDefault();
+      try {
+        const compressedBase64 = await compressImage(imageFile);
+
+        // Spawn note near top/center or staggered on canvas
+        const canvasWidth = canvasRef.current?.clientWidth || 1100;
+        const colWidth = 320;
+        const cols = Math.max(1, Math.min(3, Math.floor((canvasWidth - 48) / colWidth)));
+        const idx = filteredNotes.length;
+        const col = idx % cols;
+        const row = Math.floor(idx / cols);
+        const posX = 24 + col * (colWidth + 24);
+        const posY = 24 + row * 290;
+
+        await onCreateNote({
+          title: 'Catatan Gambar',
+          content: '',
+          imageUrl: compressedBase64,
+          color: 'yellow',
+          isPinned: false,
+          posX,
+          posY,
+        });
+        playPopSound(preferences?.soundProfile || 'pop');
+      } catch (err) {
+        console.error('Gagal menempelkan gambar ke papan:', err);
+      }
+    };
+
+    window.addEventListener('paste', handleGlobalPaste);
+    return () => {
+      window.removeEventListener('paste', handleGlobalPaste);
+    };
+  }, [activeModalOpen, filteredNotes.length, onCreateNote, preferences?.soundProfile]);
 
   const handleTogglePin = async (id: string, currentPinned: boolean) => {
     await onUpdateNote(id, { isPinned: !currentPinned });
