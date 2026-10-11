@@ -110,6 +110,8 @@ export interface UserPreferences {
   showDailyGoalBanner: boolean;
   // New: Active Column Layout Count (1, 2, or 3)
   activeColumnCount: ActiveColumnCount;
+  // New: Custom Creative / Printilan FAB Button Label
+  creativeMenuLabel?: string;
 }
 
 export interface ThemeConfig {

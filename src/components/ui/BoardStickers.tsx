@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { BoardSticker, SoundProfile } from '@/types/preferences';
 import { STICKER_PRESETS } from '@/lib/userPreferences';
 import { playPopSound } from '@/lib/soundEffects';
@@ -21,6 +21,7 @@ interface BoardStickersProps {
   soundProfile?: SoundProfile;
   isDark?: boolean;
   isTasksTab?: boolean;
+  creativeMenuLabel?: string;
 }
 
 export const BoardStickers: React.FC<BoardStickersProps> = ({
@@ -32,10 +33,27 @@ export const BoardStickers: React.FC<BoardStickersProps> = ({
   soundProfile = 'pop',
   isDark = false,
   isTasksTab = true,
+  creativeMenuLabel = 'Printilan',
 }) => {
+  const [isSpeedDialOpen, setIsSpeedDialOpen] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activeStickerId, setActiveStickerId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const speedDialRef = useRef<HTMLDivElement>(null);
+
+  const menuLabel = creativeMenuLabel?.trim() || 'Printilan';
+
+  // Close speed dial when clicking outside
+  useEffect(() => {
+    if (!isSpeedDialOpen) return;
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (speedDialRef.current && !speedDialRef.current.contains(e.target as Node)) {
+        setIsSpeedDialOpen(false);
+      }
+    };
+    document.addEventListener('pointerdown', handleClickOutside);
+    return () => document.removeEventListener('pointerdown', handleClickOutside);
+  }, [isSpeedDialOpen]);
 
   // Dragging state ref to avoid render stuttering
   const draggingRef = useRef<{
@@ -237,8 +255,11 @@ export const BoardStickers: React.FC<BoardStickersProps> = ({
         );
       })}
 
-      {/* Floating Sticker Drawer Toggle Button in bottom-right corner (next to buddy/toasts) */}
-      <div className="fixed bottom-14 right-4 pointer-events-auto z-40 flex flex-col items-end gap-2">
+      {/* Floating Speed Dial Container in bottom-right corner (next to buddy/toasts) */}
+      <div
+        ref={speedDialRef}
+        className="fixed bottom-14 right-4 pointer-events-auto z-40 flex flex-col items-end gap-2.5"
+      >
         {/* Drawer Popover */}
         {isDrawerOpen && (
           <div className="w-72 sm:w-80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-amber-300 dark:border-amber-500/40 rounded-2xl p-3 shadow-2xl animate-in fade-in zoom-in-95 duration-150 relative z-50">
@@ -293,70 +314,105 @@ export const BoardStickers: React.FC<BoardStickersProps> = ({
           </div>
         )}
 
-        {/* Toggle Button: Stiker Meja */}
+        {/* 3 Speed Dial Action Items (Tampil meluncur ke atas saat terbuka) */}
+        {isSpeedDialOpen && (
+          <div className="flex flex-col items-end gap-2 animate-in fade-in slide-in-from-bottom-3 duration-200">
+            {/* Action 1: Stiker Meja */}
+            <button
+              type="button"
+              onClick={() => {
+                playPopSound(soundProfile);
+                setIsDrawerOpen((prev) => !prev);
+              }}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl border shadow-xl font-bold text-xs transition-all cursor-pointer hover:scale-105 active:scale-95 ${
+                isDrawerOpen
+                  ? 'bg-amber-500 text-white border-amber-600 ring-2 ring-amber-300'
+                  : isDark
+                  ? 'bg-slate-900/95 text-slate-200 hover:text-white border-slate-700 hover:bg-slate-800'
+                  : 'bg-white/95 text-slate-700 hover:text-amber-800 border-amber-200/80 hover:bg-amber-50/80'
+              }`}
+              title="Buka / Tutup Stiker Meja Dekoratif"
+            >
+              <span className="text-base">🎨</span>
+              <span>Stiker Meja</span>
+              {stickers.length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-amber-400 text-amber-950">
+                  {stickers.length}
+                </span>
+              )}
+            </button>
+
+            {/* Action 2: Ocehanmu */}
+            {onOpenQuoteSticker && (
+              <button
+                type="button"
+                onClick={() => {
+                  playPopSound(soundProfile);
+                  onOpenQuoteSticker();
+                }}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl border shadow-xl font-bold text-xs transition-all cursor-pointer hover:scale-105 active:scale-95 ${
+                  isDark
+                    ? 'bg-gradient-to-r from-amber-600/90 to-orange-600/90 hover:from-amber-500 hover:to-orange-500 text-white border-amber-500/50 shadow-amber-950/40'
+                    : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-amber-400/80 shadow-orange-200'
+                }`}
+                title="Buat & tempel stiker quote artistik (Ocehanmu) ✨"
+              >
+                <span className="text-base">💬</span>
+                <span>Ocehanmu</span>
+              </button>
+            )}
+
+            {/* Action 3: Pixel Art */}
+            {onOpenPixelArt && (
+              <button
+                type="button"
+                onClick={() => {
+                  playPopSound(soundProfile);
+                  onOpenPixelArt();
+                }}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl border shadow-xl font-bold text-xs transition-all cursor-pointer hover:scale-105 active:scale-95 ${
+                  isDark
+                    ? 'bg-gradient-to-r from-purple-600/90 via-indigo-600/90 to-blue-600/90 hover:from-purple-500 hover:to-blue-500 text-white border-purple-500/50 shadow-purple-950/40'
+                    : 'bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white border-purple-400/80 shadow-indigo-200'
+                }`}
+                title="Buka kanvas Pixel Art 16x16 & tempel hasil karyamu! 👾🎨"
+              >
+                <span className="text-base">👾</span>
+                <span>Pixel Art</span>
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Tombol Utama Speed Dial (FAB Printilan) */}
         <button
           type="button"
           onClick={() => {
             playPopSound(soundProfile);
-            setIsDrawerOpen((prev) => !prev);
+            setIsSpeedDialOpen((prev) => !prev);
           }}
-          className={`flex items-center gap-2 px-3 py-2 rounded-2xl border shadow-lg font-bold text-xs transition-all cursor-pointer active:scale-95 ${
-            isDrawerOpen
+          className={`flex items-center gap-2 px-3.5 py-2.5 rounded-2xl border shadow-xl font-bold text-xs transition-all cursor-pointer active:scale-95 hover:scale-105 ${
+            isSpeedDialOpen
               ? 'bg-amber-500 text-white border-amber-600 ring-2 ring-amber-300'
               : isDark
-              ? 'bg-slate-900/90 text-slate-200 hover:text-white border-slate-700 hover:bg-slate-800'
-              : 'bg-white/90 text-slate-700 hover:text-amber-800 border-amber-200/80 hover:bg-amber-50/80'
+              ? 'bg-slate-900/95 text-slate-100 hover:text-white border-slate-700 hover:bg-slate-800'
+              : 'bg-white/95 text-slate-800 hover:text-amber-800 border-amber-200/90 hover:bg-amber-50/90'
           }`}
-          title="Buka / Tutup Stiker Meja Dekoratif"
+          title={isSpeedDialOpen ? 'Tutup menu kreasi' : `Buka menu ${menuLabel}`}
         >
-          <span className="text-base">🎨</span>
-          <span className="hidden sm:inline">Stiker Meja</span>
-          {stickers.length > 0 && (
+          <span className={`text-base transition-transform duration-200 ${isSpeedDialOpen ? 'rotate-90' : ''}`}>
+            {isSpeedDialOpen ? '✕' : '✨'}
+          </span>
+          <span>{isSpeedDialOpen ? 'Tutup' : menuLabel}</span>
+          {!isSpeedDialOpen && stickers.length > 0 && (
             <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-amber-400 text-amber-950">
               {stickers.length}
             </span>
           )}
+          <span className={`text-[10px] transition-transform duration-200 text-slate-400 dark:text-slate-500 ${isSpeedDialOpen ? 'rotate-180' : ''}`}>
+            ▲
+          </span>
         </button>
-
-        {/* Tombol "Ocehanmu" (Quote Sticker Generator) di bawah Stiker Meja */}
-        {onOpenQuoteSticker && (
-          <button
-            type="button"
-            onClick={() => {
-              playPopSound(soundProfile);
-              onOpenQuoteSticker();
-            }}
-            className={`flex items-center gap-2 px-3 py-2 rounded-2xl border shadow-lg font-bold text-xs transition-all cursor-pointer active:scale-95 ${
-              isDark
-                ? 'bg-gradient-to-r from-amber-600/90 to-orange-600/90 hover:from-amber-500 hover:to-orange-500 text-white border-amber-500/50 shadow-amber-950/40'
-                : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-amber-400/80 shadow-orange-200'
-            }`}
-            title="Buat & tempel stiker quote artistik (Ocehanmu) ✨"
-          >
-            <span className="text-base">💬</span>
-            <span className="hidden sm:inline">Ocehanmu</span>
-          </button>
-        )}
-
-        {/* Tombol "Pixel Art" (16x16 Canvas Studio) */}
-        {onOpenPixelArt && (
-          <button
-            type="button"
-            onClick={() => {
-              playPopSound(soundProfile);
-              onOpenPixelArt();
-            }}
-            className={`flex items-center gap-2 px-3 py-2 rounded-2xl border shadow-lg font-bold text-xs transition-all cursor-pointer active:scale-95 ${
-              isDark
-                ? 'bg-gradient-to-r from-purple-600/90 via-indigo-600/90 to-blue-600/90 hover:from-purple-500 hover:to-blue-500 text-white border-purple-500/50 shadow-purple-950/40'
-                : 'bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white border-purple-400/80 shadow-indigo-200'
-            }`}
-            title="Buka kanvas Pixel Art 16x16 & tempel hasil karyamu! 👾🎨"
-          >
-            <span className="text-base">👾</span>
-            <span className="hidden sm:inline">Pixel Art</span>
-          </button>
-        )}
       </div>
     </div>
   );

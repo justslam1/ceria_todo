@@ -144,6 +144,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   showBoardHeader: true,
   showDailyGoalBanner: true,
   activeColumnCount: 3,
+  creativeMenuLabel: 'Printilan',
 };
 
 export const APP_ICON_PRESETS = [

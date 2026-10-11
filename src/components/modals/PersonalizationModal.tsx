@@ -2096,6 +2096,42 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
                     </button>
                   )}
                 </div>
+
+                {/* Kustomisasi Nama Tombol Printilan */}
+                <div className="pt-3 border-t border-amber-200/80 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-amber-950">
+                      Nama Tombol Menu Printilan
+                    </label>
+                    <span className="text-[11px] text-amber-700/80 font-medium">Pojok kanan bawah</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      maxLength={20}
+                      value={formData.creativeMenuLabel || ''}
+                      onChange={(e) => setFormData({ ...formData, creativeMenuLabel: e.target.value })}
+                      placeholder="Printilan (Bawaan)"
+                      className="flex-1 px-3.5 py-2 rounded-xl border border-amber-200 bg-white text-xs font-bold text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-amber-400 placeholder-slate-400"
+                    />
+                    {formData.creativeMenuLabel && formData.creativeMenuLabel !== 'Printilan' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playPopSound(formData.soundProfile);
+                          setFormData({ ...formData, creativeMenuLabel: 'Printilan' });
+                        }}
+                        className="px-3 py-2 text-xs font-bold text-amber-900 bg-white hover:bg-amber-100/60 border border-amber-300 rounded-xl transition-colors cursor-pointer"
+                        title="Kembalikan ke 'Printilan'"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-500">
+                    Tombol speed dial ini akan membuka menu Stiker Meja, Ocehanmu, dan Pixel Art saat diklik.
+                  </p>
+                </div>
               </div>
 
               {/* 7. Teks Footer & Watermark Kustom */}

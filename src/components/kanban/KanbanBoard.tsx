@@ -1134,6 +1134,7 @@ export const KanbanBoard: React.FC = () => {
           soundProfile={preferences.soundProfile}
           isDark={themeConfig.isDark}
           isTasksTab={activeTab === 'tasks'}
+          creativeMenuLabel={preferences.creativeMenuLabel}
         />
 
         {/* Top Navigation with Sound Mute/Unmute & Personalization */}
