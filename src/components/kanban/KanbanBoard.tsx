@@ -1032,16 +1032,18 @@ export const KanbanBoard: React.FC = () => {
 
       {/* Main App Content on top of background */}
       <div className="relative z-1 flex flex-col min-h-screen">
-        {/* Free-floating Corkboard Stickers & Doodles */}
-        <BoardStickers
-          stickers={preferences.stickers || []}
-          onChangeStickers={(newStickers) =>
-            handleSavePreferences({ ...preferences, stickers: newStickers })
-          }
-          onOpenQuoteSticker={() => setIsQuoteModalOpen(true)}
-          soundProfile={preferences.soundProfile}
-          isDark={themeConfig.isDark}
-        />
+        {/* Free-floating Corkboard Stickers & Doodles (Hanya aktif di Papan Tugas) */}
+        {activeTab === 'tasks' && (
+          <BoardStickers
+            stickers={preferences.stickers || []}
+            onChangeStickers={(newStickers) =>
+              handleSavePreferences({ ...preferences, stickers: newStickers })
+            }
+            onOpenQuoteSticker={() => setIsQuoteModalOpen(true)}
+            soundProfile={preferences.soundProfile}
+            isDark={themeConfig.isDark}
+          />
+        )}
 
         {/* Top Navigation with Sound Mute/Unmute & Personalization */}
         <Navbar
