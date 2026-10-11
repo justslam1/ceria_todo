@@ -254,7 +254,7 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
     }
     return config?.defaultQuote || '';
   });
-  const [isBubbleVisible, setIsBubbleVisible] = useState<boolean>(true);
+  const [isBubbleVisible, setIsBubbleVisible] = useState<boolean>(false);
   const [isJumping, setIsJumping] = useState<boolean>(false);
 
   const [treats, setTreats] = useState<number>(() => {
@@ -282,7 +282,6 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
     setPrevBuddyType(buddyType);
     if (config?.defaultQuote) {
       setBubbleText(config.defaultQuote);
-      setIsBubbleVisible(true);
     }
   }
 
