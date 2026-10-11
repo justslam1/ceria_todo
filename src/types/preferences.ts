@@ -1,4 +1,14 @@
-export type ThemeId = 'sunset' | 'matcha' | 'berry' | 'ocean' | 'midnight';
+export type ThemeId = 'sunset' | 'matcha' | 'berry' | 'ocean' | 'midnight' | 'custom';
+export type CustomThemeAccent = 'amber' | 'rose' | 'purple' | 'blue' | 'emerald' | 'red' | 'yellow' | 'slate';
+
+export interface CustomThemeConfig {
+  name: string;
+  emoji: string;
+  accent: CustomThemeAccent;
+  isDark: boolean;
+  bgHex: string;
+}
+
 export type BgPatternId = 'dots' | 'grid' | 'clean' | 'custom';
 export type WashiTapeStyle = 'soft' | 'colorful' | 'pattern' | 'none';
 export type SoundProfile = 'pop' | 'bubble' | 'arcade';
@@ -50,6 +60,7 @@ export interface UserPreferences {
   notesBoardIconColor?: string;
   dailyMotto: string;
   theme: ThemeId;
+  customTheme?: CustomThemeConfig;
   bgPattern: BgPatternId;
   customBgUrl: string | null; // Base64 data URL for custom board wallpaper
   bgDim: number; // 0 to 80 percent dim

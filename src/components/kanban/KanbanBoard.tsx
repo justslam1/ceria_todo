@@ -122,8 +122,8 @@ export const KanbanBoard: React.FC = () => {
 
   // Active Theme Config
   const themeConfig = useMemo(() => {
-    return getThemeConfig(preferences.theme);
-  }, [preferences.theme]);
+    return getThemeConfig(preferences.theme, preferences.customTheme);
+  }, [preferences.theme, preferences.customTheme]);
 
   // Update document title & favicon dynamically with personalized logo, title, slogan & dark mode
   useEffect(() => {

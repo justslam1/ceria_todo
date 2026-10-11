@@ -20,6 +20,8 @@ import {
   PaperTexture,
   BoardSticker,
   ActiveColumnCount,
+  CustomThemeConfig,
+  CustomThemeAccent,
 } from '@/types/preferences';
 
 export type {
@@ -35,6 +37,8 @@ export type {
   PaperTexture,
   BoardSticker,
   ActiveColumnCount,
+  CustomThemeConfig,
+  CustomThemeAccent,
 };
 
 export interface IconColorPreset {
@@ -65,6 +69,14 @@ export const DEFAULT_STICKERS: BoardSticker[] = [
   { id: 'stk-plant', emoji: '🌱', x: 93, y: 78, rotation: -6, scale: 1 },
 ];
 
+export const DEFAULT_CUSTOM_THEME: CustomThemeConfig = {
+  name: 'Tema Kreasiku',
+  emoji: '🎨',
+  accent: 'purple',
+  isDark: false,
+  bgHex: '#faf5ff',
+};
+
 export const DEFAULT_PREFERENCES: UserPreferences = {
   appName: 'Papan Catatan',
   customLogoUrl: null,
@@ -78,6 +90,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   notesBoardIconColor: 'amber',
   dailyMotto: 'Kelola tugas lebih ringan & menyenangkan! ✨',
   theme: 'sunset',
+  customTheme: DEFAULT_CUSTOM_THEME,
   bgPattern: 'dots',
   customBgUrl: null,
   bgDim: 30, // 30% default overlay
@@ -575,6 +588,267 @@ export const THEME_LIST: ThemeConfig[] = [
   },
 ];
 
+export interface CustomThemeAccentOption {
+  id: CustomThemeAccent;
+  name: string;
+  dotHex: string;
+  gradient: string;
+}
+
+export const CUSTOM_THEME_ACCENTS: CustomThemeAccentOption[] = [
+  { id: 'amber', name: 'Amber Oranye', dotHex: '#f97316', gradient: 'bg-gradient-to-tr from-amber-400 to-orange-500' },
+  { id: 'rose', name: 'Rose Pink', dotHex: '#f43f5e', gradient: 'bg-gradient-to-tr from-rose-400 to-pink-500' },
+  { id: 'purple', name: 'Ungu Violet', dotHex: '#a855f7', gradient: 'bg-gradient-to-tr from-purple-500 to-indigo-600' },
+  { id: 'blue', name: 'Biru Ocean', dotHex: '#0284c7', gradient: 'bg-gradient-to-tr from-sky-400 to-blue-600' },
+  { id: 'emerald', name: 'Hijau Mint', dotHex: '#10b981', gradient: 'bg-gradient-to-tr from-emerald-400 to-teal-500' },
+  { id: 'red', name: 'Merah Ruby', dotHex: '#ef4444', gradient: 'bg-gradient-to-tr from-red-500 to-rose-600' },
+  { id: 'yellow', name: 'Kuning Gold', dotHex: '#eab308', gradient: 'bg-gradient-to-tr from-yellow-400 to-amber-500' },
+  { id: 'slate', name: 'Slate Abu', dotHex: '#475569', gradient: 'bg-gradient-to-tr from-slate-600 to-slate-800' },
+];
+
+interface AccentStyles {
+  previewHex: [string, string];
+  light: {
+    accentGradient: string;
+    accentTextGradient: string;
+    primaryButton: string;
+    badgeBg: string;
+    badgeText: string;
+    badgeBorder: string;
+    headerBorder: string;
+    focusRing: string;
+  };
+  dark: {
+    accentGradient: string;
+    accentTextGradient: string;
+    primaryButton: string;
+    badgeBg: string;
+    badgeText: string;
+    badgeBorder: string;
+    headerBorder: string;
+    focusRing: string;
+  };
+}
+
+const ACCENT_STYLE_MAP: Record<CustomThemeAccent, AccentStyles> = {
+  amber: {
+    previewHex: ['#f97316', '#fbbf24'],
+    light: {
+      accentGradient: 'from-amber-400 via-orange-400 to-rose-400',
+      accentTextGradient: 'from-amber-600 via-orange-500 to-rose-500',
+      primaryButton: 'bg-gradient-to-r from-orange-400 to-amber-500 hover:from-orange-500 hover:to-amber-600 text-white shadow-orange-200',
+      badgeBg: 'bg-amber-100',
+      badgeText: 'text-amber-900',
+      badgeBorder: 'border-amber-300',
+      headerBorder: 'border-amber-200/80',
+      focusRing: 'focus:ring-amber-400',
+    },
+    dark: {
+      accentGradient: 'from-orange-500 via-amber-500 to-rose-400',
+      accentTextGradient: 'from-orange-400 via-amber-300 to-rose-300',
+      primaryButton: 'bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white shadow-orange-950/50',
+      badgeBg: 'bg-amber-950/80',
+      badgeText: 'text-amber-200',
+      badgeBorder: 'border-amber-700/80',
+      headerBorder: 'border-slate-700/80',
+      focusRing: 'focus:ring-amber-400',
+    },
+  },
+  rose: {
+    previewHex: ['#f43f5e', '#f472b6'],
+    light: {
+      accentGradient: 'from-pink-400 via-rose-400 to-purple-400',
+      accentTextGradient: 'from-pink-600 via-rose-500 to-purple-600',
+      primaryButton: 'bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white shadow-pink-200',
+      badgeBg: 'bg-pink-100',
+      badgeText: 'text-pink-900',
+      badgeBorder: 'border-pink-300',
+      headerBorder: 'border-pink-200/80',
+      focusRing: 'focus:ring-pink-400',
+    },
+    dark: {
+      accentGradient: 'from-rose-500 via-pink-500 to-purple-400',
+      accentTextGradient: 'from-rose-400 via-pink-300 to-purple-300',
+      primaryButton: 'bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white shadow-rose-950/50',
+      badgeBg: 'bg-rose-950/80',
+      badgeText: 'text-rose-200',
+      badgeBorder: 'border-rose-700/80',
+      headerBorder: 'border-slate-700/80',
+      focusRing: 'focus:ring-rose-400',
+    },
+  },
+  purple: {
+    previewHex: ['#a855f7', '#6366f1'],
+    light: {
+      accentGradient: 'from-purple-500 via-indigo-500 to-pink-400',
+      accentTextGradient: 'from-purple-600 via-indigo-600 to-pink-600',
+      primaryButton: 'bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white shadow-purple-200',
+      badgeBg: 'bg-purple-100',
+      badgeText: 'text-purple-900',
+      badgeBorder: 'border-purple-300',
+      headerBorder: 'border-purple-200/80',
+      focusRing: 'focus:ring-purple-400',
+    },
+    dark: {
+      accentGradient: 'from-purple-500 via-indigo-500 to-pink-400',
+      accentTextGradient: 'from-purple-400 via-indigo-300 to-pink-300',
+      primaryButton: 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-950/50',
+      badgeBg: 'bg-purple-950/80',
+      badgeText: 'text-purple-200',
+      badgeBorder: 'border-purple-700/80',
+      headerBorder: 'border-slate-700/80',
+      focusRing: 'focus:ring-purple-400',
+    },
+  },
+  blue: {
+    previewHex: ['#0284c7', '#38bdf8'],
+    light: {
+      accentGradient: 'from-sky-400 via-cyan-400 to-blue-500',
+      accentTextGradient: 'from-sky-600 via-cyan-600 to-blue-600',
+      primaryButton: 'bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white shadow-sky-200',
+      badgeBg: 'bg-sky-100',
+      badgeText: 'text-sky-900',
+      badgeBorder: 'border-sky-300',
+      headerBorder: 'border-sky-200/80',
+      focusRing: 'focus:ring-sky-400',
+    },
+    dark: {
+      accentGradient: 'from-sky-500 via-blue-500 to-indigo-400',
+      accentTextGradient: 'from-sky-400 via-blue-300 to-indigo-300',
+      primaryButton: 'bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white shadow-sky-950/50',
+      badgeBg: 'bg-sky-950/80',
+      badgeText: 'text-sky-200',
+      badgeBorder: 'border-sky-700/80',
+      headerBorder: 'border-slate-700/80',
+      focusRing: 'focus:ring-sky-400',
+    },
+  },
+  emerald: {
+    previewHex: ['#10b981', '#34d399'],
+    light: {
+      accentGradient: 'from-emerald-400 via-teal-400 to-green-500',
+      accentTextGradient: 'from-emerald-700 via-teal-600 to-green-600',
+      primaryButton: 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-emerald-200',
+      badgeBg: 'bg-emerald-100',
+      badgeText: 'text-emerald-900',
+      badgeBorder: 'border-emerald-300',
+      headerBorder: 'border-emerald-200/80',
+      focusRing: 'focus:ring-emerald-400',
+    },
+    dark: {
+      accentGradient: 'from-emerald-500 via-teal-500 to-green-400',
+      accentTextGradient: 'from-emerald-400 via-teal-300 to-green-300',
+      primaryButton: 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-950/50',
+      badgeBg: 'bg-emerald-950/80',
+      badgeText: 'text-emerald-200',
+      badgeBorder: 'border-emerald-700/80',
+      headerBorder: 'border-slate-700/80',
+      focusRing: 'focus:ring-emerald-400',
+    },
+  },
+  red: {
+    previewHex: ['#ef4444', '#f87171'],
+    light: {
+      accentGradient: 'from-red-500 via-rose-500 to-amber-500',
+      accentTextGradient: 'from-red-600 via-rose-600 to-amber-600',
+      primaryButton: 'bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white shadow-red-200',
+      badgeBg: 'bg-red-100',
+      badgeText: 'text-red-900',
+      badgeBorder: 'border-red-300',
+      headerBorder: 'border-red-200/80',
+      focusRing: 'focus:ring-red-400',
+    },
+    dark: {
+      accentGradient: 'from-red-500 via-rose-500 to-orange-400',
+      accentTextGradient: 'from-red-400 via-rose-300 to-orange-300',
+      primaryButton: 'bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white shadow-red-950/50',
+      badgeBg: 'bg-red-950/80',
+      badgeText: 'text-red-200',
+      badgeBorder: 'border-red-700/80',
+      headerBorder: 'border-slate-700/80',
+      focusRing: 'focus:ring-red-400',
+    },
+  },
+  yellow: {
+    previewHex: ['#eab308', '#facc15'],
+    light: {
+      accentGradient: 'from-amber-400 via-yellow-400 to-orange-400',
+      accentTextGradient: 'from-amber-700 via-yellow-600 to-orange-600',
+      primaryButton: 'bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-white shadow-yellow-200',
+      badgeBg: 'bg-yellow-100',
+      badgeText: 'text-yellow-900',
+      badgeBorder: 'border-yellow-300',
+      headerBorder: 'border-yellow-200/80',
+      focusRing: 'focus:ring-yellow-400',
+    },
+    dark: {
+      accentGradient: 'from-yellow-500 via-amber-500 to-orange-400',
+      accentTextGradient: 'from-yellow-400 via-amber-300 to-orange-300',
+      primaryButton: 'bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white shadow-yellow-950/50',
+      badgeBg: 'bg-yellow-950/80',
+      badgeText: 'text-yellow-200',
+      badgeBorder: 'border-yellow-700/80',
+      headerBorder: 'border-slate-700/80',
+      focusRing: 'focus:ring-yellow-400',
+    },
+  },
+  slate: {
+    previewHex: ['#475569', '#64748b'],
+    light: {
+      accentGradient: 'from-slate-600 via-slate-700 to-zinc-800',
+      accentTextGradient: 'from-slate-700 via-slate-800 to-zinc-900',
+      primaryButton: 'bg-gradient-to-r from-slate-700 to-slate-900 hover:from-slate-800 hover:to-black text-white shadow-slate-300',
+      badgeBg: 'bg-slate-200',
+      badgeText: 'text-slate-800',
+      badgeBorder: 'border-slate-300',
+      headerBorder: 'border-slate-200/80',
+      focusRing: 'focus:ring-slate-400',
+    },
+    dark: {
+      accentGradient: 'from-slate-400 via-slate-300 to-zinc-200',
+      accentTextGradient: 'from-slate-300 via-slate-200 to-white',
+      primaryButton: 'bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-600 hover:to-slate-700 text-white shadow-slate-950/50',
+      badgeBg: 'bg-slate-800',
+      badgeText: 'text-slate-200',
+      badgeBorder: 'border-slate-700',
+      headerBorder: 'border-slate-700/80',
+      focusRing: 'focus:ring-slate-400',
+    },
+  },
+};
+
+export function buildCustomThemeConfig(customTheme?: CustomThemeConfig): ThemeConfig {
+  const accentKey = customTheme?.accent || 'purple';
+  const isDark = Boolean(customTheme?.isDark);
+  const accentData = ACCENT_STYLE_MAP[accentKey] || ACCENT_STYLE_MAP.purple;
+  const style = isDark ? accentData.dark : accentData.light;
+
+  const defaultBg = isDark ? '#14161d' : '#fcfaf7';
+  const bgHex = customTheme?.bgHex || defaultBg;
+  const dotColor = isDark ? '#2b3040' : '#cbd5e1';
+
+  return {
+    id: 'custom',
+    name: customTheme?.name?.trim() || 'Tema Kreasiku',
+    tagline: isDark ? 'Tema custom gelap pilihanmu ✨' : 'Tema custom terang pilihanmu ✨',
+    emoji: customTheme?.emoji || '🎨',
+    previewColors: [accentData.previewHex[0], accentData.previewHex[1], bgHex],
+    bgClass: isDark ? 'bg-[#14161d]' : 'bg-[#faf8f5]',
+    bgHex,
+    dotColor,
+    cardBg: isDark ? 'bg-[#1e222d]/90' : 'bg-white/90',
+    headerBorder: style.headerBorder,
+    badgeBg: style.badgeBg,
+    badgeText: style.badgeText,
+    badgeBorder: style.badgeBorder,
+    accentGradient: style.accentGradient,
+    accentTextGradient: style.accentTextGradient,
+    primaryButton: style.primaryButton,
+    focusRing: style.focusRing,
+    isDark,
+  };
+}
+
 export const PATTERN_OPTIONS: { id: BgPatternId; label: string; icon: string; desc: string }[] = [
   { id: 'dots', label: 'Polkadot Dots', icon: '⁖', desc: 'Pola titik halus klasik' },
   { id: 'grid', label: 'Buku Berpetak', icon: '▦', desc: 'Garis grid kertas catatan' },
@@ -777,6 +1051,7 @@ export function loadUserPreferences(): UserPreferences {
       customCategories: Array.isArray(parsed.customCategories) && parsed.customCategories.length > 0
         ? parsed.customCategories
         : DEFAULT_PREFERENCES.customCategories,
+      customTheme: parsed.customTheme ? { ...DEFAULT_CUSTOM_THEME, ...parsed.customTheme } : DEFAULT_CUSTOM_THEME,
     };
   } catch (err) {
     console.warn('Gagal membaca preferensi pengguna dari localStorage:', err);
@@ -810,7 +1085,10 @@ export function saveUserPreferences(prefs: UserPreferences): void {
   }
 }
 
-export function getThemeConfig(themeId: string): ThemeConfig {
+export function getThemeConfig(themeId: string, customTheme?: CustomThemeConfig): ThemeConfig {
+  if (themeId === 'custom') {
+    return buildCustomThemeConfig(customTheme);
+  }
   const found = THEME_LIST.find((t) => t.id === themeId);
   return found || THEME_LIST[0];
 }

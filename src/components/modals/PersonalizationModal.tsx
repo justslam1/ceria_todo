@@ -28,6 +28,9 @@ import {
   DEFAULT_STICKERS,
   getPaperTextureStyle,
   NOTES_BOARD_ICON_COLORS,
+  CUSTOM_THEME_ACCENTS,
+  buildCustomThemeConfig,
+  DEFAULT_CUSTOM_THEME,
 } from '@/lib/userPreferences';
 import { compressImageToDataUrl, compressWallpaperImageToDataUrl } from '@/lib/imageCompressor';
 import { triggerCelebration } from '@/lib/confetti';
@@ -111,7 +114,10 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
 
   if (!isOpen) return null;
 
-  const currentThemeConfig = THEME_LIST.find((t) => t.id === formData.theme) || THEME_LIST[0];
+  const customThemeConfig = buildCustomThemeConfig(formData.customTheme);
+  const currentThemeConfig = formData.theme === 'custom'
+    ? customThemeConfig
+    : THEME_LIST.find((t) => t.id === formData.theme) || THEME_LIST[0];
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -982,8 +988,9 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
                   Palet Warna Tema
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {THEME_LIST.map((theme) => {
+                  {[...THEME_LIST, customThemeConfig].map((theme) => {
                     const isSelected = formData.theme === theme.id;
+                    const isCustom = theme.id === 'custom';
                     return (
                       <div
                         key={theme.id}
@@ -997,24 +1004,29 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
                             : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                         }`}
                       >
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl">{theme.emoji}</span>
-                          <div>
-                            <div className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
-                              {theme.name}
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="text-2xl shrink-0">{theme.emoji}</span>
+                          <div className="min-w-0">
+                            <div className="font-bold text-xs text-slate-800 flex items-center gap-1.5 flex-wrap">
+                              <span>{theme.name}</span>
+                              {isCustom && (
+                                <span className="text-[10px] px-1.5 py-0.2 bg-amber-500 text-white rounded-md font-bold">
+                                  Custom
+                                </span>
+                              )}
                               {theme.isDark && (
                                 <span className="text-[10px] px-1.5 py-0.2 bg-slate-800 text-slate-200 rounded-md">
                                   Dark
                                 </span>
                               )}
                             </div>
-                            <p className="text-[11px] text-slate-500 leading-tight">
+                            <p className="text-[11px] text-slate-500 leading-tight truncate">
                               {theme.tagline}
                             </p>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-1 pl-2">
+                        <div className="flex items-center gap-1 pl-2 shrink-0">
                           <div className="flex -space-x-1.5 items-center">
                             {theme.previewColors.map((hex, i) => (
                               <span
@@ -1025,13 +1037,258 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
                             ))}
                           </div>
                           {isSelected && (
-                            <Check className="w-4 h-4 text-orange-600 ml-1.5" />
+                            <Check className="w-4 h-4 text-orange-600 ml-1.5 shrink-0" />
                           )}
                         </div>
                       </div>
                     );
                   })}
                 </div>
+
+                {/* Panel Kustomisasi Tema Bebas jika Custom dipilih */}
+                {formData.theme === 'custom' && (
+                  <div className="mt-3.5 p-4 rounded-2xl bg-amber-50/50 dark:bg-slate-800/60 border border-amber-200/80 dark:border-slate-700 space-y-4 animate-in fade-in zoom-in-95">
+                    <div className="flex items-center justify-between border-b border-amber-200/60 dark:border-slate-700/60 pb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">🎨</span>
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100">
+                            Atur Tema Bebas Kreasimu
+                          </h4>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                            Pilih mode tampilan, warna aksen, tombol, dan warna latar papan buletin
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 1. Mode Terang vs Gelap */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                        Mode Tampilan Dasar
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playPopSound(formData.soundProfile);
+                            setFormData({
+                              ...formData,
+                              customTheme: {
+                                ...(formData.customTheme || DEFAULT_CUSTOM_THEME),
+                                isDark: false,
+                                bgHex:
+                                  formData.customTheme?.bgHex === '#14161d'
+                                    ? '#faf5ff'
+                                    : formData.customTheme?.bgHex || '#faf5ff',
+                              },
+                            });
+                          }}
+                          className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                            !formData.customTheme?.isDark
+                              ? 'bg-white border-amber-500 text-amber-900 shadow-xs ring-1 ring-amber-400'
+                              : 'bg-white/40 border-slate-200 text-slate-600 hover:bg-white'
+                          }`}
+                        >
+                          <span>☀️</span>
+                          <span>Terang (Light)</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playPopSound(formData.soundProfile);
+                            setFormData({
+                              ...formData,
+                              customTheme: {
+                                ...(formData.customTheme || DEFAULT_CUSTOM_THEME),
+                                isDark: true,
+                                bgHex:
+                                  formData.customTheme?.bgHex === '#faf5ff'
+                                    ? '#14161d'
+                                    : formData.customTheme?.bgHex || '#14161d',
+                              },
+                            });
+                          }}
+                          className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                            formData.customTheme?.isDark
+                              ? 'bg-slate-900 border-indigo-400 text-indigo-200 shadow-xs ring-1 ring-indigo-400'
+                              : 'bg-white/40 border-slate-200 text-slate-600 hover:bg-slate-900 hover:text-white'
+                          }`}
+                        >
+                          <span>🌙</span>
+                          <span>Gelap (Dark)</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 2. Warna Aksen & Tombol Utama */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                        Warna Aksen & Tombol
+                      </label>
+                      <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                        {CUSTOM_THEME_ACCENTS.map((acc) => {
+                          const isAccSelected =
+                            (formData.customTheme?.accent || 'purple') === acc.id;
+                          return (
+                            <button
+                              key={acc.id}
+                              type="button"
+                              onClick={() => {
+                                playPopSound(formData.soundProfile);
+                                setFormData({
+                                  ...formData,
+                                  customTheme: {
+                                    ...(formData.customTheme || DEFAULT_CUSTOM_THEME),
+                                    accent: acc.id,
+                                  },
+                                });
+                              }}
+                              className={`h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
+                                acc.gradient
+                              } ${
+                                isAccSelected
+                                  ? 'ring-2 ring-white dark:ring-amber-400 shadow-md scale-105'
+                                  : 'opacity-80 hover:opacity-100 hover:scale-105'
+                              }`}
+                              title={acc.name}
+                            >
+                              {isAccSelected && (
+                                <Check className="w-4 h-4 text-white drop-shadow-sm" />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* 3. Warna Latar Belakang Papan */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                        Warna Latar Papan (Background)
+                      </label>
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {(formData.customTheme?.isDark
+                            ? ['#14161d', '#0f172a', '#1e1b4b', '#022c22', '#18181b', '#1c1917']
+                            : ['#faf5ff', '#faf8f5', '#f0fdf4', '#f0f9ff', '#fffbeb', '#ffffff']
+                          ).map((hex) => (
+                            <button
+                              key={hex}
+                              type="button"
+                              onClick={() => {
+                                playPopSound(formData.soundProfile);
+                                setFormData({
+                                  ...formData,
+                                  customTheme: {
+                                    ...(formData.customTheme || DEFAULT_CUSTOM_THEME),
+                                    bgHex: hex,
+                                  },
+                                });
+                              }}
+                              className={`w-7 h-7 rounded-xl border transition-all cursor-pointer ${
+                                formData.customTheme?.bgHex === hex
+                                  ? 'ring-2 ring-amber-500 scale-110 shadow-xs'
+                                  : 'hover:scale-105 border-slate-300 dark:border-slate-600'
+                              }`}
+                              style={{ backgroundColor: hex }}
+                              title={hex}
+                            />
+                          ))}
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <input
+                            type="color"
+                            value={formData.customTheme?.bgHex || '#faf5ff'}
+                            onChange={(e) => {
+                              setFormData({
+                                ...formData,
+                                customTheme: {
+                                  ...(formData.customTheme || DEFAULT_CUSTOM_THEME),
+                                  bgHex: e.target.value,
+                                },
+                              });
+                            }}
+                            className="w-8 h-8 rounded-xl border border-slate-300 dark:border-slate-600 cursor-pointer p-0.5 bg-white dark:bg-slate-800 shrink-0"
+                            title="Pilih warna bebas via color picker"
+                          />
+                          <input
+                            type="text"
+                            value={formData.customTheme?.bgHex || '#faf5ff'}
+                            maxLength={20}
+                            onChange={(e) => {
+                              setFormData({
+                                ...formData,
+                                customTheme: {
+                                  ...(formData.customTheme || DEFAULT_CUSTOM_THEME),
+                                  bgHex: e.target.value,
+                                },
+                              });
+                            }}
+                            placeholder="#faf5ff"
+                            className="w-24 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-600 text-xs font-mono uppercase bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 4. Nama & Emoji Tema */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                          Nama Tema Kustom
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.customTheme?.name ?? 'Tema Kreasiku'}
+                          maxLength={30}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              customTheme: {
+                                ...(formData.customTheme || DEFAULT_CUSTOM_THEME),
+                                name: e.target.value,
+                              },
+                            })
+                          }
+                          placeholder="Misal: Pastel Dream, Cyberpunk"
+                          className="w-full px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-600 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                          Emoji Tema
+                        </label>
+                        <div className="flex items-center gap-1 flex-wrap">
+                          {['🎨', '🌈', '🔮', '💎', '🌺', '🪐', '⚡', '🍬'].map((em) => (
+                            <button
+                              key={em}
+                              type="button"
+                              onClick={() => {
+                                playPopSound(formData.soundProfile);
+                                setFormData({
+                                  ...formData,
+                                  customTheme: {
+                                    ...(formData.customTheme || DEFAULT_CUSTOM_THEME),
+                                    emoji: em,
+                                  },
+                                });
+                              }}
+                              className={`w-7 h-7 rounded-lg text-sm flex items-center justify-center transition-all cursor-pointer ${
+                                (formData.customTheme?.emoji || '🎨') === em
+                                  ? 'bg-amber-100 dark:bg-amber-900/60 ring-2 ring-amber-400 scale-110'
+                                  : 'hover:bg-slate-100 dark:hover:bg-slate-700'
+                              }`}
+                            >
+                              {em}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Background Pattern */}
