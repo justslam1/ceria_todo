@@ -133,6 +133,9 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   viewDensity: 'cozy',
   sortBy: 'manual',
   deskBuddy: 'cat',
+  deskBuddyCustomName: '',
+  deskBuddyCustomQuotes: [],
+  deskBuddyPosition: 'bottom-left',
   footerText: 'Slam Area © 2026',
   paperTexture: 'plain',
   stickers: DEFAULT_STICKERS,
@@ -922,12 +925,17 @@ export const DESK_BUDDY_OPTIONS: {
   avatar: string;
   desc: string;
   defaultQuote: string;
+  treatEmoji: string;
+  treatName: string;
 }[] = [
-  { id: 'cat', name: 'Mimi si Kucing', avatar: '🐱', desc: 'Kucing manis penyemangat kerja', defaultQuote: 'Meow! Satu per satu pasti kelar kok! 🐾' },
-  { id: 'dog', name: 'Bobi si Anjing', avatar: '🐶', desc: 'Anjing setia yang selalu bersemangat', defaultQuote: 'Guk! Kamu pasti bisa, ayo semangat! 🦴' },
-  { id: 'plant', name: 'Moko si Sukulen', avatar: '🌱', desc: 'Tanaman tenang pembawa fokus', defaultQuote: 'Tumbuh sedikit demi sedikit setiap hari 🌿' },
-  { id: 'coffee', name: 'KopiBot Barista', avatar: '☕', desc: 'Robot kopi pembangkit energi', defaultQuote: 'Bip-bop! Jangan lupa seduh kopi & minum air! ⚡' },
-  { id: 'none', name: 'Tanpa Maskot', avatar: '🚫', desc: 'Tampilan bersih tanpa teman meja', defaultQuote: '' },
+  { id: 'cat', name: 'Mimi si Kucing', avatar: '🐱', desc: 'Kucing manis penyemangat kerja', defaultQuote: 'Meow! Satu per satu pasti kelar kok! 🐾', treatEmoji: '🐟', treatName: 'Ikan Lezat' },
+  { id: 'dog', name: 'Bobi si Anjing', avatar: '🐶', desc: 'Anjing setia yang selalu bersemangat', defaultQuote: 'Guk! Kamu pasti bisa, ayo semangat! 🦴', treatEmoji: '🦴', treatName: 'Biskuit Tulang' },
+  { id: 'plant', name: 'Moko si Sukulen', avatar: '🌱', desc: 'Tanaman tenang pembawa fokus', defaultQuote: 'Tumbuh sedikit demi sedikit setiap hari 🌿', treatEmoji: '💧', treatName: 'Air Segar' },
+  { id: 'coffee', name: 'KopiBot Barista', avatar: '☕', desc: 'Robot kopi pembangkit energi', defaultQuote: 'Bip-bop! Jangan lupa seduh kopi & minum air! ⚡', treatEmoji: '🍩', treatName: 'Donat Manis' },
+  { id: 'owl', name: 'Hooti si Burung Hantu', avatar: '🦉', desc: 'Burung hantu bijak penjaga fokus malam', defaultQuote: 'Hoo-hoo! Setiap keputusan bijak lahir dari ketenangan 🌙', treatEmoji: '🌰', treatName: 'Biji Kenari' },
+  { id: 'robot', name: 'Bip-Bop si Robot', avatar: '🤖', desc: 'Asisten cerdas pendukung produktivitas', defaultQuote: 'Bip-bip-bop! Efisiensi tinggi terdeteksi hari ini! ⚡', treatEmoji: '🔋', treatName: 'Baterai Super' },
+  { id: 'toast', name: 'Roti si Roti Panggang', avatar: '🍞', desc: 'Roti hangat lucu & teman sarapan renyah', defaultQuote: 'Hangat & renyah! Jangan lupa sarapan biar bertenaga! 🍓', treatEmoji: '🍓', treatName: 'Selai Manis' },
+  { id: 'none', name: 'Tanpa Maskot', avatar: '🚫', desc: 'Tampilan bersih tanpa teman meja', defaultQuote: '', treatEmoji: '', treatName: '' },
 ];
 
 export const PAPER_TEXTURE_OPTIONS: {
@@ -1036,6 +1044,9 @@ export function loadUserPreferences(): UserPreferences {
       viewDensity: parsed.viewDensity || DEFAULT_PREFERENCES.viewDensity,
       sortBy: parsed.sortBy || DEFAULT_PREFERENCES.sortBy,
       deskBuddy: parsed.deskBuddy || DEFAULT_PREFERENCES.deskBuddy,
+      deskBuddyCustomName: typeof parsed.deskBuddyCustomName === 'string' ? parsed.deskBuddyCustomName : '',
+      deskBuddyCustomQuotes: Array.isArray(parsed.deskBuddyCustomQuotes) ? parsed.deskBuddyCustomQuotes : [],
+      deskBuddyPosition: ['bottom-left', 'bottom-right', 'top-left', 'top-right'].includes(parsed.deskBuddyPosition) ? parsed.deskBuddyPosition : 'bottom-left',
       footerText: typeof parsed.footerText === 'string' ? parsed.footerText : DEFAULT_PREFERENCES.footerText,
       paperTexture: parsed.paperTexture || DEFAULT_PREFERENCES.paperTexture,
       stickers: Array.isArray(parsed.stickers) ? parsed.stickers : DEFAULT_PREFERENCES.stickers,

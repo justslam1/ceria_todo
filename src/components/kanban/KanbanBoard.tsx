@@ -2033,6 +2033,9 @@ export const KanbanBoard: React.FC = () => {
         soundProfile={preferences.soundProfile}
         completedTasksCount={doneCount}
         dailyGoal={preferences.dailyTargetGoal}
+        customName={preferences.deskBuddyCustomName}
+        customQuotes={preferences.deskBuddyCustomQuotes}
+        position={preferences.deskBuddyPosition}
       />
 
       {/* Floating Network Error Toast */}

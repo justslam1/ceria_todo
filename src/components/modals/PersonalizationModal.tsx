@@ -4,6 +4,7 @@ import {
   ThemeId,
   PaperTexture,
   ActiveColumnCount,
+  DeskBuddyPosition,
 } from '@/types/preferences';
 import {
   THEME_LIST,
@@ -1832,7 +1833,7 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
               </div>
 
               {/* 4. Teman Meja Virtual (Desk Buddy Mascot) */}
-              <div className="p-4 rounded-2xl bg-sky-50/40 border border-sky-200/80 space-y-3">
+              <div className="p-4 rounded-2xl bg-sky-50/40 border border-sky-200/80 space-y-3.5">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-bold text-sky-950 uppercase tracking-wider flex items-center gap-1.5">
                     <Smile className="w-4 h-4 text-sky-600" />
@@ -1842,10 +1843,11 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
                 </div>
 
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Maskot interaktif yang menemani hari kerjamu, menyemangati setiap kali tugas selesai, dan memberikan kutipan motivasi saat diklik.
+                  Maskot interaktif yang menemani hari kerjamu, menyemangati setiap kali tugas selesai, bisa diberi makan camilan favorit, dan memberikan kutipan motivasi saat diklik.
                 </p>
 
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                {/* Karakter Maskot Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                   {DESK_BUDDY_OPTIONS.map((opt) => {
                     const isSelected = (formData.deskBuddy || 'cat') === opt.id;
                     return (
@@ -1856,7 +1858,7 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
                           playPopSound(formData.soundProfile);
                           setFormData({ ...formData, deskBuddy: opt.id });
                         }}
-                        className={`p-3 rounded-2xl border text-center transition-all cursor-pointer flex flex-col items-center justify-between gap-1 ${
+                        className={`p-3 rounded-2xl border text-center transition-all cursor-pointer flex flex-col items-center justify-between gap-1.5 ${
                           isSelected
                             ? 'border-sky-500 bg-white shadow-xs ring-2 ring-sky-300'
                             : 'border-sky-200/70 bg-white/70 hover:bg-white hover:border-sky-300'
@@ -1867,10 +1869,95 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
                           <span className="font-bold text-xs text-slate-800 block">{opt.name.split(' ')[0]}</span>
                           <span className="text-[10px] text-slate-400 block line-clamp-1">{opt.desc}</span>
                         </div>
+                        {opt.treatEmoji && (
+                          <span className="text-[9px] font-medium text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded-full border border-sky-100 flex items-center gap-1">
+                            <span>{opt.treatEmoji}</span>
+                            <span>{opt.treatName}</span>
+                          </span>
+                        )}
                       </button>
                     );
                   })}
                 </div>
+
+                {/* Konfigurasi Tambahan Maskot (jika bukan 'none') */}
+                {formData.deskBuddy !== 'none' && (
+                  <div className="pt-3 border-t border-sky-200/60 space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Nama Panggilan Kustom */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          Nama Panggilan Maskot (Opsional)
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.deskBuddyCustomName || ''}
+                          onChange={(e) => setFormData({ ...formData, deskBuddyCustomName: e.target.value })}
+                          placeholder="Bawaan: sesuai karakter"
+                          className="w-full px-3 py-2 text-xs rounded-xl border border-sky-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-400 placeholder:text-slate-400 shadow-2xs"
+                        />
+                      </div>
+
+                      {/* Posisi Maskot di Papan */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          Posisi Maskot di Layar
+                        </label>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {(
+                            [
+                              { id: 'bottom-left', label: '↙️ Kiri Bawah' },
+                              { id: 'bottom-right', label: '↘️ Kanan Bawah' },
+                              { id: 'top-left', label: '↖️ Kiri Atas' },
+                              { id: 'top-right', label: '↗️ Kanan Atas' },
+                            ] as { id: DeskBuddyPosition; label: string }[]
+                          ).map((pos) => {
+                            const isCurrent = (formData.deskBuddyPosition || 'bottom-left') === pos.id;
+                            return (
+                              <button
+                                key={pos.id}
+                                type="button"
+                                onClick={() => {
+                                  playPopSound(formData.soundProfile);
+                                  setFormData({ ...formData, deskBuddyPosition: pos.id });
+                                }}
+                                className={`px-2 py-1.5 rounded-xl text-[11px] font-semibold border transition-all cursor-pointer ${
+                                  isCurrent
+                                    ? 'bg-sky-500 text-white border-sky-600 shadow-2xs'
+                                    : 'bg-white text-slate-600 border-sky-200 hover:bg-sky-50'
+                                }`}
+                              >
+                                {pos.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Sapaan / Kutipan Kustom */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-[11px] font-bold text-slate-700">
+                          Sapaan / Kutipan Motivasi Kustom (Satu per baris)
+                        </label>
+                        <span className="text-[10px] text-sky-600">
+                          Muncul bergantian saat maskot disapa ✨
+                        </span>
+                      </div>
+                      <textarea
+                        rows={2}
+                        value={(formData.deskBuddyCustomQuotes || []).join('\n')}
+                        onChange={(e) => {
+                          const quotes = e.target.value.split('\n');
+                          setFormData({ ...formData, deskBuddyCustomQuotes: quotes });
+                        }}
+                        placeholder="Contoh:&#10;Fokus 25 menit lagi, setelah itu kita pesan es teh! 🧋&#10;Jangan lupa duduk tegak ya! ✨"
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-sky-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-400 placeholder:text-slate-400 leading-relaxed resize-none shadow-2xs"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* 5. Tekstur Kertas Catatan (Paper Textures) */}

@@ -21,7 +21,8 @@ export type CompletionStamp = 'SELESAI!' | 'LUNAS' | 'APPROVED' | 'MANTAP! 👍'
 export type StampColor = 'red' | 'green' | 'blue' | 'purple' | 'gold';
 export type ViewDensity = 'cozy' | 'compact';
 export type SortByOption = 'manual' | 'priority' | 'dueDate' | 'title';
-export type DeskBuddyType = 'cat' | 'dog' | 'plant' | 'coffee' | 'none';
+export type DeskBuddyType = 'cat' | 'dog' | 'plant' | 'coffee' | 'owl' | 'robot' | 'toast' | 'none';
+export type DeskBuddyPosition = 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right';
 export type PaperTexture = 'plain' | 'grid' | 'lined' | 'dots' | 'kraft';
 export type ActiveColumnCount = 1 | 2 | 3;
 
@@ -91,6 +92,9 @@ export interface UserPreferences {
   sortBy: SortByOption;
   // New: Desk Buddy Mascot & Custom Footer
   deskBuddy: DeskBuddyType;
+  deskBuddyCustomName?: string;
+  deskBuddyCustomQuotes?: string[];
+  deskBuddyPosition?: DeskBuddyPosition;
   footerText: string;
   // New: Paper Textures & Desk Stickers
   paperTexture: PaperTexture;
