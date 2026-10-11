@@ -154,6 +154,8 @@ export const BoardStickers: React.FC<BoardStickersProps> = ({
       {/* Floating Stickers on Corkboard */}
       {stickers.map((sticker) => {
         const isActive = activeStickerId === sticker.id;
+        const isImage = Boolean(sticker.imageUrl);
+
         return (
           <div
             key={sticker.id}
@@ -163,13 +165,36 @@ export const BoardStickers: React.FC<BoardStickersProps> = ({
               left: `${sticker.x}%`,
               top: `${sticker.y}%`,
               transform: `rotate(${sticker.rotation}deg) scale(${sticker.scale || 1})`,
+              width: isImage ? (sticker.width || 240) : undefined,
             }}
-            className="absolute pointer-events-auto select-none cursor-grab active:cursor-grabbing touch-none group transition-transform duration-75 hover:scale-115 hover:z-30"
+            className={`absolute pointer-events-auto select-none cursor-grab active:cursor-grabbing touch-none group transition-shadow duration-75 ${
+              isImage ? 'hover:z-30' : 'hover:scale-115 hover:z-30'
+            }`}
           >
-            {/* The Sticker Emoji */}
-            <div className="relative text-3xl sm:text-4xl drop-shadow-[0_4px_6px_rgba(0,0,0,0.22)] filter transition-all active:scale-95">
-              {sticker.emoji}
-            </div>
+            {isImage ? (
+              /* Quote Sticker Image Card */
+              <div className="relative rounded-2xl overflow-hidden shadow-2xl border-2 border-white/80 dark:border-slate-700/80 bg-white/90 dark:bg-slate-900/90 transition-transform active:scale-[0.98]">
+                {/* Washi Tape Accent at Top Center */}
+                <div
+                  className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-16 h-4 bg-amber-200/80 dark:bg-amber-600/60 backdrop-blur-xs rounded-xs border-y border-dashed border-amber-400/50 shadow-xs z-20 pointer-events-none -rotate-2"
+                  style={{ opacity: 0.85 }}
+                />
+
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={sticker.imageUrl}
+                  alt={sticker.text || 'Stiker Quote Motivasi'}
+                  className="w-full h-auto object-contain rounded-xl pointer-events-none"
+                  loading="lazy"
+                  draggable={false}
+                />
+              </div>
+            ) : (
+              /* Standard Emoji Sticker */
+              <div className="relative text-3xl sm:text-4xl drop-shadow-[0_4px_6px_rgba(0,0,0,0.22)] filter transition-all active:scale-95">
+                {sticker.emoji}
+              </div>
+            )}
 
             {/* Floating controls badge (visible on hover or when active) */}
             <div

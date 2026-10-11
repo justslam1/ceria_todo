@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useSyncExternalStore } from 'react';
 import { DragDropContext, DropResult } from '@hello-pangea/dnd';
 import { Task, TaskStatus, CreateTaskInput, UpdateTaskInput } from '@/types/task';
-import { UserPreferences, SortByOption } from '@/types/preferences';
+import { UserPreferences, SortByOption, BoardSticker } from '@/types/preferences';
 import {
   loadUserPreferences,
   saveUserPreferences,
@@ -415,7 +415,7 @@ export const KanbanBoard: React.FC = () => {
     }
   };
 
-  // Create custom quote sticker via Option 3 (Canvas image sticker)
+  // Create custom quote sticker via Option 1 (Floating desktop quote sticker)
   const handleCreateQuoteSticker = async (imageUrl: string, quoteText: string) => {
     // If user is currently on notes tab, spawn it in notes canvas
     if (activeTab === 'notes') {
@@ -437,21 +437,29 @@ export const KanbanBoard: React.FC = () => {
         posX,
         posY,
       });
+      triggerCelebration(preferences.celebrationFx);
+      playVictoryChime(preferences.soundProfile);
     } else {
-      // If user is on Kanban tasks tab, create a decorative task or switch to notes
-      // Also add as note sticker so it stays persistent and can be viewed anytime
-      await handleCreateNote({
-        title: quoteText.slice(0, 50),
-        content: quoteText,
+      // If user is on Kanban tasks tab: Add as a floating desktop sticker on the tasks board!
+      const currentStickers = preferences.stickers || [];
+      const newQuoteSticker: BoardSticker = {
+        id: `quote-stk-${Date.now()}`,
         imageUrl,
-        isSticker: true,
-        color: 'yellow',
-        isPinned: false,
-        posX: 50,
-        posY: 50,
+        text: quoteText,
+        width: 250,
+        // Place comfortably near center or upper corners
+        x: 15 + ((currentStickers.length * 15) % 50),
+        y: 20 + ((currentStickers.length * 18) % 45),
+        rotation: ((currentStickers.length % 5) - 2) * 4, // slight realistic tilt -8 to +8 deg
+        scale: 1,
+      };
+
+      const updatedStickers = [...currentStickers, newQuoteSticker];
+      handleSavePreferences({
+        ...preferences,
+        stickers: updatedStickers,
       });
-      // Automatically switch to Notes board so user directly sees their new quote sticker!
-      setActiveTab('notes');
+
       triggerCelebration(preferences.celebrationFx);
       playVictoryChime(preferences.soundProfile);
     }

@@ -29,7 +29,11 @@ export type ActiveColumnCount = 1 | 2 | 3;
 
 export interface BoardSticker {
   id: string;
-  emoji: string;
+  emoji?: string;
+  imageUrl?: string; // Base64 data URL atau link gambar quote dekoratif
+  text?: string;     // Teks kutipan jika stiker berupa quote
+  author?: string;   // Penulis / author kutipan
+  width?: number;    // Lebar stiker gambar dalam px (default: 260)
   x: number; // percentage (0 - 95%)
   y: number; // percentage (0 - 95%)
   rotation: number; // degrees, -25 to 25
