@@ -17,12 +17,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Auto-claim any notes that might belong to legacy user IDs or null
+    // Auto-claim only orphan notes (userId null or deleted legacy users that don't exist in User table)
+    const existingUsers = await prisma.user.findMany({ select: { id: true } });
+    const existingUserIds = existingUsers.map((u) => u.id);
+
     await prisma.note.updateMany({
       where: {
         OR: [
           { userId: null },
-          { userId: { not: userId } },
+          { userId: { notIn: existingUserIds } },
         ],
       },
       data: { userId },

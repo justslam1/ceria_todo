@@ -34,7 +34,14 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     if (note.userId && note.userId !== userId) {
-      // Auto-adopt note to current active user
+      const ownerExists = await prisma.user.findUnique({ where: { id: note.userId } });
+      if (ownerExists) {
+        return NextResponse.json(
+          { success: false, error: 'Anda tidak memiliki hak akses ke catatan ini' },
+          { status: 403 }
+        );
+      }
+      // If legacy orphan user, adopt to current user
       await prisma.note.update({
         where: { id },
         data: { userId },
@@ -75,6 +82,13 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     if (existing.userId && existing.userId !== userId) {
+      const ownerExists = await prisma.user.findUnique({ where: { id: existing.userId } });
+      if (ownerExists) {
+        return NextResponse.json(
+          { success: false, error: 'Anda tidak memiliki hak akses untuk mengubah catatan ini' },
+          { status: 403 }
+        );
+      }
       await prisma.note.update({
         where: { id },
         data: { userId },
