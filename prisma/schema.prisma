@@ -29,6 +29,8 @@ model User {
   sessions      Session[]
   tasks         Task[]
   notes         Note[]
+  showcases     BoardShowcase[]
+  boardLikes    BoardLike[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -112,5 +114,38 @@ model Note {
 
   @@index([userId])
   @@index([isPinned])
+}
+
+model BoardShowcase {
+  id          String      @id @default(uuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?     @db.Text
+  category    String      @default("Aesthetic")
+  thumbnail   String?     @db.LongText
+  configJson  String      @db.LongText
+  likesCount  Int         @default(0)
+  clonesCount Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  likes       BoardLike[]
+
+  @@index([userId])
+  @@index([likesCount])
+  @@index([createdAt])
+}
+
+model BoardLike {
+  id         String        @id @default(uuid())
+  userId     String
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  showcaseId String
+  showcase   BoardShowcase @relation(fields: [showcaseId], references: [id], onDelete: Cascade)
+  createdAt  DateTime      @default(now())
+
+  @@unique([userId, showcaseId])
+  @@index([userId])
+  @@index([showcaseId])
 }
 

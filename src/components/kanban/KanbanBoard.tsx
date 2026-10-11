@@ -21,6 +21,7 @@ import { PomodoroBar } from '@/components/pomodoro/PomodoroBar';
 import { ArchiveModal } from '@/components/modals/ArchiveModal';
 import { QuoteStickerModal } from '@/components/modals/QuoteStickerModal';
 import { PixelArtModal } from '@/components/modals/PixelArtModal';
+import { ShowcaseModal } from '@/components/modals/ShowcaseModal';
 import { DeskBuddy } from '@/components/ui/DeskBuddy';
 import { BoardStickers } from '@/components/ui/BoardStickers';
 import {
@@ -86,6 +87,7 @@ export const KanbanBoard: React.FC = () => {
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [isPixelModalOpen, setIsPixelModalOpen] = useState(false);
+  const [isShowcaseOpen, setIsShowcaseOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [defaultStatusForNew, setDefaultStatusForNew] = useState<TaskStatus>('TODO');
   const [singleColumnTab, setSingleColumnTab] = useState<TaskStatus>('TODO');
@@ -511,6 +513,17 @@ export const KanbanBoard: React.FC = () => {
       triggerCelebration(preferences.celebrationFx);
       playVictoryChime(preferences.soundProfile);
     }
+  };
+
+  // Apply community showcase template to user preferences
+  const handleApplyShowcase = (showcasePrefs: Partial<UserPreferences>) => {
+    const updated: UserPreferences = {
+      ...preferences,
+      ...showcasePrefs,
+      appName: showcasePrefs.appName || preferences.appName,
+      userName: showcasePrefs.userName || preferences.userName,
+    };
+    handleSavePreferences(updated);
   };
 
   // Active vs Archived tasks
@@ -1121,6 +1134,7 @@ export const KanbanBoard: React.FC = () => {
           onOpenPersonalization={() => setIsPersonalizationOpen(true)}
           onOpenPomodoro={() => setIsPomodoroOpen((prev) => !prev)}
           onOpenArchive={() => setIsArchiveOpen(true)}
+          onOpenShowcase={() => setIsShowcaseOpen(true)}
           isSoundMuted={soundMuted}
           onToggleSound={handleToggleSound}
           preferences={preferences}
@@ -2113,6 +2127,15 @@ export const KanbanBoard: React.FC = () => {
         onSubmit={handleCreatePixelArtSticker}
         soundProfile={preferences.soundProfile}
         isDark={themeConfig.isDark}
+      />
+
+      {/* Community Board Showcase Gallery Modal */}
+      <ShowcaseModal
+        isOpen={isShowcaseOpen}
+        onClose={() => setIsShowcaseOpen(false)}
+        preferences={preferences}
+        onApplyPreferences={handleApplyShowcase}
+        themeConfig={themeConfig}
       />
 
       {/* Virtual Desk Buddy Mascot */}
