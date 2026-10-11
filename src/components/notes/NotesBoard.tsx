@@ -433,6 +433,16 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
     await onUpdateNote(id, transform);
   };
 
+  const handleUpdateOrder = async (id: string, direction: 'front' | 'back') => {
+    playPopSound(preferences?.soundProfile || 'pop');
+    const allOrders = notes.map((n) => n.order || 0);
+    const maxOrder = allOrders.length > 0 ? Math.max(...allOrders, 0) : 0;
+    const minOrder = allOrders.length > 0 ? Math.min(...allOrders, 0) : 0;
+
+    const newOrder = direction === 'front' ? maxOrder + 1 : minOrder - 1;
+    await onUpdateNote(id, { order: newOrder });
+  };
+
   const handleChangeColor = async (id: string, color: NoteColor) => {
     await onUpdateNote(id, { color });
   };
@@ -965,6 +975,8 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
           {filteredNotes.map((note, index) => {
             const pos = getNotePosition(note, index);
             const isDragging = draggingId === note.id;
+            const baseZ = note.isPinned ? 40 : 20;
+            const layerZ = baseZ + (note.order || 0);
 
             return (
               <div
@@ -974,7 +986,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                   left: `${pos.x}px`,
                   top: `${pos.y}px`,
                   width: note.isSticker && note.imageUrl ? `${note.width || 280}px` : '310px',
-                  zIndex: isDragging ? 50 : note.isPinned ? 30 : 20,
+                  zIndex: isDragging ? 70 : Math.max(1, layerZ),
                   pointerEvents: draggingId && !isDragging ? 'none' : 'auto',
                   transition: isDragging ? 'none' : 'box-shadow 0.2s ease, transform 0.2s ease',
                 }}
@@ -986,6 +998,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                     onTogglePin={handleTogglePin}
                     onToggleSticker={handleToggleSticker}
                     onUpdateTransform={handleUpdateTransform}
+                    onUpdateOrder={handleUpdateOrder}
                     isCanvasMode={true}
                     isDragging={isDragging}
                     onDragStart={(e) => handleStartDrag(e, note, pos.x, pos.y)}
@@ -1004,6 +1017,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                     onConvertToTask={onConvertToTask}
                     onUpdateContent={handleUpdateContent}
                     onToggleSticker={handleToggleSticker}
+                    onUpdateOrder={handleUpdateOrder}
                   />
                 )}
               </div>

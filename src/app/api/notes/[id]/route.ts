@@ -120,7 +120,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         : 0;
     }
     if (body.order !== undefined && typeof body.order === 'number') {
-      updateData.order = Math.max(0, Math.floor(body.order));
+      updateData.order = Math.max(-9999, Math.min(9999, Math.floor(body.order)));
     }
 
     const updatedNote = await prisma.note.update({

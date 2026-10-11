@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Pin, Trash2, Edit3, Sparkles, MoreHorizontal, X, ZoomIn, Sticker } from 'lucide-react';
+import { Pin, Trash2, Edit3, Sparkles, MoreHorizontal, X, ZoomIn, Sticker, BringToFront, SendToBack } from 'lucide-react';
 import { NoteItem, NoteColor, NOTE_COLOR_STYLES } from '@/types/note';
 import { ThemeConfig } from '@/types/preferences';
 
@@ -16,6 +16,7 @@ interface NoteCardProps {
   onConvertToTask: (note: NoteItem) => void;
   onUpdateContent?: (id: string, newContent: string) => void;
   onToggleSticker?: (id: string, isSticker: boolean) => void;
+  onUpdateOrder?: (id: string, direction: 'front' | 'back') => void;
   isCanvasMode?: boolean;
   onDragStart?: (e: React.PointerEvent) => void;
   isDragging?: boolean;
@@ -30,6 +31,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
   onConvertToTask,
   onUpdateContent,
   onToggleSticker,
+  onUpdateOrder,
   isCanvasMode = false,
   onDragStart,
   isDragging = false,
@@ -121,6 +123,34 @@ export const NoteCard: React.FC<NoteCardProps> = ({
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
+          {/* Bring to Front / Send to Back (Canvas mode only) */}
+          {isCanvasMode && onUpdateOrder && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onUpdateOrder(note.id, 'front');
+                }}
+                className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl transition-colors cursor-pointer"
+                title="Bawa ke Paling Depan (Layer Teratas) 🔼"
+              >
+                <BringToFront className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onUpdateOrder(note.id, 'back');
+                }}
+                className="p-1.5 text-slate-400 hover:text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-950/40 rounded-xl transition-colors cursor-pointer"
+                title="Kirim ke Paling Belakang (Layer Terbawah) 🔽"
+              >
+                <SendToBack className="w-3.5 h-3.5" />
+              </button>
+            </>
+          )}
+
           {/* Pin Button */}
           <button
             type="button"

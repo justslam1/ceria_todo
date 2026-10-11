@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Pin, Trash2, ZoomIn, StickyNote, X, RotateCw, RotateCcw, Maximize2, Rotate3d } from 'lucide-react';
+import { Pin, Trash2, ZoomIn, StickyNote, X, RotateCw, RotateCcw, Maximize2, Rotate3d, BringToFront, SendToBack } from 'lucide-react';
 import { NoteItem } from '@/types/note';
 
 interface NoteStickerProps {
@@ -11,6 +11,7 @@ interface NoteStickerProps {
   onTogglePin?: (id: string, currentPinned: boolean) => void;
   onToggleSticker?: (id: string, isSticker: boolean) => void;
   onUpdateTransform?: (id: string, transform: { width?: number; rotation?: number }) => void;
+  onUpdateOrder?: (id: string, direction: 'front' | 'back') => void;
   isCanvasMode?: boolean;
   onDragStart?: (e: React.PointerEvent) => void;
   isDragging?: boolean;
@@ -23,6 +24,7 @@ export const NoteSticker: React.FC<NoteStickerProps> = ({
   onTogglePin,
   onToggleSticker,
   onUpdateTransform,
+  onUpdateOrder,
   isCanvasMode = false,
   onDragStart,
   isDragging = false,
@@ -243,6 +245,34 @@ export const NoteSticker: React.FC<NoteStickerProps> = ({
           >
             <Rotate3d className="w-3.5 h-3.5" />
           </button>
+        )}
+
+        {/* Bring to Front / Send to Back (Pengaturan Layer / Tumpukan) */}
+        {onUpdateOrder && (
+          <>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onUpdateOrder(note.id, 'front');
+              }}
+              className="p-1 text-white/80 hover:text-emerald-300 hover:bg-emerald-500/30 rounded-lg transition-colors cursor-pointer"
+              title="Bawa ke Paling Depan (Layer Teratas) 🔼"
+            >
+              <BringToFront className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onUpdateOrder(note.id, 'back');
+              }}
+              className="p-1 text-white/80 hover:text-sky-300 hover:bg-sky-500/30 rounded-lg transition-colors cursor-pointer"
+              title="Kirim ke Paling Belakang (Layer Terbawah) 🔽"
+            >
+              <SendToBack className="w-3.5 h-3.5" />
+            </button>
+          </>
         )}
 
         {/* Toggle Pin */}
