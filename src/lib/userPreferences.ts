@@ -17,6 +17,7 @@ import {
   ViewDensity,
   SortByOption,
   DeskBuddyType,
+  DeskBuddySize,
   PaperTexture,
   BoardSticker,
   ActiveColumnCount,
@@ -136,6 +137,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   deskBuddyCustomName: '',
   deskBuddyCustomQuotes: [],
   deskBuddyPosition: 'bottom-left',
+  deskBuddySize: 'large',
   footerText: 'Slam Area © 2026',
   paperTexture: 'plain',
   stickers: DEFAULT_STICKERS,
@@ -938,6 +940,18 @@ export const DESK_BUDDY_OPTIONS: {
   { id: 'none', name: 'Tanpa Maskot', avatar: '🚫', desc: 'Tampilan bersih tanpa teman meja', defaultQuote: '', treatEmoji: '', treatName: '' },
 ];
 
+export const DESK_BUDDY_SIZE_OPTIONS: {
+  id: DeskBuddySize;
+  label: string;
+  icon: string;
+  desc: string;
+  pixelLabel: string;
+}[] = [
+  { id: 'normal', label: 'Sedang (Compact)', icon: '🤏', desc: 'Ukuran standar minimalis', pixelLabel: '48 × 48 px' },
+  { id: 'large', label: 'Besar (Cozy)', icon: '✨', desc: 'Proporsional & imut (Rekomendasi)', pixelLabel: '60 × 60 px' },
+  { id: 'jumbo', label: 'Jumbo (Ekstra)', icon: '🌟', desc: 'Paling mencolok & ekspresif', pixelLabel: '72 × 72 px' },
+];
+
 export const PAPER_TEXTURE_OPTIONS: {
   id: PaperTexture;
   label: string;
@@ -1047,6 +1061,7 @@ export function loadUserPreferences(): UserPreferences {
       deskBuddyCustomName: typeof parsed.deskBuddyCustomName === 'string' ? parsed.deskBuddyCustomName : '',
       deskBuddyCustomQuotes: Array.isArray(parsed.deskBuddyCustomQuotes) ? parsed.deskBuddyCustomQuotes : [],
       deskBuddyPosition: ['bottom-left', 'bottom-right', 'top-left', 'top-right'].includes(parsed.deskBuddyPosition) ? parsed.deskBuddyPosition : 'bottom-left',
+      deskBuddySize: ['normal', 'large', 'jumbo'].includes(parsed.deskBuddySize) ? parsed.deskBuddySize : 'large',
       footerText: typeof parsed.footerText === 'string' ? parsed.footerText : DEFAULT_PREFERENCES.footerText,
       paperTexture: parsed.paperTexture || DEFAULT_PREFERENCES.paperTexture,
       stickers: Array.isArray(parsed.stickers) ? parsed.stickers : DEFAULT_PREFERENCES.stickers,

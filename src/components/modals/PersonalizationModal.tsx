@@ -25,6 +25,7 @@ import {
   STAMP_COLOR_OPTIONS,
   VIEW_DENSITY_OPTIONS,
   DESK_BUDDY_OPTIONS,
+  DESK_BUDDY_SIZE_OPTIONS,
   PAPER_TEXTURE_OPTIONS,
   DEFAULT_STICKERS,
   getPaperTextureStyle,
@@ -1932,6 +1933,57 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
                             );
                           })}
                         </div>
+                      </div>
+                    </div>
+
+                    {/* Ukuran Tampilan Maskot (NEW Opsi 2) */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-[11px] font-bold text-slate-700">
+                          Ukuran Tampilan Maskot
+                        </label>
+                        <span className="text-[10px] text-sky-600 font-medium">Bisa diperbesar sesuka hati ✨</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        {DESK_BUDDY_SIZE_OPTIONS.map((sz) => {
+                          const isCurrent = (formData.deskBuddySize || 'large') === sz.id;
+                          return (
+                            <button
+                              key={sz.id}
+                              type="button"
+                              onClick={() => {
+                                playPopSound(formData.soundProfile);
+                                setFormData({ ...formData, deskBuddySize: sz.id });
+                              }}
+                              className={`p-2.5 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between ${
+                                isCurrent
+                                  ? 'bg-sky-500 text-white border-sky-600 shadow-2xs ring-2 ring-sky-300'
+                                  : 'bg-white text-slate-700 border-sky-200 hover:bg-sky-50'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="text-base">{sz.icon}</span>
+                                <span
+                                  className={`text-[9px] font-mono px-1.5 py-0.5 rounded-md font-bold ${
+                                    isCurrent ? 'bg-sky-600/80 text-white' : 'bg-slate-100 text-slate-500'
+                                  }`}
+                                >
+                                  {sz.pixelLabel}
+                                </span>
+                              </div>
+                              <div className="mt-1">
+                                <span className="block text-xs font-bold leading-tight">{sz.label.split(' ')[0]}</span>
+                                <span
+                                  className={`text-[10px] line-clamp-1 mt-0.5 ${
+                                    isCurrent ? 'text-sky-100' : 'text-slate-400'
+                                  }`}
+                                >
+                                  {sz.desc}
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
 

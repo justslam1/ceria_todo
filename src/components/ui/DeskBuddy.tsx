@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { DeskBuddyType, DeskBuddyPosition, SoundProfile } from '@/types/preferences';
+import { DeskBuddyType, DeskBuddyPosition, DeskBuddySize, SoundProfile } from '@/types/preferences';
 import { DESK_BUDDY_OPTIONS } from '@/lib/userPreferences';
 import { playPopSound, playVictoryChime } from '@/lib/soundEffects';
 import { X, Sparkles, MessageCircleHeart, Heart, Moon } from 'lucide-react';
@@ -14,6 +14,7 @@ interface DeskBuddyProps {
   customName?: string;
   customQuotes?: string[];
   position?: DeskBuddyPosition;
+  size?: DeskBuddySize;
 }
 
 const QUOTES_COLLECTION: Record<string, string[]> = {
@@ -101,10 +102,49 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
   customName,
   customQuotes = [],
   position = 'bottom-left',
+  size = 'large',
 }) => {
   const config = DESK_BUDDY_OPTIONS.find((b) => b.id === buddyType);
 
   const displayName = customName?.trim() || config?.name || 'Maskot';
+
+  const sizeStyles = {
+    normal: {
+      btn: 'w-12 h-12 rounded-2xl text-2xl',
+      crown: '-top-3.5 text-base',
+      sleepBadge: '-top-1 -right-1 text-[10px] px-1',
+      treatBtn: 'h-8 px-2 text-xs',
+      treatEmoji: 'text-xs',
+      toggleBtn: 'p-1.5',
+      toggleIcon: 'w-3.5 h-3.5',
+    },
+    large: {
+      btn: 'w-[60px] h-[60px] rounded-2xl text-3xl',
+      crown: '-top-4 text-xl',
+      sleepBadge: '-top-1 -right-1 text-xs px-1.5',
+      treatBtn: 'h-9 px-2.5 text-xs',
+      treatEmoji: 'text-sm',
+      toggleBtn: 'p-2',
+      toggleIcon: 'w-4 h-4',
+    },
+    jumbo: {
+      btn: 'w-[72px] h-[72px] rounded-3xl text-4xl',
+      crown: '-top-5 text-2xl',
+      sleepBadge: '-top-1.5 -right-1.5 text-sm px-2 py-0.5',
+      treatBtn: 'h-10 px-3 text-sm',
+      treatEmoji: 'text-base',
+      toggleBtn: 'p-2.5',
+      toggleIcon: 'w-4.5 h-4.5',
+    },
+  }[size] || {
+    btn: 'w-[60px] h-[60px] rounded-2xl text-3xl',
+    crown: '-top-4 text-xl',
+    sleepBadge: '-top-1 -right-1 text-xs px-1.5',
+    treatBtn: 'h-9 px-2.5 text-xs',
+    treatEmoji: 'text-sm',
+    toggleBtn: 'p-2',
+    toggleIcon: 'w-4 h-4',
+  };
 
   const [bubbleText, setBubbleText] = useState<string>(() => config?.defaultQuote || '');
   const [isBubbleVisible, setIsBubbleVisible] = useState<boolean>(true);
@@ -284,7 +324,7 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
           {/* Champion Crown if Daily Goal reached */}
           {isGoalReached && (
             <div
-              className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10 text-base drop-shadow-md animate-bounce"
+              className={`absolute ${sizeStyles.crown} left-1/2 -translate-x-1/2 z-10 drop-shadow-md animate-bounce`}
               title="Target harian tercapai! Maskot memakai mahkota juara 👑"
             >
               👑
@@ -294,7 +334,7 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
           {/* Night mode sleepy badge */}
           {isNightMode && (
             <div
-              className="absolute -top-1 -right-1 z-10 bg-indigo-900/90 text-indigo-200 text-[10px] px-1 rounded-full border border-indigo-400/50 shadow-xs"
+              className={`absolute ${sizeStyles.sleepBadge} z-10 bg-indigo-900/90 text-indigo-200 rounded-full border border-indigo-400/50 shadow-xs`}
               title="Mode Malam: Maskot sedang mengantuk 😴"
             >
               💤
@@ -303,7 +343,7 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
 
           <button
             onClick={handleBuddyClick}
-            className={`w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-100 via-orange-50 to-yellow-100 dark:from-slate-800 dark:to-slate-900 border-2 border-amber-300/80 dark:border-amber-500/60 shadow-lg flex items-center justify-center text-2xl cursor-pointer transition-all hover:scale-110 active:scale-95 ${
+            className={`${sizeStyles.btn} bg-gradient-to-tr from-amber-100 via-orange-50 to-yellow-100 dark:from-slate-800 dark:to-slate-900 border-2 border-amber-300/80 dark:border-amber-500/60 shadow-lg flex items-center justify-center cursor-pointer transition-all hover:scale-110 active:scale-95 ${
               isJumping ? '-translate-y-2 rotate-6 shadow-2xl ring-2 ring-amber-400' : 'hover:-translate-y-0.5'
             }`}
             title={`Klik ${displayName} untuk sapaan! (Level: ${friendship.label}, ${hearts} ❤️)`}
@@ -316,10 +356,10 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
         {config.treatEmoji && (
           <button
             onClick={handleFeed}
-            className="h-8 px-2 rounded-xl bg-white/95 dark:bg-slate-800/95 border border-amber-300/80 dark:border-amber-500/40 shadow-xs text-xs font-bold text-amber-900 dark:text-amber-200 hover:scale-105 active:scale-95 flex items-center gap-1 cursor-pointer transition-all"
+            className={`${sizeStyles.treatBtn} rounded-xl bg-white/95 dark:bg-slate-800/95 border border-amber-300/80 dark:border-amber-500/40 shadow-xs font-bold text-amber-900 dark:text-amber-200 hover:scale-105 active:scale-95 flex items-center gap-1.5 cursor-pointer transition-all`}
             title={`Beri makan ${displayName} dengan ${config.treatName} (+1 ❤️)`}
           >
-            <span>{config.treatEmoji}</span>
+            <span className={sizeStyles.treatEmoji}>{config.treatEmoji}</span>
             <span className="text-[10px] hidden sm:inline text-amber-700 dark:text-amber-300">
               {hearts > 0 ? hearts : 'Feed'}
             </span>
@@ -331,10 +371,10 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
         {!isBubbleVisible && (
           <button
             onClick={handleBuddyClick}
-            className="p-1.5 rounded-full bg-white/90 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 shadow-sm text-slate-500 hover:text-amber-600 transition-colors cursor-pointer"
+            className={`${sizeStyles.toggleBtn} rounded-full bg-white/90 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 shadow-sm text-slate-500 hover:text-amber-600 transition-colors cursor-pointer`}
             title="Buka obrolan teman meja"
           >
-            <MessageCircleHeart className="w-3.5 h-3.5 text-amber-500" />
+            <MessageCircleHeart className={`${sizeStyles.toggleIcon} text-amber-500`} />
           </button>
         )}
       </div>

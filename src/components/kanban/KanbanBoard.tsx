@@ -2036,6 +2036,7 @@ export const KanbanBoard: React.FC = () => {
         customName={preferences.deskBuddyCustomName}
         customQuotes={preferences.deskBuddyCustomQuotes}
         position={preferences.deskBuddyPosition}
+        size={preferences.deskBuddySize || 'large'}
       />
 
       {/* Floating Network Error Toast */}
