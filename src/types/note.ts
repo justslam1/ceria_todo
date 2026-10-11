@@ -11,6 +11,8 @@ export interface NoteItem {
   isPinned: boolean;
   posX?: number | null;
   posY?: number | null;
+  width?: number | null;
+  rotation?: number | null;
   order?: number;
   createdAt: string;
   updatedAt: string;

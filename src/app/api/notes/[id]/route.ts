@@ -109,6 +109,16 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     if (body.posY !== undefined) {
       updateData.posY = typeof body.posY === 'number' && Number.isFinite(body.posY) ? body.posY : null;
     }
+    if (body.width !== undefined) {
+      updateData.width = typeof body.width === 'number' && Number.isFinite(body.width)
+        ? Math.max(120, Math.min(800, body.width))
+        : 280;
+    }
+    if (body.rotation !== undefined) {
+      updateData.rotation = typeof body.rotation === 'number' && Number.isFinite(body.rotation)
+        ? body.rotation
+        : 0;
+    }
     if (body.order !== undefined && typeof body.order === 'number') {
       updateData.order = Math.max(0, Math.floor(body.order));
     }

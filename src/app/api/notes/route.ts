@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, content, imageUrl, isSticker, color, isPinned, posX, posY, order } = body;
+    const { title, content, imageUrl, isSticker, color, isPinned, posX, posY, width, rotation, order } = body;
 
     const trimmedTitle = typeof title === 'string' ? title.trim().slice(0, 200) : '';
     const trimmedContent = typeof content === 'string' ? content.trim().slice(0, 20000) : '';
@@ -94,6 +94,8 @@ export async function POST(request: NextRequest) {
         isPinned: Boolean(isPinned),
         posX: typeof posX === 'number' && Number.isFinite(posX) ? posX : null,
         posY: typeof posY === 'number' && Number.isFinite(posY) ? posY : null,
+        width: typeof width === 'number' && Number.isFinite(width) ? Math.max(120, Math.min(800, width)) : 280,
+        rotation: typeof rotation === 'number' && Number.isFinite(rotation) ? rotation : 0,
         order: typeof order === 'number' ? Math.max(0, Math.floor(order)) : 0,
       },
     });

@@ -341,6 +341,10 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
     await onUpdateNote(id, { isSticker });
   };
 
+  const handleUpdateTransform = async (id: string, transform: { width?: number; rotation?: number }) => {
+    await onUpdateNote(id, transform);
+  };
+
   const handleChangeColor = async (id: string, color: NoteColor) => {
     await onUpdateNote(id, { color });
   };
@@ -651,7 +655,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                   position: 'absolute',
                   left: `${pos.x}px`,
                   top: `${pos.y}px`,
-                  width: '310px',
+                  width: note.isSticker && note.imageUrl ? `${note.width || 280}px` : '310px',
                   zIndex: isDragging ? 50 : note.isPinned ? 30 : 20,
                   pointerEvents: draggingId && !isDragging ? 'none' : 'auto',
                   transition: isDragging ? 'none' : 'box-shadow 0.2s ease, transform 0.2s ease',
@@ -663,6 +667,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                     onDelete={handleDeleteWithConfirm}
                     onTogglePin={handleTogglePin}
                     onToggleSticker={handleToggleSticker}
+                    onUpdateTransform={handleUpdateTransform}
                     isCanvasMode={true}
                     isDragging={isDragging}
                     onDragStart={(e) => handleStartDrag(e, note, pos.x, pos.y)}
@@ -708,6 +713,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                       onDelete={handleDeleteWithConfirm}
                       onTogglePin={handleTogglePin}
                       onToggleSticker={handleToggleSticker}
+                      onUpdateTransform={handleUpdateTransform}
                       isCanvasMode={false}
                     />
                   ) : (
@@ -749,6 +755,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                       onDelete={handleDeleteWithConfirm}
                       onTogglePin={handleTogglePin}
                       onToggleSticker={handleToggleSticker}
+                      onUpdateTransform={handleUpdateTransform}
                       isCanvasMode={false}
                     />
                   ) : (

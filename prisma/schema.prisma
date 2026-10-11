@@ -101,6 +101,8 @@ model Note {
   isPinned  Boolean  @default(false)
   posX      Float?
   posY      Float?
+  width     Float?   @default(280)
+  rotation  Float?   @default(0)
   order     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
