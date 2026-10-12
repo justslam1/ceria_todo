@@ -721,6 +721,111 @@ export const PersonalizationModal: React.FC<PersonalizationModalProps> = ({
                 </div>
               </div>
 
+              {/* Gaya Tampilan Navbar & Tombol (Tema Sticky Notes) */}
+              <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-200/80 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-amber-950 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>📌</span>
+                    <span>Gaya Tampilan Navbar & Tombol</span>
+                  </label>
+                  <span className="text-[11px] text-amber-700/80 font-semibold">Tema Papan & Sticky Notes</span>
+                </div>
+                <p className="text-xs text-slate-600">
+                  Pilih gaya bilah navigasi dan tombol-tombolnya agar senada dengan nuansa papan catatan:
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  {/* Gaya A: Subtle Stationery */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playPopSound(formData.soundProfile);
+                      setFormData({ ...formData, navbarStyle: 'subtle' });
+                    }}
+                    className={`p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer relative flex flex-col justify-between ${
+                      (formData.navbarStyle || 'subtle') === 'subtle'
+                        ? 'border-amber-500 bg-white shadow-md ring-2 ring-amber-400/40'
+                        : 'border-slate-200 bg-white/70 hover:bg-white hover:border-amber-300'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                          <span>🏷️</span> Gaya A: Subtle Stationery
+                        </span>
+                        {(formData.navbarStyle || 'subtle') === 'subtle' && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold">
+                            Aktif
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-relaxed mb-3">
+                        Rapi, bersih & elegan. Warna kertas memo pastel hangat, lis papan buletin halus, dan bayangan kertas lembut (paper elevation).
+                      </p>
+                    </div>
+
+                    {/* Preview Mini */}
+                    <div className="p-2 rounded-xl bg-[#FAF7F2] border border-amber-900/10 flex items-center gap-1.5 overflow-hidden">
+                      <div className="px-2 py-1 rounded-lg bg-amber-100/70 border border-amber-200/80 text-[10px] font-bold text-amber-900 shadow-2xs">
+                        ⏱️ Fokus
+                      </div>
+                      <div className="px-2 py-1 rounded-lg bg-emerald-100/60 border border-emerald-200/80 text-[10px] font-bold text-emerald-900 shadow-2xs">
+                        🗂️ Arsip
+                      </div>
+                      <div className="px-2 py-1 rounded-lg bg-rose-100/60 border border-rose-200/80 text-[10px] font-bold text-rose-900 shadow-2xs">
+                        🏛️ Galeri
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* Gaya B: Full Craft & Playful Memo */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playPopSound(formData.soundProfile);
+                      setFormData({ ...formData, navbarStyle: 'playful' });
+                    }}
+                    className={`p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer relative flex flex-col justify-between ${
+                      formData.navbarStyle === 'playful'
+                        ? 'border-amber-500 bg-white shadow-md ring-2 ring-amber-400/40'
+                        : 'border-slate-200 bg-white/70 hover:bg-white hover:border-amber-300'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                          <span>✂️</span> Gaya B: Full Craft & Playful
+                        </span>
+                        {formData.navbarStyle === 'playful' && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold">
+                            Aktif
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-relaxed mb-3">
+                        Kreatif & berkarakter. Setiap tombol memo dilengkapi selotip washi tape mini, sudut miring organik (-1° / +1°), dan nuansa papan kliping.
+                      </p>
+                    </div>
+
+                    {/* Preview Mini */}
+                    <div className="p-2 rounded-xl bg-[#FBF8F3] border-b-2 border-dashed border-amber-900/20 flex items-center gap-1.5 overflow-hidden">
+                      <div className="relative px-2 py-1 rounded-lg bg-amber-100/90 border border-amber-300 text-[10px] font-bold text-amber-950 shadow-xs -rotate-2">
+                        <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-4 h-1 bg-amber-200/90 border-y border-dashed border-amber-400/60 rounded-2xs pointer-events-none" />
+                        ⏱️ Fokus
+                      </div>
+                      <div className="relative px-2 py-1 rounded-lg bg-emerald-100/90 border border-emerald-300 text-[10px] font-bold text-emerald-950 shadow-xs rotate-2">
+                        <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-4 h-1 bg-emerald-200/90 border-y border-dashed border-emerald-400/60 rounded-2xs pointer-events-none" />
+                        🗂️ Arsip
+                      </div>
+                      <div className="relative px-2 py-1 rounded-lg bg-rose-100/90 border border-rose-300 text-[10px] font-bold text-rose-950 shadow-xs -rotate-1">
+                        <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-4 h-1 bg-rose-200/90 border-y border-dashed border-rose-400/60 rounded-2xs pointer-events-none" />
+                        🏛️ Galeri
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
               {/* Identitas Diri */}
               <div className="space-y-4 pt-1">
                 <div>

@@ -145,6 +145,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   showDailyGoalBanner: true,
   activeColumnCount: 3,
   creativeMenuLabel: 'Printilan',
+  navbarStyle: 'subtle',
 };
 
 export const APP_ICON_PRESETS = [

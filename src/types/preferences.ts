@@ -26,6 +26,7 @@ export type DeskBuddyPosition = 'bottom-left' | 'bottom-right' | 'top-left' | 't
 export type DeskBuddySize = 'normal' | 'large' | 'jumbo';
 export type PaperTexture = 'plain' | 'grid' | 'lined' | 'dots' | 'kraft';
 export type ActiveColumnCount = 1 | 2 | 3;
+export type NavbarStyle = 'subtle' | 'playful'; // 'subtle' (Gaya A: Subtle Stationery) | 'playful' (Gaya B: Full Craft & Playful Memo)
 
 export interface BoardSticker {
   id: string;
@@ -114,6 +115,8 @@ export interface UserPreferences {
   activeColumnCount: ActiveColumnCount;
   // New: Custom Creative / Printilan FAB Button Label
   creativeMenuLabel?: string;
+  // New: Gaya Tampilan Navbar & Tombol (Sticky Notes)
+  navbarStyle?: NavbarStyle;
 }
 
 export interface ThemeConfig {
