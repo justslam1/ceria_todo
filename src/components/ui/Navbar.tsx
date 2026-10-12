@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Sparkles, Plus, Volume2, VolumeX, Palette, Timer, Archive, Check, X } from 'lucide-react';
 import { UserPreferences, ThemeConfig } from '@/types/preferences';
 import { UserAuthButton } from '@/components/ui/UserAuthButton';
+import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 
 interface NavbarProps {
   onOpenQuickPaste?: () => void;
@@ -316,6 +317,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className="text-xs font-bold">Galeri</span>
               </button>
             )}
+
+            {/* Language Switcher */}
+            <LanguageSwitcher variant="badge" className="hidden sm:inline-flex" />
 
             {/* Personalization / Settings Button */}
             <button

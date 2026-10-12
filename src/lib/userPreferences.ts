@@ -23,9 +23,11 @@ import {
   ActiveColumnCount,
   CustomThemeConfig,
   CustomThemeAccent,
+  Language,
 } from '@/types/preferences';
 
 export type {
+  Language,
   CustomCategory,
   NoteColor,
   NoteColorMode,
@@ -146,6 +148,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   activeColumnCount: 3,
   creativeMenuLabel: 'Printilan',
   navbarStyle: 'subtle',
+  language: 'id',
 };
 
 export const APP_ICON_PRESETS = [
@@ -1070,6 +1073,7 @@ export function loadUserPreferences(): UserPreferences {
       showBoardHeader: parsed.showBoardHeader !== false,
       showDailyGoalBanner: parsed.showDailyGoalBanner !== false,
       activeColumnCount: ([1, 2, 3].includes(parsed.activeColumnCount) ? parsed.activeColumnCount : 3) as ActiveColumnCount,
+      language: (['id', 'en'].includes(parsed.language) ? parsed.language : 'id') as Language,
       customLogoUrl: isSafeUrl(parsed.customLogoUrl),
       customBgUrl: isSafeUrl(parsed.customBgUrl),
       columns: {

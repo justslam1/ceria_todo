@@ -5,10 +5,13 @@ import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle2, MessageSquareShare, ArrowRight, ShieldCheck } from 'lucide-react';
 import AppLogo from '@/components/ui/AppLogo';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 
 export default function LoginPage() {
   const { status } = useSession();
   const router = useRouter();
+  const { t } = useLanguage();
 
   // Jika sudah login, otomatis alihkan ke Dashboard
   useEffect(() => {
@@ -28,16 +31,21 @@ export default function LoginPage() {
         {/* Washi Tape Strip on Top */}
         <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 w-24 h-6 bg-amber-200/80 border border-amber-300/60 rounded-xs shadow-2xs rotate-[-1deg] backdrop-blur-xs opacity-80 pointer-events-none" />
 
+        {/* Pilihan Bahasa di bagian atas kartu sticky note */}
+        <div className="flex justify-end mb-2">
+          <LanguageSwitcher />
+        </div>
+
         {/* Header App Branding */}
         <div className="flex flex-col items-center text-center mb-6">
           <div className="mb-3">
             <AppLogo />
           </div>
           <h1 className="text-2xl font-black bg-gradient-to-r from-amber-700 via-orange-600 to-rose-600 bg-clip-text text-transparent">
-            Papan Catatan
+            {t.login.title}
           </h1>
           <p className="text-xs font-semibold text-amber-900/80 mt-1">
-            Kelola tugas lebih satset ✨
+            {t.login.subtitle}
           </p>
         </div>
 
@@ -45,15 +53,15 @@ export default function LoginPage() {
         <div className="bg-white/70 backdrop-blur-xs rounded-2xl p-4 border border-amber-200/80 mb-6 space-y-2.5 text-xs text-slate-700">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>Pantau tugas semudah tempel <strong>Sticky Notes</strong></span>
+            <span>{t.login.feature1} <strong>{t.login.feature1Highlight}</strong></span>
           </div>
           <div className="flex items-center gap-2">
             <MessageSquareShare className="w-4 h-4 text-sky-600 shrink-0" />
-            <span>Salin pesan penting, bereskan jadi tugas dalam sekejap</span>
+            <span>{t.login.feature2}</span>
           </div>
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
-            <span>Data tersimpan aman dari keracunan embege</span>
+            <span>{t.login.feature3}</span>
           </div>
         </div>
 
@@ -83,21 +91,21 @@ export default function LoginPage() {
                 d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.25 2.63 1.26 6.59l4.02 3.13c.95-2.83 3.6-4.97 6.72-4.97z"
               />
             </svg>
-            <span>Lanjutkan dengan Akun Google</span>
+            <span>{t.login.googleButton}</span>
             <ArrowRight className="w-4 h-4 text-slate-400 ml-auto" />
           </button>
         </div>
 
         {/* Footer Note */}
         <p className="text-[11px] text-center text-amber-900/60 mt-5 font-medium">
-          Masuk dengan aman & instan tanpa perlu mendaftar kata sandi manual.
+          {t.login.footerNote}
         </p>
       </div>
 
       {/* Footer Branding */}
       <footer className="mt-6 sm:mt-8 text-center z-10">
         <p className="text-xs font-medium tracking-wide text-slate-400 select-none">
-          Slam Area &copy; 2026
+          {t.login.footerCopyright}
         </p>
       </footer>
     </div>

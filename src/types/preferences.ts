@@ -27,6 +27,7 @@ export type DeskBuddySize = 'normal' | 'large' | 'jumbo';
 export type PaperTexture = 'plain' | 'grid' | 'lined' | 'dots' | 'kraft';
 export type ActiveColumnCount = 1 | 2 | 3;
 export type NavbarStyle = 'subtle' | 'playful'; // 'subtle' (Gaya A: Subtle Stationery) | 'playful' (Gaya B: Full Craft & Playful Memo)
+export type Language = 'id' | 'en';
 
 export interface BoardSticker {
   id: string;
@@ -117,6 +118,8 @@ export interface UserPreferences {
   creativeMenuLabel?: string;
   // New: Gaya Tampilan Navbar & Tombol (Sticky Notes)
   navbarStyle?: NavbarStyle;
+  // New: Pilihan Bahasa / Language (id | en)
+  language?: Language;
 }
 
 export interface ThemeConfig {
