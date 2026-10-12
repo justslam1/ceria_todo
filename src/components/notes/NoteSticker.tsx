@@ -249,6 +249,7 @@ export const NoteSticker: React.FC<NoteStickerProps> = ({
       }`}
       style={{
         width: `${effectiveWidth}px`,
+        maxWidth: '100%',
         transform: `rotate(${effectiveRotation}deg)`,
         transformOrigin: 'center center',
         touchAction: isCanvasMode ? 'none' : 'auto',

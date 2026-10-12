@@ -55,7 +55,46 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
   editingNote,
   onSelectEditingNote,
 }) => {
+  // Layout Mode: 'canvas' (desktop/tablet) | 'grid' (rapi/mobile)
   const [layoutMode, setLayoutMode] = useState<'canvas' | 'grid'>('canvas');
+
+  // Auto-detect mobile screen on mount & remember user choice per device
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const mql = window.matchMedia('(max-width: 767px)');
+
+    const applyLayout = () => {
+      const savedMode = localStorage.getItem('ceria_notes_layout_mode') as 'canvas' | 'grid' | null;
+      if (savedMode === 'canvas' || savedMode === 'grid') {
+        setLayoutMode(savedMode);
+      } else {
+        // Otomatis 'grid' di HP (< 768px), dan 'canvas' di laptop/desktop (>= 768px)
+        setLayoutMode(mql.matches ? 'grid' : 'canvas');
+      }
+    };
+
+    applyLayout();
+
+    const handleMediaChange = (e: MediaQueryListEvent) => {
+      const savedMode = localStorage.getItem('ceria_notes_layout_mode');
+      if (!savedMode) {
+        setLayoutMode(e.matches ? 'grid' : 'canvas');
+      }
+    };
+
+    mql.addEventListener('change', handleMediaChange);
+    return () => mql.removeEventListener('change', handleMediaChange);
+  }, []);
+
+  const handleSwitchLayoutMode = (mode: 'canvas' | 'grid') => {
+    playPopSound(preferences?.soundProfile || 'pop');
+    setLayoutMode(mode);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ceria_notes_layout_mode', mode);
+    }
+  };
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedColor, setSelectedColor] = useState<'all' | NoteColor>('all');
   const [internalModalOpen, setInternalModalOpen] = useState(false);
@@ -776,10 +815,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                 >
                   <button
                     type="button"
-                    onClick={() => {
-                      playPopSound(preferences?.soundProfile || 'pop');
-                      setLayoutMode('canvas');
-                    }}
+                    onClick={() => handleSwitchLayoutMode('canvas')}
                     className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
                       layoutMode === 'canvas'
                         ? 'bg-amber-500 text-white shadow-2xs'
@@ -793,10 +829,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
 
                   <button
                     type="button"
-                    onClick={() => {
-                      playPopSound(preferences?.soundProfile || 'pop');
-                      setLayoutMode('grid');
-                    }}
+                    onClick={() => handleSwitchLayoutMode('grid')}
                     className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
                       layoutMode === 'grid'
                         ? 'bg-amber-500 text-white shadow-2xs'
@@ -1042,15 +1075,16 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
                 {pinnedNotes.map((note) => (
                   note.isSticker && note.imageUrl ? (
-                    <NoteSticker
-                      key={note.id}
-                      note={note}
-                      onDelete={handleDeleteWithConfirm}
-                      onTogglePin={handleTogglePin}
-                      onToggleSticker={handleToggleSticker}
-                      onUpdateTransform={handleUpdateTransform}
-                      isCanvasMode={false}
-                    />
+                    <div key={note.id} className="flex justify-center items-center w-full">
+                      <NoteSticker
+                        note={note}
+                        onDelete={handleDeleteWithConfirm}
+                        onTogglePin={handleTogglePin}
+                        onToggleSticker={handleToggleSticker}
+                        onUpdateTransform={handleUpdateTransform}
+                        isCanvasMode={false}
+                      />
+                    </div>
                   ) : (
                     <NoteCard
                       key={note.id}
@@ -1084,15 +1118,16 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
                 {otherNotes.map((note) => (
                   note.isSticker && note.imageUrl ? (
-                    <NoteSticker
-                      key={note.id}
-                      note={note}
-                      onDelete={handleDeleteWithConfirm}
-                      onTogglePin={handleTogglePin}
-                      onToggleSticker={handleToggleSticker}
-                      onUpdateTransform={handleUpdateTransform}
-                      isCanvasMode={false}
-                    />
+                    <div key={note.id} className="flex justify-center items-center w-full">
+                      <NoteSticker
+                        note={note}
+                        onDelete={handleDeleteWithConfirm}
+                        onTogglePin={handleTogglePin}
+                        onToggleSticker={handleToggleSticker}
+                        onUpdateTransform={handleUpdateTransform}
+                        isCanvasMode={false}
+                      />
+                    </div>
                   ) : (
                     <NoteCard
                       key={note.id}
