@@ -4,7 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { DeskBuddyType, DeskBuddyPosition, DeskBuddySize, SoundProfile } from '@/types/preferences';
 import { DESK_BUDDY_OPTIONS } from '@/lib/userPreferences';
 import { playPopSound, playVictoryChime } from '@/lib/soundEffects';
-import { X, Sparkles, Heart, Moon, Zap } from 'lucide-react';
+import { X, Sparkles, Heart, Moon, Zap, Gamepad2 } from 'lucide-react';
+import { BuddySnackGameModal } from '@/components/modals/BuddySnackGameModal';
 
 interface DeskBuddyProps {
   buddyType: DeskBuddyType;
@@ -276,6 +277,12 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
   const [showHeartFloater, setShowHeartFloater] = useState<boolean>(false);
   const [earnedTreatFloater, setEarnedTreatFloater] = useState<number>(0);
 
+  // Easter Egg: Pet Streak & Mini Game State
+  const [isEasterEggUnlocked, setIsEasterEggUnlocked] = useState<boolean>(false);
+  const [isMiniGameOpen, setIsMiniGameOpen] = useState<boolean>(false);
+  const petStreakRef = useRef<number>(0);
+  const lastPetTimeRef = useRef<number>(0);
+
   const isNightMode = (() => {
     if (typeof window === 'undefined') return false;
     const hour = new Date().getHours();
@@ -372,6 +379,49 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
     playPopSound(soundProfile);
     setIsJumping(true);
 
+    // Hitung elusan beruntun (Pet Streak) dalam jeda < 2.5 detik
+    const now = Date.now();
+    if (now - lastPetTimeRef.current < 2500) {
+      petStreakRef.current += 1;
+    } else {
+      petStreakRef.current = 1;
+    }
+    lastPetTimeRef.current = now;
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ceria_desk_buddy_last_interaction_time', String(now));
+    }
+
+    // Reaksi bertahap saat dielus beruntun (Easter Egg Trigger)
+    if (petStreakRef.current === 3) {
+      setBubbleText('Hehe, geli tahu dielus-elus terus! 🥰✨');
+      setIsBubbleVisible(true);
+      return;
+    }
+
+    if (petStreakRef.current === 4) {
+      setBubbleText('Wah nyaman banget dielus! Satu elusan lagi ada kejutan rahasia lho... 👀🐾');
+      setIsBubbleVisible(true);
+      return;
+    }
+
+    if (petStreakRef.current >= 5) {
+      setIsEasterEggUnlocked(true);
+      if (petStreakRef.current === 5) {
+        playVictoryChime('arcade');
+      }
+      if (petStreakRef.current >= 7) {
+        petStreakRef.current = 0;
+        setIsMiniGameOpen(true);
+        return;
+      }
+      setBubbleText(
+        `🎉 Easter Egg Terbuka! Hehe geli tahu dielus terus! Main "Tangkap ${config.treatName}" yuk? Bisa dapat camilan & hati gratis! 🎮`
+      );
+      setIsBubbleVisible(true);
+      return;
+    }
+
     let pool: string[] = [];
 
     // Jika lapar, maskot sesekali mengeluh lapar dengan nada imut
@@ -397,9 +447,41 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
     const randomQuote = pool[Math.floor(Math.random() * pool.length)];
     setBubbleText(randomQuote);
     setIsBubbleVisible(true);
+  };
+
+  // Klaim hadiah dari Mini Game Easter Egg
+  const handleClaimGameReward = (earnedTreats: number, earnedHearts: number) => {
+    const nextTreats = treats + earnedTreats;
+    const nextHearts = hearts + earnedHearts;
+    const nextFullness = Math.min(100, fullness + 20);
+
+    setTreats(nextTreats);
+    setHearts(nextHearts);
+    setFullness(nextFullness);
+    setIsJumping(true);
+
     if (typeof window !== 'undefined') {
+      localStorage.setItem('ceria_desk_buddy_treats', String(nextTreats));
+      localStorage.setItem('ceria_desk_buddy_hearts', String(nextHearts));
+      localStorage.setItem('ceria_desk_buddy_fullness', String(nextFullness));
       localStorage.setItem('ceria_desk_buddy_last_interaction_time', String(Date.now()));
     }
+
+    if (earnedTreats > 0) {
+      setEarnedTreatFloater(earnedTreats);
+      setTimeout(() => setEarnedTreatFloater(0), 1800);
+    }
+    if (earnedHearts > 0) {
+      setShowHeartFloater(true);
+      setTimeout(() => setShowHeartFloater(false), 1400);
+    }
+
+    setBubbleText(
+      `Seru banget main bareng kamu! Kita dapat +${earnedTreats} ${config.treatEmoji}${
+        earnedHearts > 0 ? ` dan +${earnedHearts} ❤️` : ''
+      }! Ayo semangat lanjutkan misi hari ini! 🚀🥰`
+    );
+    setIsBubbleVisible(true);
   };
 
   // Opsi A & B: Memberi Makan Maskot
@@ -411,7 +493,7 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
       playPopSound('pop');
       setIsJumping(true);
       setBubbleText(
-        `Stok ${config.treatName} habis! 🥺 Selesaikan tugas di papan untuk dapat camilan lezat ya! 🎯🐾`
+        `Stok ${config.treatName} habis! 🥺 Selesaikan tugas di papan (atau elus aku 5x untuk main mini game!) 🎯🐾`
       );
       setIsBubbleVisible(true);
       if (typeof window !== 'undefined') {
@@ -473,7 +555,7 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
       : 'absolute -bottom-1.5 left-5 w-3 h-3 bg-white dark:bg-slate-900 border-r border-b border-amber-300 dark:border-amber-500/40 rotate-45';
 
   const speechBubble = isBubbleVisible && (
-    <div className="relative max-w-[230px] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-amber-300 dark:border-amber-500/40 rounded-2xl p-2.5 shadow-xl text-slate-800 dark:text-slate-100 text-xs animate-in fade-in zoom-in-95 duration-200">
+    <div className="relative max-w-[235px] bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-amber-300 dark:border-amber-500/40 rounded-2xl p-2.5 shadow-xl text-slate-800 dark:text-slate-100 text-xs animate-in fade-in zoom-in-95 duration-200">
       <div className="flex items-start justify-between gap-1 mb-1">
         <span className="font-bold text-[10px] uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1 truncate">
           {isNightMode ? (
@@ -498,6 +580,20 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
         {bubbleText}
       </p>
 
+      {/* Easter Egg Mini Game Trigger Button inside Speech Bubble */}
+      {isEasterEggUnlocked && (
+        <button
+          onClick={() => {
+            playPopSound('arcade');
+            setIsMiniGameOpen(true);
+          }}
+          className="mt-2 w-full py-1.5 px-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-extrabold text-[11px] shadow-md flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-all animate-pulse"
+        >
+          <Gamepad2 className="w-3.5 h-3.5" />
+          <span>Main Tangkap {config.treatName}!</span>
+        </button>
+      )}
+
       {/* Mini Status Footer in Speech Bubble */}
       <div className="mt-2 pt-1.5 border-t border-amber-200/50 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400">
         <span className="flex items-center gap-1 font-semibold">
@@ -520,154 +616,169 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
   );
 
   return (
-    <aside aria-label="Teman Meja Virtual" className={`${positionClasses} transition-all`}>
-      {/* If top, speech bubble appears below mascot */}
-      {!isTop && speechBubble}
+    <>
+      <aside aria-label="Teman Meja Virtual" className={`${positionClasses} transition-all`}>
+        {/* If top, speech bubble appears below mascot */}
+        {!isTop && speechBubble}
 
-      {/* Mascot Avatar & Actions Bar */}
-      <div className={`flex items-center gap-1.5 relative ${isRight ? 'flex-row-reverse' : ''}`}>
-        {/* Floating Heart Particle Animation on Feed (+1 ❤️) */}
-        {showHeartFloater && (
-          <div
-            className={`absolute -top-7 ${
-              isRight ? 'right-3' : 'left-3'
-            } z-50 pointer-events-none flex items-center gap-1 text-xs font-black text-rose-500 animate-in fade-in slide-out-to-top-6 duration-1000`}
-          >
-            <Heart className="w-4 h-4 fill-rose-500 text-rose-500" />
-            <span>+1 ❤️</span>
-          </div>
-        )}
-
-        {/* Floating Broken Heart Notification if Inactive (-X 💔) */}
-        {lostHeartsNotice > 0 && (
-          <div
-            className={`absolute -top-7 ${
-              isRight ? 'right-3' : 'left-3'
-            } z-50 pointer-events-none flex items-center gap-1 text-xs font-black text-rose-600 bg-rose-50 dark:bg-rose-950 px-2 py-0.5 rounded-full border border-rose-300 shadow-md animate-in fade-in slide-out-to-top-6 duration-1000`}
-          >
-            <span>💔 -{lostHeartsNotice} ❤️</span>
-          </div>
-        )}
-
-        {/* Floating Earned Treat Particle Animation on Task Complete (+1 🦴) */}
-        {earnedTreatFloater > 0 && (
-          <div
-            className={`absolute -top-8 ${
-              isRight ? 'right-12' : 'left-12'
-            } z-50 pointer-events-none flex items-center gap-1 text-xs font-black text-amber-600 bg-amber-100/90 dark:bg-amber-950/90 border border-amber-400 px-1.5 py-0.5 rounded-full shadow-lg animate-in fade-in slide-out-to-top-6 duration-1000`}
-          >
-            <span>+{earnedTreatFloater} {config.treatEmoji}</span>
-            <span>Camilan!</span>
-          </div>
-        )}
-
-        {/* Mascot Avatar Button */}
-        <div className="relative">
-          {/* Opsi D: Aksesoris Kosmetik Berdasarkan Level & Target */}
-          {/* Level 5 atau Target Tercapai: Mahkota Emas */}
-          {(isGoalReached || friendship.level === 5) && (
+        {/* Mascot Avatar & Actions Bar */}
+        <div className={`flex items-center gap-1.5 relative ${isRight ? 'flex-row-reverse' : ''}`}>
+          {/* Floating Heart Particle Animation on Feed (+1 ❤️) */}
+          {showHeartFloater && (
             <div
-              className={`absolute ${sizeStyles.crown} left-1/2 -translate-x-1/2 z-10 drop-shadow-md animate-bounce`}
+              className={`absolute -top-7 ${
+                isRight ? 'right-3' : 'left-3'
+              } z-50 pointer-events-none flex items-center gap-1 text-xs font-black text-rose-500 animate-in fade-in slide-out-to-top-6 duration-1000`}
+            >
+              <Heart className="w-4 h-4 fill-rose-500 text-rose-500" />
+              <span>+❤️</span>
+            </div>
+          )}
+
+          {/* Floating Broken Heart Notification if Inactive (-X 💔) */}
+          {lostHeartsNotice > 0 && (
+            <div
+              className={`absolute -top-7 ${
+                isRight ? 'right-3' : 'left-3'
+              } z-50 pointer-events-none flex items-center gap-1 text-xs font-black text-rose-600 bg-rose-50 dark:bg-rose-950 px-2 py-0.5 rounded-full border border-rose-300 shadow-md animate-in fade-in slide-out-to-top-6 duration-1000`}
+            >
+              <span>💔 -{lostHeartsNotice} ❤️</span>
+            </div>
+          )}
+
+          {/* Floating Earned Treat Particle Animation on Task Complete (+1 🦴) */}
+          {earnedTreatFloater > 0 && (
+            <div
+              className={`absolute -top-8 ${
+                isRight ? 'right-12' : 'left-12'
+              } z-50 pointer-events-none flex items-center gap-1 text-xs font-black text-amber-600 bg-amber-100/90 dark:bg-amber-950/90 border border-amber-400 px-1.5 py-0.5 rounded-full shadow-lg animate-in fade-in slide-out-to-top-6 duration-1000`}
+            >
+              <span>+{earnedTreatFloater} {config.treatEmoji}</span>
+              <span>Camilan!</span>
+            </div>
+          )}
+
+          {/* Mascot Avatar Button */}
+          <div className="relative">
+            {/* Opsi D: Aksesoris Kosmetik Berdasarkan Level & Target */}
+            {/* Level 5 atau Target Tercapai: Mahkota Emas */}
+            {(isGoalReached || friendship.level === 5) && (
+              <div
+                className={`absolute ${sizeStyles.crown} left-1/2 -translate-x-1/2 z-10 drop-shadow-md animate-bounce`}
+                title={
+                  isGoalReached
+                    ? 'Target harian tercapai! Maskot memakai mahkota juara 👑'
+                    : 'Level 5 (Soulmate Abadi): Mahkota Emas Berlian 👑'
+                }
+              >
+                👑
+              </div>
+            )}
+
+            {/* Opsi D: Aksesoris Level 2 (Pita 🎀), Level 3 (Kacamata 🕶️), Level 4 (Jubah 🦸) */}
+            {!isGoalReached && friendship.level === 2 && (
+              <div
+                className="absolute -top-2 -left-1 z-10 text-xs drop-shadow-xs"
+                title="Aksesoris Terbuka: Pita Manis 🎀 (Level 2)"
+              >
+                🎀
+              </div>
+            )}
+            {!isGoalReached && friendship.level === 3 && (
+              <div
+                className="absolute -top-1.5 -left-1.5 z-10 text-xs drop-shadow-xs"
+                title="Aksesoris Terbuka: Kacamata Keren 🕶️ (Level 3)"
+              >
+                🕶️
+              </div>
+            )}
+            {!isGoalReached && friendship.level === 4 && (
+              <div
+                className="absolute -bottom-1 -left-1 z-10 text-xs drop-shadow-xs"
+                title="Aksesoris Terbuka: Jubah Pahlawan 🦸 (Level 4)"
+              >
+                🦸
+              </div>
+            )}
+
+            {/* Night mode sleepy badge */}
+            {isNightMode && (
+              <div
+                className={`absolute ${sizeStyles.sleepBadge} z-10 bg-indigo-900/90 text-indigo-200 rounded-full border border-indigo-400/50 shadow-xs`}
+                title="Mode Malam: Maskot sedang mengantuk 😴"
+              >
+                💤
+              </div>
+            )}
+
+            {/* Opsi B: Indikator Lapar jika Energi < 25% */}
+            {isHungry && !isNightMode && (
+              <div
+                className="absolute -bottom-1 -right-1 z-10 bg-rose-500 text-white text-[9px] px-1 rounded-full border border-white font-bold shadow-xs animate-pulse"
+                title="Maskot sedang lapar! Beri makan camilan agar bersemangat 🥺"
+              >
+                🥺
+              </div>
+            )}
+
+            <button
+              onClick={handleBuddyClick}
+              className={`${sizeStyles.btn} bg-gradient-to-tr from-amber-100 via-orange-50 to-yellow-100 dark:from-slate-800 dark:to-slate-900 border-2 border-amber-300/80 dark:border-amber-500/60 shadow-lg flex items-center justify-center cursor-pointer transition-all hover:scale-110 active:scale-95 ${
+                friendship.auraClass
+              } ${
+                isJumping
+                  ? '-translate-y-2 rotate-6 shadow-2xl ring-2 ring-amber-400'
+                  : 'hover:-translate-y-0.5'
+              }`}
+              title={`Klik ${displayName} untuk sapaan! Elus 5x berturut-turut untuk kejutan! (${friendship.label}, ${hearts} ❤️ • Energi: ${fullness}%)`}
+            >
+              <span>{config.avatar}</span>
+            </button>
+          </div>
+
+          {/* Opsi A & B: Feed Treat Button dengan Sistem Stok & Energi */}
+          {config.treatEmoji && (
+            <button
+              onClick={handleFeed}
+              className={`${sizeStyles.treatBtn} rounded-xl bg-white/95 dark:bg-slate-800/95 border transition-all cursor-pointer shadow-xs flex items-center gap-1.5 active:scale-95 ${
+                treats > 0
+                  ? 'border-amber-300/80 dark:border-amber-500/40 text-amber-900 dark:text-amber-200 hover:scale-105 hover:bg-amber-50/80'
+                  : 'border-slate-200 dark:border-slate-700 text-slate-400 hover:border-amber-300 opacity-85'
+              } ${isHungry && treats > 0 ? 'ring-2 ring-amber-400 animate-pulse' : ''}`}
               title={
-                isGoalReached
-                  ? 'Target harian tercapai! Maskot memakai mahkota juara 👑'
-                  : 'Level 5 (Soulmate Abadi): Mahkota Emas Berlian 👑'
+                treats > 0
+                  ? `Beri makan ${displayName} dengan ${config.treatName} (+1 ❤️, +35% Energi). Stok: ${treats}`
+                  : `Stok ${config.treatName} habis! Selesaikan tugas untuk dapat camilan.`
               }
             >
-              👑
-            </div>
+              <span className={sizeStyles.treatEmoji}>{config.treatEmoji}</span>
+              <span
+                className={`text-[11px] font-bold ${
+                  treats > 0 ? 'text-amber-800 dark:text-amber-200' : 'text-slate-400'
+                }`}
+              >
+                x{treats}
+              </span>
+            </button>
           )}
-
-          {/* Opsi D: Aksesoris Level 2 (Pita 🎀), Level 3 (Kacamata 🕶️), Level 4 (Jubah 🦸) */}
-          {!isGoalReached && friendship.level === 2 && (
-            <div
-              className="absolute -top-2 -left-1 z-10 text-xs drop-shadow-xs"
-              title="Aksesoris Terbuka: Pita Manis 🎀 (Level 2)"
-            >
-              🎀
-            </div>
-          )}
-          {!isGoalReached && friendship.level === 3 && (
-            <div
-              className="absolute -top-1.5 -left-1.5 z-10 text-xs drop-shadow-xs"
-              title="Aksesoris Terbuka: Kacamata Keren 🕶️ (Level 3)"
-            >
-              🕶️
-            </div>
-          )}
-          {!isGoalReached && friendship.level === 4 && (
-            <div
-              className="absolute -bottom-1 -left-1 z-10 text-xs drop-shadow-xs"
-              title="Aksesoris Terbuka: Jubah Pahlawan 🦸 (Level 4)"
-            >
-              🦸
-            </div>
-          )}
-
-          {/* Night mode sleepy badge */}
-          {isNightMode && (
-            <div
-              className={`absolute ${sizeStyles.sleepBadge} z-10 bg-indigo-900/90 text-indigo-200 rounded-full border border-indigo-400/50 shadow-xs`}
-              title="Mode Malam: Maskot sedang mengantuk 😴"
-            >
-              💤
-            </div>
-          )}
-
-          {/* Opsi B: Indikator Lapar jika Energi < 25% */}
-          {isHungry && !isNightMode && (
-            <div
-              className="absolute -bottom-1 -right-1 z-10 bg-rose-500 text-white text-[9px] px-1 rounded-full border border-white font-bold shadow-xs animate-pulse"
-              title="Maskot sedang lapar! Beri makan camilan agar bersemangat 🥺"
-            >
-              🥺
-            </div>
-          )}
-
-          <button
-            onClick={handleBuddyClick}
-            className={`${sizeStyles.btn} bg-gradient-to-tr from-amber-100 via-orange-50 to-yellow-100 dark:from-slate-800 dark:to-slate-900 border-2 border-amber-300/80 dark:border-amber-500/60 shadow-lg flex items-center justify-center cursor-pointer transition-all hover:scale-110 active:scale-95 ${
-              friendship.auraClass
-            } ${
-              isJumping
-                ? '-translate-y-2 rotate-6 shadow-2xl ring-2 ring-amber-400'
-                : 'hover:-translate-y-0.5'
-            }`}
-            title={`Klik ${displayName} untuk sapaan! (${friendship.label}, ${hearts} ❤️ • Energi: ${fullness}%)`}
-          >
-            <span>{config.avatar}</span>
-          </button>
         </div>
 
-        {/* Opsi A & B: Feed Treat Button dengan Sistem Stok & Energi */}
-        {config.treatEmoji && (
-          <button
-            onClick={handleFeed}
-            className={`${sizeStyles.treatBtn} rounded-xl bg-white/95 dark:bg-slate-800/95 border transition-all cursor-pointer shadow-xs flex items-center gap-1.5 active:scale-95 ${
-              treats > 0
-                ? 'border-amber-300/80 dark:border-amber-500/40 text-amber-900 dark:text-amber-200 hover:scale-105 hover:bg-amber-50/80'
-                : 'border-slate-200 dark:border-slate-700 text-slate-400 hover:border-amber-300 opacity-85'
-            } ${isHungry && treats > 0 ? 'ring-2 ring-amber-400 animate-pulse' : ''}`}
-            title={
-              treats > 0
-                ? `Beri makan ${displayName} dengan ${config.treatName} (+1 ❤️, +35% Energi). Stok: ${treats}`
-                : `Stok ${config.treatName} habis! Selesaikan tugas untuk dapat camilan.`
-            }
-          >
-            <span className={sizeStyles.treatEmoji}>{config.treatEmoji}</span>
-            <span
-              className={`text-[11px] font-bold ${
-                treats > 0 ? 'text-amber-800 dark:text-amber-200' : 'text-slate-400'
-              }`}
-            >
-              x{treats}
-            </span>
-          </button>
-        )}
-      </div>
+        {/* If top, speech bubble appears below mascot */}
+        {isTop && speechBubble}
+      </aside>
 
-      {/* If top, speech bubble appears below mascot */}
-      {isTop && speechBubble}
-    </aside>
+      {/* Easter Egg Mini Game Modal */}
+      <BuddySnackGameModal
+        isOpen={isMiniGameOpen}
+        onClose={() => setIsMiniGameOpen(false)}
+        buddyName={displayName}
+        buddyAvatar={config.avatar}
+        treatEmoji={config.treatEmoji || '🐟'}
+        treatName={config.treatName || 'Camilan'}
+        accessoryIcon={isGoalReached || friendship.level === 5 ? '👑' : friendship.accessoryIcon}
+        soundProfile={soundProfile}
+        onClaimReward={handleClaimGameReward}
+      />
+    </>
   );
 };

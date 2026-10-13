@@ -164,3 +164,33 @@ export function playVictoryChime(profile: SoundProfile = 'pop'): void {
     console.warn('Could not play victory chime:', err);
   }
 }
+
+/**
+ * Gentle retro buzz sound when hitting a distraction obstacle in the mini-game.
+ */
+export function playBuzzSound(): void {
+  if (isSoundMuted()) return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  try {
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(160, now);
+    osc.frequency.linearRampToValueAtTime(95, now + 0.14);
+
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.15);
+  } catch (err) {
+    console.warn('Could not play buzz sound:', err);
+  }
+}
+
