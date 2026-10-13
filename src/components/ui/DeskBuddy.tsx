@@ -412,6 +412,8 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
       }
       if (petStreakRef.current >= 7) {
         petStreakRef.current = 0;
+        setIsEasterEggUnlocked(false);
+        setIsBubbleVisible(false);
         setIsMiniGameOpen(true);
         return;
       }
@@ -476,12 +478,10 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
       setTimeout(() => setShowHeartFloater(false), 1400);
     }
 
-    setBubbleText(
-      `Seru banget main bareng kamu! Kita dapat +${earnedTreats} ${config.treatEmoji}${
-        earnedHearts > 0 ? ` dan +${earnedHearts} ❤️` : ''
-      }! Ayo semangat lanjutkan misi hari ini! 🚀🥰`
-    );
-    setIsBubbleVisible(true);
+    // Reset trigger & tutup bubble setelah bermain agar user harus mengelus lagi untuk main
+    petStreakRef.current = 0;
+    setIsEasterEggUnlocked(false);
+    setIsBubbleVisible(false);
   };
 
   // Opsi A & B: Memberi Makan Maskot
@@ -568,7 +568,11 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
           </span>
         </span>
         <button
-          onClick={() => setIsBubbleVisible(false)}
+          onClick={() => {
+            setIsBubbleVisible(false);
+            setIsEasterEggUnlocked(false);
+            petStreakRef.current = 0;
+          }}
           className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded cursor-pointer transition-colors shrink-0"
           title="Tutup pesan"
         >
@@ -585,6 +589,9 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
         <button
           onClick={() => {
             playPopSound('arcade');
+            petStreakRef.current = 0;
+            setIsEasterEggUnlocked(false);
+            setIsBubbleVisible(false);
             setIsMiniGameOpen(true);
           }}
           className="mt-2 w-full py-1.5 px-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-extrabold text-[11px] shadow-md flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-all animate-pulse"
@@ -770,7 +777,12 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
       {/* Easter Egg Mini Game Modal */}
       <BuddySnackGameModal
         isOpen={isMiniGameOpen}
-        onClose={() => setIsMiniGameOpen(false)}
+        onClose={() => {
+          setIsMiniGameOpen(false);
+          setIsBubbleVisible(false);
+          setIsEasterEggUnlocked(false);
+          petStreakRef.current = 0;
+        }}
         buddyName={displayName}
         buddyAvatar={config.avatar}
         treatEmoji={config.treatEmoji || '🐟'}

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Trophy, Heart, Sparkles, Play, RotateCcw, Gamepad2 } from 'lucide-react';
+import { X, Trophy, Heart, Sparkles, Play, Gamepad2 } from 'lucide-react';
 import { SoundProfile } from '@/types/preferences';
 import { playPopSound, playVictoryChime, playBuzzSound } from '@/lib/soundEffects';
 import { triggerCelebration } from '@/lib/confetti';
@@ -355,11 +355,18 @@ export const BuddySnackGameModal: React.FC<BuddySnackGameModalProps> = ({
   };
 
   const handleClaimAndClose = () => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
     if (!rewardClaimed && gameState === 'ended') {
       const reward = calculateRewards(score);
       onClaimReward(reward.treats, reward.hearts);
       setRewardClaimed(true);
     }
+    setGameState('ready');
+    setItems([]);
+    itemsRef.current = [];
     onClose();
   };
 
@@ -552,28 +559,12 @@ export const BuddySnackGameModal: React.FC<BuddySnackGameModalProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2.5">
-                <button
-                  onClick={() => {
-                    if (!rewardClaimed) {
-                      onClaimReward(rewardInfo.treats, rewardInfo.hearts);
-                      setRewardClaimed(true);
-                    }
-                    startGame();
-                  }}
-                  className="px-4 py-2 rounded-xl border border-amber-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-amber-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Main Lagi</span>
-                </button>
-
-                <button
-                  onClick={handleClaimAndClose}
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-extrabold text-xs shadow-md flex items-center gap-1.5 cursor-pointer transition-all"
-                >
-                  <span>Ambil Hadiah & Selesai ✨</span>
-                </button>
-              </div>
+              <button
+                onClick={handleClaimAndClose}
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-extrabold text-xs shadow-md flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+              >
+                <span>Ambil Hadiah & Selesai ✨</span>
+              </button>
             </div>
           )}
 
