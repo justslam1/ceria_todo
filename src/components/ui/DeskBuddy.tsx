@@ -1,11 +1,16 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { DeskBuddyType, DeskBuddyPosition, DeskBuddySize, SoundProfile } from '@/types/preferences';
 import { DESK_BUDDY_OPTIONS } from '@/lib/userPreferences';
 import { playPopSound, playVictoryChime } from '@/lib/soundEffects';
 import { X, Sparkles, Heart, Moon, Zap, Gamepad2 } from 'lucide-react';
-import { BuddySnackGameModal } from '@/components/modals/BuddySnackGameModal';
+
+const BuddySnackGameModal = dynamic(
+  () => import('@/components/modals/BuddySnackGameModal').then((m) => m.BuddySnackGameModal),
+  { ssr: false }
+);
 
 interface DeskBuddyProps {
   buddyType: DeskBuddyType;
@@ -815,23 +820,25 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
         {isTop && speechBubble}
       </aside>
 
-      {/* Easter Egg Mini Game Modal */}
-      <BuddySnackGameModal
-        isOpen={isMiniGameOpen}
-        onClose={() => {
-          setIsMiniGameOpen(false);
-          setIsBubbleVisible(false);
-          setIsEasterEggUnlocked(false);
-          petStreakRef.current = 0;
-        }}
-        buddyName={displayName}
-        buddyAvatar={config.avatar}
-        treatEmoji={config.treatEmoji || '🐟'}
-        treatName={config.treatName || 'Camilan'}
-        accessoryIcon={isGoalReached || friendship.level === 5 ? '👑' : friendship.accessoryIcon}
-        soundProfile={soundProfile}
-        onClaimReward={handleClaimGameReward}
-      />
+      {/* Easter Egg Mini Game Modal (Lazy Loaded on Demand) */}
+      {isMiniGameOpen && (
+        <BuddySnackGameModal
+          isOpen={isMiniGameOpen}
+          onClose={() => {
+            setIsMiniGameOpen(false);
+            setIsBubbleVisible(false);
+            setIsEasterEggUnlocked(false);
+            petStreakRef.current = 0;
+          }}
+          buddyName={displayName}
+          buddyAvatar={config.avatar}
+          treatEmoji={config.treatEmoji || '🐟'}
+          treatName={config.treatName || 'Camilan'}
+          accessoryIcon={isGoalReached || friendship.level === 5 ? '👑' : friendship.accessoryIcon}
+          soundProfile={soundProfile}
+          onClaimReward={handleClaimGameReward}
+        />
+      )}
     </>
   );
 };

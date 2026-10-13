@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useSyncExternalStore } from 'react';
+import dynamic from 'next/dynamic';
 import { DragDropContext, DropResult } from '@hello-pangea/dnd';
 import { Task, TaskStatus, CreateTaskInput, UpdateTaskInput } from '@/types/task';
 import { UserPreferences, SortByOption, BoardSticker } from '@/types/preferences';
@@ -23,10 +24,25 @@ import { ArchiveModal } from '@/components/modals/ArchiveModal';
 import { QuoteStickerModal } from '@/components/modals/QuoteStickerModal';
 import { PixelArtModal } from '@/components/modals/PixelArtModal';
 import { ShowcaseModal } from '@/components/modals/ShowcaseModal';
-import { StickyNotesMatchModal } from '@/components/modals/StickyNotesMatchModal';
-import { WhackADistractionModal } from '@/components/modals/WhackADistractionModal';
 import { DeskBuddy } from '@/components/ui/DeskBuddy';
 import { BoardStickers } from '@/components/ui/BoardStickers';
+
+const StickyNotesMatchModal = dynamic(
+  () => import('@/components/modals/StickyNotesMatchModal').then((m) => m.StickyNotesMatchModal),
+  { ssr: false }
+);
+const WhackADistractionModal = dynamic(
+  () => import('@/components/modals/WhackADistractionModal').then((m) => m.WhackADistractionModal),
+  { ssr: false }
+);
+const BuddySnakeModal = dynamic(
+  () => import('@/components/modals/BuddySnakeModal').then((m) => m.BuddySnakeModal),
+  { ssr: false }
+);
+const FocusPongModal = dynamic(
+  () => import('@/components/modals/FocusPongModal').then((m) => m.FocusPongModal),
+  { ssr: false }
+);
 import {
   toggleSubtaskInRawDescription,
   isTaskPinned,
@@ -60,6 +76,8 @@ import {
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 const MEMORY_TRIGGER_WORDS = ['gabut', 'rehat', 'game'];
+const SNAKE_TRIGGER_WORDS = ['snake', 'ular'];
+const PONG_TRIGGER_WORDS = ['pong', 'tenis'];
 const KONAMI_SEQUENCE = [
   'ArrowUp',
   'ArrowUp',
@@ -109,6 +127,8 @@ export const KanbanBoard: React.FC = () => {
   const [isStickyMatchOpen, setIsStickyMatchOpen] = useState(false);
   const [stickyMatchTriggerWord, setStickyMatchTriggerWord] = useState('rehat');
   const [isWhackGameOpen, setIsWhackGameOpen] = useState(false);
+  const [isSnakeGameOpen, setIsSnakeGameOpen] = useState(false);
+  const [isPongGameOpen, setIsPongGameOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [defaultStatusForNew, setDefaultStatusForNew] = useState<TaskStatus>('TODO');
   const [singleColumnTab, setSingleColumnTab] = useState<TaskStatus>('TODO');
@@ -126,6 +146,8 @@ export const KanbanBoard: React.FC = () => {
   // Easter Egg Triggers:
   // 1) Mengetik kata 'gabut', 'rehat', atau 'game' -> Sticky Notes Match
   // 2) Konami Code (↑ ↑ ↓ ↓ ← → ← →) -> Procrastination Invaders (Whack-a-Distraction)
+  // 3) Mengetik kata 'snake' atau 'ular' -> Buddy Snake
+  // 4) Mengetik kata 'pong' atau 'tenis' -> Focus Pong
   useEffect(() => {
     let keyBuffer = '';
     let lastKeyTime = 0;
@@ -133,7 +155,7 @@ export const KanbanBoard: React.FC = () => {
     let lastKonamiTime = 0;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (isStickyMatchOpen || isWhackGameOpen) return;
+      if (isStickyMatchOpen || isWhackGameOpen || isSnakeGameOpen || isPongGameOpen) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
 
       const target = e.target as HTMLElement | null;
@@ -167,7 +189,7 @@ export const KanbanBoard: React.FC = () => {
         konamiIndex = 0;
       }
 
-      // Check word buffer ('gabut', 'rehat', 'game')
+      // Check word buffer ('gabut', 'rehat', 'game', 'snake', 'ular', 'pong', 'tenis')
       if (e.key.length === 1 && /[a-zA-Z]/.test(e.key)) {
         if (now - lastKeyTime > 2000) {
           keyBuffer = '';
@@ -175,22 +197,44 @@ export const KanbanBoard: React.FC = () => {
         lastKeyTime = now;
         keyBuffer = (keyBuffer + e.key.toLowerCase()).slice(-10);
 
-        const matched = MEMORY_TRIGGER_WORDS.find((w) => keyBuffer.endsWith(w));
-        if (matched) {
+        const matchedMemory = MEMORY_TRIGGER_WORDS.find((w) => keyBuffer.endsWith(w));
+        if (matchedMemory) {
           keyBuffer = '';
           playPopSound('arcade');
-          setStickyMatchTriggerWord(matched);
+          setStickyMatchTriggerWord(matchedMemory);
           setIsStickyMatchOpen(true);
+          return;
+        }
+
+        const matchedSnake = SNAKE_TRIGGER_WORDS.find((w) => keyBuffer.endsWith(w));
+        if (matchedSnake) {
+          keyBuffer = '';
+          playPopSound('arcade');
+          setIsSnakeGameOpen(true);
+          return;
+        }
+
+        const matchedPong = PONG_TRIGGER_WORDS.find((w) => keyBuffer.endsWith(w));
+        if (matchedPong) {
+          keyBuffer = '';
+          playPopSound('arcade');
+          setIsPongGameOpen(true);
         }
       }
     };
 
     const handleCustomOpen = (e: Event) => {
       const customEvent = e as CustomEvent<{ word?: string }>;
-      const word = customEvent.detail?.word || 'rehat';
+      const word = (customEvent.detail?.word || 'rehat').toLowerCase();
       playPopSound('arcade');
-      setStickyMatchTriggerWord(word);
-      setIsStickyMatchOpen(true);
+      if (SNAKE_TRIGGER_WORDS.includes(word)) {
+        setIsSnakeGameOpen(true);
+      } else if (PONG_TRIGGER_WORDS.includes(word)) {
+        setIsPongGameOpen(true);
+      } else {
+        setStickyMatchTriggerWord(word);
+        setIsStickyMatchOpen(true);
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -199,7 +243,7 @@ export const KanbanBoard: React.FC = () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('ceria-open-memory-game', handleCustomOpen);
     };
-  }, [isStickyMatchOpen, isWhackGameOpen]);
+  }, [isStickyMatchOpen, isWhackGameOpen, isSnakeGameOpen, isPongGameOpen]);
 
   useEffect(() => {
     const locale = language === 'en' ? 'en-US' : 'id-ID';
@@ -1607,6 +1651,18 @@ export const KanbanBoard: React.FC = () => {
                   setIsStickyMatchOpen(true);
                   return;
                 }
+                if (SNAKE_TRIGGER_WORDS.includes(normalized)) {
+                  setSearchQuery('');
+                  playPopSound('arcade');
+                  setIsSnakeGameOpen(true);
+                  return;
+                }
+                if (PONG_TRIGGER_WORDS.includes(normalized)) {
+                  setSearchQuery('');
+                  playPopSound('arcade');
+                  setIsPongGameOpen(true);
+                  return;
+                }
                 setSearchQuery(val);
               }}
               placeholder={t.kanban.searchPlaceholder}
@@ -2333,27 +2389,77 @@ export const KanbanBoard: React.FC = () => {
       )}
 
       {/* Easter Egg: Memory Card Sticky Notes Match Modal (triggered by typing gabut, rehat, game) */}
-      <StickyNotesMatchModal
-        isOpen={isStickyMatchOpen}
-        onClose={() => setIsStickyMatchOpen(false)}
-        triggerWord={stickyMatchTriggerWord}
-        soundProfile={preferences.soundProfile}
-      />
+      {isStickyMatchOpen && (
+        <StickyNotesMatchModal
+          isOpen={isStickyMatchOpen}
+          onClose={() => setIsStickyMatchOpen(false)}
+          triggerWord={stickyMatchTriggerWord}
+          soundProfile={preferences.soundProfile}
+        />
+      )}
 
       {/* Easter Egg: Procrastination Invaders / Whack-a-Distraction (triggered by Konami Code) */}
-      <WhackADistractionModal
-        isOpen={isWhackGameOpen}
-        onClose={() => setIsWhackGameOpen(false)}
-        buddyAvatar={
-          DESK_BUDDY_OPTIONS.find((b) => b.id === preferences.deskBuddy)?.avatar || '🐱'
-        }
-        buddyName={
-          preferences.deskBuddyCustomName?.trim() ||
-          DESK_BUDDY_OPTIONS.find((b) => b.id === preferences.deskBuddy)?.name ||
-          'Desk Buddy'
-        }
-        soundProfile={preferences.soundProfile}
-      />
+      {isWhackGameOpen && (
+        <WhackADistractionModal
+          isOpen={isWhackGameOpen}
+          onClose={() => setIsWhackGameOpen(false)}
+          buddyAvatar={
+            DESK_BUDDY_OPTIONS.find((b) => b.id === preferences.deskBuddy)?.avatar || '🐱'
+          }
+          buddyName={
+            preferences.deskBuddyCustomName?.trim() ||
+            DESK_BUDDY_OPTIONS.find((b) => b.id === preferences.deskBuddy)?.name ||
+            'Desk Buddy'
+          }
+          soundProfile={preferences.soundProfile}
+        />
+      )}
+
+      {/* Easter Egg: Buddy Snake (triggered by typing snake or ular) */}
+      {isSnakeGameOpen && (
+        <BuddySnakeModal
+          isOpen={isSnakeGameOpen}
+          onClose={() => setIsSnakeGameOpen(false)}
+          buddyAvatar={
+            DESK_BUDDY_OPTIONS.find((b) => b.id === preferences.deskBuddy)?.avatar || '🐱'
+          }
+          buddyName={
+            preferences.deskBuddyCustomName?.trim() ||
+            DESK_BUDDY_OPTIONS.find((b) => b.id === preferences.deskBuddy)?.name ||
+            'Desk Buddy'
+          }
+          treatEmoji={
+            DESK_BUDDY_OPTIONS.find((b) => b.id === preferences.deskBuddy)?.treatEmoji || '🐟'
+          }
+          treatName={
+            DESK_BUDDY_OPTIONS.find((b) => b.id === preferences.deskBuddy)?.treatName || 'Camilan'
+          }
+          soundProfile={preferences.soundProfile}
+        />
+      )}
+
+      {/* Easter Egg: Focus Pong (triggered by typing pong or tenis) */}
+      {isPongGameOpen && (
+        <FocusPongModal
+          isOpen={isPongGameOpen}
+          onClose={() => setIsPongGameOpen(false)}
+          buddyAvatar={
+            DESK_BUDDY_OPTIONS.find((b) => b.id === preferences.deskBuddy)?.avatar || '🐱'
+          }
+          buddyName={
+            preferences.deskBuddyCustomName?.trim() ||
+            DESK_BUDDY_OPTIONS.find((b) => b.id === preferences.deskBuddy)?.name ||
+            'Desk Buddy'
+          }
+          treatEmoji={
+            DESK_BUDDY_OPTIONS.find((b) => b.id === preferences.deskBuddy)?.treatEmoji || '🐟'
+          }
+          treatName={
+            DESK_BUDDY_OPTIONS.find((b) => b.id === preferences.deskBuddy)?.treatName || 'Camilan'
+          }
+          soundProfile={preferences.soundProfile}
+        />
+      )}
 
       {/* Floating Network Error Toast */}
       {networkError && (

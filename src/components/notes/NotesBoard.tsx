@@ -861,7 +861,11 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                     onChange={(e) => {
                       const val = e.target.value;
                       const normalized = val.trim().toLowerCase();
-                      if (['gabut', 'rehat', 'game'].includes(normalized)) {
+                      if (
+                        ['gabut', 'rehat', 'game', 'snake', 'ular', 'pong', 'tenis'].includes(
+                          normalized
+                        )
+                      ) {
                         setSearchQuery('');
                         if (typeof window !== 'undefined') {
                           window.dispatchEvent(
