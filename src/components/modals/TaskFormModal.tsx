@@ -372,7 +372,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
                 className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-amber-400 text-sm font-medium text-slate-700 bg-white"
               >
                 <option value="TODO">💡 {t.kanban.defaultColTodoTitle}</option>
-                <option value="IN_PROGRESS">⚡ {t.kanban.defaultColInProgressTitle}</option>
+                <option value="IN_PROGRESS">⚡ {t.kanban.defaultColProgTitle}</option>
                 <option value="DONE">🏆 {t.kanban.defaultColDoneTitle}</option>
               </select>
             </div>
