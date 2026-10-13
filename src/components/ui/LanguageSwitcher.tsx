@@ -2,11 +2,47 @@
 
 import React from 'react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
-import { Globe } from 'lucide-react';
 
 interface LanguageSwitcherProps {
   className?: string;
   variant?: 'pill' | 'minimal' | 'badge';
+}
+
+function FlagID({ className = 'w-4 h-3' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 16"
+      className={` rounded-[3px] shadow-2xs border border-black/15 shrink-0 overflow-hidden ${className}`}
+      aria-hidden="true"
+    >
+      <rect width="24" height="8" y="0" fill="#E70011" />
+      <rect width="24" height="8" y="8" fill="#FFFFFF" />
+    </svg>
+  );
+}
+
+function FlagGB({ className = 'w-4 h-3' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 60 30"
+      className={`rounded-[3px] shadow-2xs border border-black/15 shrink-0 overflow-hidden ${className}`}
+      aria-hidden="true"
+    >
+      <clipPath id="gb-clip">
+        <path d="M0,0 v30 h60 v-30 z" />
+      </clipPath>
+      <clipPath id="gb-diag">
+        <path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z" />
+      </clipPath>
+      <g clipPath="url(#gb-clip)">
+        <path d="M0,0 v30 h60 v-30 z" fill="#012169" />
+        <path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" strokeWidth="6" />
+        <path d="M0,0 L60,30 M60,0 L0,30" clipPath="url(#gb-diag)" stroke="#C8102E" strokeWidth="4" />
+        <path d="M30,0 v30 M0,15 h60" stroke="#fff" strokeWidth="10" />
+        <path d="M30,0 v30 M0,15 h60" stroke="#C8102E" strokeWidth="6" />
+      </g>
+    </svg>
+  );
 }
 
 export function LanguageSwitcher({ className = '', variant = 'pill' }: LanguageSwitcherProps) {
@@ -14,30 +50,35 @@ export function LanguageSwitcher({ className = '', variant = 'pill' }: LanguageS
 
   if (variant === 'badge') {
     return (
-      <div className={`inline-flex items-center gap-1.5 p-1 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xs rounded-full border border-amber-200/80 dark:border-slate-700 shadow-xs ${className}`}>
-        <Globe className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 ml-1.5 shrink-0" />
-        <div className="flex items-center text-xs font-bold">
+      <div
+        className={`inline-flex items-center gap-1 p-1 bg-white/85 dark:bg-slate-800/85 backdrop-blur-xs rounded-full border border-amber-200/80 dark:border-slate-700 shadow-xs ${className}`}
+      >
+        <div className="flex items-center gap-0.5 text-xs font-bold">
           <button
             type="button"
             onClick={() => setLanguage('id')}
-            className={`px-2.5 py-0.5 rounded-full transition-all cursor-pointer ${
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full transition-all cursor-pointer ${
               language === 'id'
                 ? 'bg-amber-500 text-white shadow-2xs font-extrabold'
-                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
             }`}
+            title="Bahasa Indonesia"
           >
-            🇮🇩 ID
+            <FlagID className="w-4 h-3" />
+            <span>ID</span>
           </button>
           <button
             type="button"
             onClick={() => setLanguage('en')}
-            className={`px-2.5 py-0.5 rounded-full transition-all cursor-pointer ${
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full transition-all cursor-pointer ${
               language === 'en'
                 ? 'bg-amber-500 text-white shadow-2xs font-extrabold'
-                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
             }`}
+            title="English"
           >
-            🇬🇧 EN
+            <FlagGB className="w-4 h-3" />
+            <span>EN</span>
           </button>
         </div>
       </div>
@@ -58,7 +99,7 @@ export function LanguageSwitcher({ className = '', variant = 'pill' }: LanguageS
         }`}
         title="Bahasa Indonesia"
       >
-        <span>🇮🇩</span>
+        <FlagID className="w-4 h-3" />
         <span>ID</span>
       </button>
 
@@ -72,7 +113,7 @@ export function LanguageSwitcher({ className = '', variant = 'pill' }: LanguageS
         }`}
         title="English"
       >
-        <span>🇬🇧</span>
+        <FlagGB className="w-4 h-3" />
         <span>EN</span>
       </button>
     </div>
