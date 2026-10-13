@@ -367,6 +367,47 @@ export const DeskBuddy: React.FC<DeskBuddyProps> = ({
     }
   }, [isJumping]);
 
+  // Listen for rewards from other easter egg mini-games (e.g. Sticky Notes Match)
+  useEffect(() => {
+    const handleExternalReward = (e: Event) => {
+      const customEvent = e as CustomEvent<{ treats?: number; hearts?: number }>;
+      const earnedTreats = customEvent.detail?.treats || 0;
+      const earnedHearts = customEvent.detail?.hearts || 0;
+      if (earnedTreats <= 0 && earnedHearts <= 0) return;
+
+      setTreats((prev) => {
+        const next = prev + earnedTreats;
+        localStorage.setItem('ceria_desk_buddy_treats', String(next));
+        return next;
+      });
+      setHearts((prev) => {
+        const next = prev + earnedHearts;
+        localStorage.setItem('ceria_desk_buddy_hearts', String(next));
+        return next;
+      });
+      setFullness((prev) => {
+        const next = Math.min(100, prev + 20);
+        localStorage.setItem('ceria_desk_buddy_fullness', String(next));
+        return next;
+      });
+      localStorage.setItem('ceria_desk_buddy_last_interaction_time', String(Date.now()));
+
+      setIsJumping(true);
+      if (earnedTreats > 0) {
+        setEarnedTreatFloater(earnedTreats);
+        setTimeout(() => setEarnedTreatFloater(0), 1800);
+      }
+      if (earnedHearts > 0) {
+        setShowHeartFloater(true);
+        setTimeout(() => setShowHeartFloater(false), 1400);
+      }
+      setIsBubbleVisible(false);
+    };
+
+    window.addEventListener('ceria-buddy-reward', handleExternalReward);
+    return () => window.removeEventListener('ceria-buddy-reward', handleExternalReward);
+  }, []);
+
   if (!config || buddyType === 'none') {
     return null;
   }

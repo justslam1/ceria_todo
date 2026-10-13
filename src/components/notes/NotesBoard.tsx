@@ -858,7 +858,22 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                   <input
                     type="text"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const normalized = val.trim().toLowerCase();
+                      if (['gabut', 'rehat', 'game'].includes(normalized)) {
+                        setSearchQuery('');
+                        if (typeof window !== 'undefined') {
+                          window.dispatchEvent(
+                            new CustomEvent('ceria-open-memory-game', {
+                              detail: { word: normalized },
+                            })
+                          );
+                        }
+                        return;
+                      }
+                      setSearchQuery(val);
+                    }}
                     placeholder={t.notesBoard.searchPlaceholder}
                     style={{ color: themeConfig.isDark ? '#ffffff' : '#0f172a' }}
                     className={`w-full pl-9 pr-7 py-1.5 rounded-xl border text-xs transition-all outline-hidden ${

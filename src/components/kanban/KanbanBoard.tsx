@@ -22,6 +22,7 @@ import { ArchiveModal } from '@/components/modals/ArchiveModal';
 import { QuoteStickerModal } from '@/components/modals/QuoteStickerModal';
 import { PixelArtModal } from '@/components/modals/PixelArtModal';
 import { ShowcaseModal } from '@/components/modals/ShowcaseModal';
+import { StickyNotesMatchModal } from '@/components/modals/StickyNotesMatchModal';
 import { DeskBuddy } from '@/components/ui/DeskBuddy';
 import { BoardStickers } from '@/components/ui/BoardStickers';
 import {
@@ -55,6 +56,8 @@ import {
   Columns3,
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+
+const MEMORY_TRIGGER_WORDS = ['gabut', 'rehat', 'game'];
 
 export const KanbanBoard: React.FC = () => {
   const { t, language } = useLanguage();
@@ -91,6 +94,8 @@ export const KanbanBoard: React.FC = () => {
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [isPixelModalOpen, setIsPixelModalOpen] = useState(false);
   const [isShowcaseOpen, setIsShowcaseOpen] = useState(false);
+  const [isStickyMatchOpen, setIsStickyMatchOpen] = useState(false);
+  const [stickyMatchTriggerWord, setStickyMatchTriggerWord] = useState('rehat');
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [defaultStatusForNew, setDefaultStatusForNew] = useState<TaskStatus>('TODO');
   const [singleColumnTab, setSingleColumnTab] = useState<TaskStatus>('TODO');
@@ -104,6 +109,57 @@ export const KanbanBoard: React.FC = () => {
 
   const [currentDate, setCurrentDate] = useState('');
   const [currentTime, setCurrentTime] = useState('');
+
+  // Easter Egg Trigger: Mengetik kata 'gabut', 'rehat', atau 'game'
+  useEffect(() => {
+    let keyBuffer = '';
+    let lastKeyTime = 0;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isStickyMatchOpen) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+      const target = e.target as HTMLElement | null;
+      if (target) {
+        const tag = target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable) {
+          return;
+        }
+      }
+
+      if (e.key.length === 1 && /[a-zA-Z]/.test(e.key)) {
+        const now = Date.now();
+        if (now - lastKeyTime > 2000) {
+          keyBuffer = '';
+        }
+        lastKeyTime = now;
+        keyBuffer = (keyBuffer + e.key.toLowerCase()).slice(-10);
+
+        const matched = MEMORY_TRIGGER_WORDS.find((w) => keyBuffer.endsWith(w));
+        if (matched) {
+          keyBuffer = '';
+          playPopSound('arcade');
+          setStickyMatchTriggerWord(matched);
+          setIsStickyMatchOpen(true);
+        }
+      }
+    };
+
+    const handleCustomOpen = (e: Event) => {
+      const customEvent = e as CustomEvent<{ word?: string }>;
+      const word = customEvent.detail?.word || 'rehat';
+      playPopSound('arcade');
+      setStickyMatchTriggerWord(word);
+      setIsStickyMatchOpen(true);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('ceria-open-memory-game', handleCustomOpen);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('ceria-open-memory-game', handleCustomOpen);
+    };
+  }, [isStickyMatchOpen]);
 
   useEffect(() => {
     const locale = language === 'en' ? 'en-US' : 'id-ID';
@@ -1501,7 +1557,18 @@ export const KanbanBoard: React.FC = () => {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                const normalized = val.trim().toLowerCase();
+                if (MEMORY_TRIGGER_WORDS.includes(normalized)) {
+                  setSearchQuery('');
+                  playPopSound('arcade');
+                  setStickyMatchTriggerWord(normalized);
+                  setIsStickyMatchOpen(true);
+                  return;
+                }
+                setSearchQuery(val);
+              }}
               placeholder={t.kanban.searchPlaceholder}
               className={`w-full pl-8 pr-7 py-1.5 rounded-xl border text-xs focus:outline-hidden focus:ring-2 ${
                 themeConfig.focusRing
@@ -2224,6 +2291,14 @@ export const KanbanBoard: React.FC = () => {
           tasks={tasks}
         />
       )}
+
+      {/* Easter Egg: Memory Card Sticky Notes Match Modal (triggered by typing gabut, rehat, game) */}
+      <StickyNotesMatchModal
+        isOpen={isStickyMatchOpen}
+        onClose={() => setIsStickyMatchOpen(false)}
+        triggerWord={stickyMatchTriggerWord}
+        soundProfile={preferences.soundProfile}
+      />
 
       {/* Floating Network Error Toast */}
       {networkError && (
