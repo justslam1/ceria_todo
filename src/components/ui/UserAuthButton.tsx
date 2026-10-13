@@ -4,11 +4,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { LogOut, Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export const UserAuthButton: React.FC = () => {
   const { data: session, status } = useSession();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -25,21 +27,21 @@ export const UserAuthButton: React.FC = () => {
     return (
       <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-slate-100 text-slate-400 text-xs font-medium animate-pulse">
         <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-500" />
-        <span>Memeriksa akun...</span>
+        <span>{t.navbar.checkingAccount}</span>
       </div>
     );
   }
 
   if (status === 'authenticated' && session?.user) {
     const { name, email, image } = session.user;
-    const firstName = name ? name.split(' ')[0] : 'Akun';
+    const firstName = name ? name.split(' ')[0] : 'User';
 
     return (
       <div className="relative z-50" ref={dropdownRef}>
         <button
           onClick={() => setDropdownOpen((prev) => !prev)}
           className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1.5 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 shadow-2xs hover:shadow-xs transition-all active:scale-95 cursor-pointer shrink-0"
-          title={`Masuk sebagai ${name || email}`}
+          title={`${t.navbar.loggedInAs} ${name || email}`}
         >
           {image ? (
             <Image
@@ -74,7 +76,7 @@ export const UserAuthButton: React.FC = () => {
                 className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
               >
                 <LogOut className="w-3.5 h-3.5" />
-                <span>Keluar (Logout)</span>
+                <span>{t.navbar.logoutBtn}</span>
               </button>
             </div>
           </div>
@@ -83,6 +85,5 @@ export const UserAuthButton: React.FC = () => {
     );
   }
 
-  // Jika belum login, tidak menampilkan tombol di navbar karena diarahkan ke /login
   return null;
 };

@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { Pin, Trash2, Edit3, Sparkles, MoreHorizontal, X, ZoomIn, Sticker, BringToFront, SendToBack } from 'lucide-react';
 import { NoteItem, NoteColor, NOTE_COLOR_STYLES } from '@/types/note';
 import { ThemeConfig } from '@/types/preferences';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface NoteCardProps {
   note: NoteItem;
@@ -36,6 +37,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
   onDragStart,
   isDragging = false,
 }) => {
+  const { language, t } = useLanguage();
   const [showColorMenu, setShowColorMenu] = useState(false);
   const [showLightbox, setShowLightbox] = useState(false);
   const style = NOTE_COLOR_STYLES[note.color] || NOTE_COLOR_STYLES.yellow;
@@ -43,7 +45,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
   const formatDate = (isoString: string) => {
     try {
       const d = new Date(isoString);
-      return d.toLocaleDateString('id-ID', {
+      return d.toLocaleDateString(language === 'en' ? 'en-US' : 'id-ID', {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
@@ -291,10 +293,9 @@ export const NoteCard: React.FC<NoteCardProps> = ({
             type="button"
             onClick={() => onConvertToTask(note)}
             className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500 hover:text-white text-amber-800 dark:text-amber-200 dark:hover:text-white font-semibold transition-all active:scale-95 cursor-pointer shadow-2xs text-[10px]"
-            title="Ubah memo ini menjadi tugas di Papan Kanban 🚀"
           >
             <Sparkles className="w-3 h-3 text-amber-500 group-hover:text-white" />
-            <span className="hidden sm:inline">Jadikan Tugas</span>
+            <span className="hidden sm:inline">{t.notesBoard.convertToTaskBtn}</span>
           </button>
 
           {/* Convert to Sticker (Lepas Kotak) */}
@@ -303,7 +304,6 @@ export const NoteCard: React.FC<NoteCardProps> = ({
               type="button"
               onClick={() => onToggleSticker(note.id, true)}
               className="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-slate-500 hover:text-purple-600 dark:text-slate-300 dark:hover:text-purple-400 transition-colors cursor-pointer"
-              title="Lepas Kotak (Jadikan Stiker Bebas) 🎨"
             >
               <Sticker className="w-3.5 h-3.5" />
             </button>
@@ -314,7 +314,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
             type="button"
             onClick={() => onEdit(note)}
             className="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-slate-500 dark:text-slate-300 transition-colors cursor-pointer"
-            title="Edit Catatan"
+            title={t.common.edit}
           >
             <Edit3 className="w-3.5 h-3.5" />
           </button>
@@ -324,7 +324,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
             type="button"
             onClick={() => onDelete(note.id)}
             className="p-1 rounded-lg hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 text-slate-400 dark:text-slate-400 transition-colors cursor-pointer"
-            title="Hapus Catatan"
+            title={t.common.delete}
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>

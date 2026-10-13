@@ -15,6 +15,7 @@ import {
 } from '@/types/preferences';
 import { TaskCard } from './TaskCard';
 import { Lightbulb, Zap, Trophy, Plus, Sparkles, Archive } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface KanbanColumnProps {
   id: TaskStatus;
@@ -69,6 +70,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
   onStartPomodoro,
   onArchiveDone,
 }) => {
+  const { t } = useLanguage();
   // Rich, tactile pastel themed styles per column
   const getTheme = () => {
     switch (status) {
@@ -151,10 +153,9 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
                 type="button"
                 onClick={onArchiveDone}
                 className="p-1 rounded-lg bg-white/70 border border-emerald-300 hover:bg-emerald-200/90 text-emerald-800 transition-all active:scale-95 cursor-pointer shadow-2xs flex items-center gap-1 text-[11px] font-bold px-1.5"
-                title="Pindahkan tugas selesai ke Arsip 📦"
               >
                 <Archive className="w-3.5 h-3.5 text-emerald-700" />
-                <span className="hidden sm:inline">Arsipkan</span>
+                <span className="hidden sm:inline">{t.kanban.archiveAllBtn}</span>
               </button>
             )}
 
@@ -163,7 +164,6 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
               <button
                 onClick={() => onAddTaskToColumn(status)}
                 className={`p-1 rounded-lg bg-white/60 border ${theme.quickAddBtn} transition-all active:scale-95 cursor-pointer shadow-2xs`}
-                title={`Tambah tugas ke ${title}`}
               >
                 <Plus className="w-3.5 h-3.5" />
               </button>
@@ -172,7 +172,6 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
             {/* Circular Stamp-like Counter Badge */}
             <span
               className={`w-5.5 h-5.5 rounded-full flex items-center justify-center text-[11px] font-bold ${theme.badge}`}
-              title={`${tasks.length} tugas`}
             >
               {tasks.length}
             </span>
@@ -209,10 +208,10 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
                   <Sparkles className="w-5 h-5 opacity-75" />
                 </div>
                 <p className="text-xs font-bold text-slate-700 mb-1">
-                  Tempel Catatan di Sini
+                  {t.kanban.emptyColumnTitle}
                 </p>
                 <p className="text-[11px] text-slate-500 max-w-[170px] leading-relaxed">
-                  Belum ada sticky note. Klik untuk membuat tugas baru! 📌
+                  {t.kanban.emptyColumnDesc}
                 </p>
               </div>
             ) : (

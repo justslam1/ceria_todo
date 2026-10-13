@@ -54,8 +54,10 @@ import {
   Rows3,
   Columns3,
 } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export const KanbanBoard: React.FC = () => {
+  const { t, language } = useLanguage();
   const isMounted = useSyncExternalStore(
     () => () => {},
     () => true,
@@ -104,10 +106,11 @@ export const KanbanBoard: React.FC = () => {
   const [currentTime, setCurrentTime] = useState('');
 
   useEffect(() => {
+    const locale = language === 'en' ? 'en-US' : 'id-ID';
     const updateDateTime = () => {
       const now = new Date();
       setCurrentDate(
-        now.toLocaleDateString('id-ID', {
+        now.toLocaleDateString(locale, {
           weekday: 'long',
           day: 'numeric',
           month: 'short',
@@ -115,18 +118,18 @@ export const KanbanBoard: React.FC = () => {
         })
       );
       setCurrentTime(
-        now.toLocaleTimeString('id-ID', {
+        now.toLocaleTimeString(locale, {
           hour: '2-digit',
           minute: '2-digit',
           second: '2-digit',
-        }) + ' WIB'
+        }) + (language === 'id' ? ' WIB' : '')
       );
     };
 
     updateDateTime();
     const timer = setInterval(updateDateTime, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [language]);
 
   // Active Theme Config
   const themeConfig = useMemo(() => {
@@ -871,7 +874,7 @@ export const KanbanBoard: React.FC = () => {
 
     if (
       !confirm(
-        `Arsipkan ${unarchivedDone.length} tugas yang telah selesai? Kolom akan menjadi bersih dan tugas tetap tersimpan di riwayat arsip.`
+        t.kanban.archiveConfirm(unarchivedDone.length)
       )
     ) {
       return;
@@ -1091,11 +1094,35 @@ export const KanbanBoard: React.FC = () => {
       <div className="min-h-screen bg-[#faf8f5] flex items-center justify-center">
         <div className="flex items-center gap-3 text-slate-500 text-sm">
           <RefreshCw className="w-5 h-5 animate-spin text-amber-500" />
-          <span>Memuat Ceria Todo Board...</span>
+          <span>{t.kanban.loadingBoard}</span>
         </div>
       </div>
     );
   }
+
+  const getColTitle = (col: 'TODO' | 'IN_PROGRESS' | 'DONE') => {
+    const saved = preferences.columns?.[col]?.title;
+    if (language === 'en') {
+      if (col === 'TODO' && (!saved || saved === 'Rencana Brilian')) return t.kanban.defaultColTodoTitle;
+      if (col === 'IN_PROGRESS' && (!saved || saved === 'Aksi Seru')) return t.kanban.defaultColProgTitle;
+      if (col === 'DONE' && (!saved || saved === 'Misi Sukses')) return t.kanban.defaultColDoneTitle;
+    }
+    if (col === 'TODO') return saved || t.kanban.defaultColTodoTitle;
+    if (col === 'IN_PROGRESS') return saved || t.kanban.defaultColProgTitle;
+    return saved || t.kanban.defaultColDoneTitle;
+  };
+
+  const getColSubtitle = (col: 'TODO' | 'IN_PROGRESS' | 'DONE') => {
+    const saved = preferences.columns?.[col]?.subtitle;
+    if (language === 'en') {
+      if (col === 'TODO' && (!saved || saved === 'Ide & tugas baru yang siap dieksekusi')) return t.kanban.defaultColTodoSub;
+      if (col === 'IN_PROGRESS' && (!saved || saved === 'Sedang dikerjakan dengan semangat')) return t.kanban.defaultColProgSub;
+      if (col === 'DONE' && (!saved || saved === 'Telah selesai dengan hasil gemilang! 🎉')) return t.kanban.defaultColDoneSub;
+    }
+    if (col === 'TODO') return saved || t.kanban.defaultColTodoSub;
+    if (col === 'IN_PROGRESS') return saved || t.kanban.defaultColProgSub;
+    return saved || t.kanban.defaultColDoneSub;
+  };
 
   return (
     <div
@@ -1271,10 +1298,14 @@ export const KanbanBoard: React.FC = () => {
                       themeConfig.isDark ? 'text-white' : 'text-slate-800'
                     }`}
                   >
-                    <span>{preferences.boardTitle || 'Studio Papan Buletin Kerja'}</span>
+                    <span>
+                      {language === 'en' && (!preferences.boardTitle || preferences.boardTitle === 'Studio Papan Buletin Kerja')
+                        ? 'Work Bulletin Studio'
+                        : preferences.boardTitle || 'Studio Papan Buletin Kerja'}
+                    </span>
                     {completionPercentage === 100 && totalCount > 0 && (
                       <span className="text-[10px] px-2 py-0.2 rounded-full bg-emerald-100 text-emerald-800 font-bold border border-emerald-300">
-                        🏆 Sempurna!
+                        {t.kanban.perfectBadge}
                       </span>
                     )}
                   </h2>
@@ -1287,7 +1318,6 @@ export const KanbanBoard: React.FC = () => {
                         ? 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
                         : 'text-slate-400 hover:text-orange-500 hover:bg-orange-50'
                     }`}
-                    title="Ubah Nama & Tampilan Papan"
                   >
                     <SlidersHorizontal className="w-3 h-3" />
                   </button>
@@ -1301,14 +1331,14 @@ export const KanbanBoard: React.FC = () => {
                 >
                   {preferences.userName && (
                     <span className="font-semibold text-orange-500 mr-1">
-                      Halo, {preferences.userName}! {preferences.avatarIcon}
+                      {t.kanban.greetingPrefix} {preferences.userName}! {preferences.avatarIcon}
                     </span>
                   )}
                   {totalCount === 0
-                    ? 'Papan buletin siap diisi. Tekan "+ Tambah Tugas" atau "Quick Paste WA" untuk memulai!'
+                    ? t.kanban.emptyBoardGreeting
                     : completionPercentage === 100
-                    ? 'Luar biasa! Semua misi berhasil dituntaskan hari ini!'
-                    : `${doneCount} dari ${totalCount} misi selesai (${completionPercentage}%). Semangat terus! 💪`}
+                    ? t.kanban.allCompletedGreeting
+                    : t.kanban.progressGreeting(doneCount, totalCount, completionPercentage)}
                 </p>
               </div>
             </div>
@@ -1341,7 +1371,7 @@ export const KanbanBoard: React.FC = () => {
                 }`}
               >
                 <span className={themeConfig.isDark ? 'text-slate-400 font-normal' : 'text-slate-500 font-normal'}>
-                  Pencapaian:
+                  {t.kanban.achievementLabel}
                 </span>
                 <span>{completionPercentage}%</span>
               </div>
@@ -1378,21 +1408,21 @@ export const KanbanBoard: React.FC = () => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className={`text-[11px] font-bold ${themeConfig.isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-                      Target Harian:{' '}
+                      {t.kanban.dailyTargetLabel}{' '}
                       <span className="text-orange-500 font-extrabold">
-                        {doneCount} / {preferences.dailyTargetGoal} Selesai
+                        {doneCount} / {preferences.dailyTargetGoal} {t.kanban.completedSuffix}
                       </span>
                     </span>
                     {doneCount >= preferences.dailyTargetGoal && (
                       <span className="text-[9px] font-black px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-                        🎉 TERCAPAI!
+                        {t.kanban.achievedBadge}
                       </span>
                     )}
                   </div>
                   {preferences.rewardNote && (
                     <div className={`flex items-center gap-1.5 text-[10px] truncate ${themeConfig.isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                       <Gift className="w-3 h-3 text-rose-500 shrink-0" />
-                      <span>Hadiah: <strong className={`${themeConfig.isDark ? 'text-rose-400' : 'text-rose-600'} font-semibold`}>{preferences.rewardNote}</strong></span>
+                      <span>{t.kanban.rewardLabel} <strong className={`${themeConfig.isDark ? 'text-rose-400' : 'text-rose-600'} font-semibold`}>{preferences.rewardNote}</strong></span>
                     </div>
                   )}
                 </div>
@@ -1420,7 +1450,7 @@ export const KanbanBoard: React.FC = () => {
                     }}
                     className="px-2.5 py-0.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-[11px] font-bold shadow-xs hover:scale-105 active:scale-95 transition-transform cursor-pointer shrink-0 flex items-center gap-1"
                   >
-                    <span>Klaim Hadiah 🎁</span>
+                    <span>{t.kanban.claimRewardBtn}</span>
                   </button>
                 )}
               </div>
@@ -1439,17 +1469,14 @@ export const KanbanBoard: React.FC = () => {
                   <div
                     style={{ width: `${(doneCount / totalCount) * 100}%` }}
                     className="bg-emerald-500 transition-all duration-300"
-                    title={`Selesai: ${doneCount} tugas`}
                   />
                   <div
                     style={{ width: `${(inProgressCount / totalCount) * 100}%` }}
                     className="bg-sky-500 transition-all duration-300"
-                    title={`Sedang dikerjakan: ${inProgressCount} tugas`}
                   />
                   <div
                     style={{ width: `${(todoCount / totalCount) * 100}%` }}
                     className="bg-amber-400 transition-all duration-300"
-                    title={`Rencana: ${todoCount} tugas`}
                   />
                 </>
               ) : (
@@ -1475,7 +1502,7 @@ export const KanbanBoard: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari tugas di papan..."
+              placeholder={t.kanban.searchPlaceholder}
               className={`w-full pl-8 pr-7 py-1.5 rounded-xl border text-xs focus:outline-hidden focus:ring-2 ${
                 themeConfig.focusRing
               } ${
@@ -1505,7 +1532,7 @@ export const KanbanBoard: React.FC = () => {
               }`}
             >
               <Filter className="w-3 h-3 text-slate-400" />
-              <span className="font-medium text-slate-500 text-[11px]">Kategori:</span>
+              <span className="font-medium text-slate-500 text-[11px]">{t.kanban.categoryLabel}</span>
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
@@ -1513,7 +1540,7 @@ export const KanbanBoard: React.FC = () => {
                   themeConfig.isDark ? 'text-slate-200' : 'text-slate-800'
                 }`}
               >
-                <option value="ALL" className={themeConfig.isDark ? 'bg-slate-900 text-white' : ''}>Semua</option>
+                <option value="ALL" className={themeConfig.isDark ? 'bg-slate-900 text-white' : ''}>{t.common.all}</option>
                 {categories.map((c) => (
                   <option key={c} value={c} className={themeConfig.isDark ? 'bg-slate-900 text-white' : ''}>
                     {c}
@@ -1530,7 +1557,7 @@ export const KanbanBoard: React.FC = () => {
                   : 'bg-white/50 border-slate-200 text-slate-600'
               }`}
             >
-              <span className="font-medium text-slate-500 text-[11px]">Prioritas:</span>
+              <span className="font-medium text-slate-500 text-[11px]">{t.kanban.priorityLabel}</span>
               <select
                 value={selectedPriority}
                 onChange={(e) => setSelectedPriority(e.target.value)}
@@ -1538,10 +1565,10 @@ export const KanbanBoard: React.FC = () => {
                   themeConfig.isDark ? 'text-slate-200' : 'text-slate-800'
                 }`}
               >
-                <option value="ALL" className={themeConfig.isDark ? 'bg-slate-900 text-white' : ''}>Semua</option>
-                <option value="HIGH" className={themeConfig.isDark ? 'bg-slate-900 text-white' : ''}>Tinggi 🔥</option>
-                <option value="MEDIUM" className={themeConfig.isDark ? 'bg-slate-900 text-white' : ''}>Sedang ⚡</option>
-                <option value="LOW" className={themeConfig.isDark ? 'bg-slate-900 text-white' : ''}>Santai 🍃</option>
+                <option value="ALL" className={themeConfig.isDark ? 'bg-slate-900 text-white' : ''}>{t.common.all}</option>
+                <option value="HIGH" className={themeConfig.isDark ? 'bg-slate-900 text-white' : ''}>{t.taskModal.priorityHigh}</option>
+                <option value="MEDIUM" className={themeConfig.isDark ? 'bg-slate-900 text-white' : ''}>{t.taskModal.priorityMedium}</option>
+                <option value="LOW" className={themeConfig.isDark ? 'bg-slate-900 text-white' : ''}>{t.taskModal.priorityLow}</option>
               </select>
             </div>
 
@@ -1554,7 +1581,7 @@ export const KanbanBoard: React.FC = () => {
               }`}
             >
               <ArrowUpDown className="w-3 h-3 text-slate-400" />
-              <span className="font-medium text-slate-500 text-[11px]">Urutkan:</span>
+              <span className="font-medium text-slate-500 text-[11px]">{t.kanban.sortByLabel}</span>
               <select
                 value={preferences.sortBy || 'manual'}
                 onChange={(e) =>
@@ -1567,10 +1594,10 @@ export const KanbanBoard: React.FC = () => {
                   themeConfig.isDark ? 'text-slate-200' : 'text-slate-800'
                 }`}
               >
-                <option value="manual" className={themeConfig.isDark ? 'bg-slate-900 text-white' : ''}>Manual (Bebas)</option>
-                <option value="priority" className={themeConfig.isDark ? 'bg-slate-900 text-white' : ''}>Prioritas 🔥</option>
-                <option value="dueDate" className={themeConfig.isDark ? 'bg-slate-900 text-white' : ''}>Tenggat Terdekat 🗓️</option>
-                <option value="title" className={themeConfig.isDark ? 'bg-slate-900 text-white' : ''}>Abjad (A-Z) 🔤</option>
+                <option value="manual" className={themeConfig.isDark ? 'bg-slate-900 text-white' : ''}>{t.kanban.sortManual}</option>
+                <option value="priority" className={themeConfig.isDark ? 'bg-slate-900 text-white' : ''}>{t.kanban.sortPriority}</option>
+                <option value="dueDate" className={themeConfig.isDark ? 'bg-slate-900 text-white' : ''}>{t.kanban.sortDueDate}</option>
+                <option value="title" className={themeConfig.isDark ? 'bg-slate-900 text-white' : ''}>{t.kanban.sortTitle}</option>
               </select>
             </div>
 
@@ -1589,21 +1616,16 @@ export const KanbanBoard: React.FC = () => {
                   ? 'bg-slate-900/40 border-slate-700/60 text-slate-300 hover:bg-slate-800/60'
                   : 'bg-white/50 border-slate-200 text-slate-600 hover:bg-slate-50'
               }`}
-              title={
-                preferences.viewDensity === 'compact'
-                  ? 'Ganti ke Mode Nyaman (Cozy)'
-                  : 'Ganti ke Mode Ringkas (Compact)'
-              }
             >
               {preferences.viewDensity === 'compact' ? (
                 <>
                   <Rows3 className="w-3.5 h-3.5 text-amber-500" />
-                  <span className="font-semibold text-[11px]">Ringkas</span>
+                  <span className="font-semibold text-[11px]">{t.kanban.densityCompact}</span>
                 </>
               ) : (
                 <>
                   <LayoutGrid className="w-3.5 h-3.5 text-amber-500" />
-                  <span className="font-semibold text-[11px]">Nyaman</span>
+                  <span className="font-semibold text-[11px]">{t.kanban.densityCozy}</span>
                 </>
               )}
             </button>
@@ -1615,11 +1637,10 @@ export const KanbanBoard: React.FC = () => {
                   ? 'bg-slate-900/40 border-slate-700/60 text-slate-300'
                   : 'bg-white/50 border-slate-200 text-slate-600'
               }`}
-              title="Pilih jumlah kolom papan (1, 2, atau 3 kolom)"
             >
               <div className="flex items-center gap-1 px-1.5 py-0.5 text-slate-400">
                 <Columns3 className="w-3.5 h-3.5" />
-                <span className="text-[11px] font-medium hidden lg:inline">Kolom:</span>
+                <span className="text-[11px] font-medium hidden lg:inline">{t.kanban.columnsLabel}</span>
               </div>
               <div className="flex items-center gap-0.5">
                 {([1, 2, 3] as const).map((num) => {
@@ -1640,7 +1661,6 @@ export const KanbanBoard: React.FC = () => {
                           ? 'bg-orange-500 text-white shadow-2xs scale-105'
                           : 'hover:bg-slate-200/50 text-slate-500 dark:text-slate-400'
                       }`}
-                      title={`Tampilkan ${num} Kolom`}
                     >
                       {num}
                     </button>
@@ -1657,7 +1677,7 @@ export const KanbanBoard: React.FC = () => {
                   ? 'bg-slate-900/40 border-slate-700/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
                   : 'bg-white/50 border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-50'
               }`}
-              title="Muat ulang tugas"
+              title={t.kanban.refreshTitle}
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
@@ -1684,16 +1704,16 @@ export const KanbanBoard: React.FC = () => {
                       themeConfig.isDark ? 'text-amber-300' : 'text-amber-950'
                     }`}
                   >
-                    <span>Fokus Utama Hari Ini</span>
+                    <span>{t.kanban.topFocusTitle}</span>
                     <span className="text-[10px] px-2 py-0.2 rounded-full bg-amber-400 text-amber-950 font-bold border border-amber-500 shadow-2xs">
-                      {pinnedTasks.length} Prioritas
+                      {pinnedTasks.length} {t.kanban.priorityCountSuffix}
                     </span>
                   </h3>
                 </div>
               </div>
 
               <div className="text-[11px] font-semibold text-amber-800 dark:text-amber-400 hidden sm:block">
-                ✨ Selesaikan fokus ini dulu untuk hasil maksimal!
+                {t.kanban.topFocusSubtitle}
               </div>
             </div>
 
@@ -1721,7 +1741,7 @@ export const KanbanBoard: React.FC = () => {
                         {task.title}
                       </p>
                       <p className="text-[10px] text-slate-400 truncate">
-                        {task.category} • {task.status === 'TODO' ? 'Rencana' : 'Sedang dikerjakan'}
+                        {task.category} • {task.status === 'TODO' ? t.kanban.statusTodo : t.kanban.statusInProgress}
                       </p>
                     </div>
                   </div>
@@ -1731,7 +1751,7 @@ export const KanbanBoard: React.FC = () => {
                       type="button"
                       onClick={() => handleStartPomodoro(task)}
                       className="p-1 rounded-lg text-amber-600 hover:bg-amber-100/70 transition-colors cursor-pointer"
-                      title="Mulai Pomodoro Fokus ⏱️"
+                      title={t.card.pomodoroTitle}
                     >
                       <Timer className="w-3.5 h-3.5" />
                     </button>
@@ -1740,7 +1760,7 @@ export const KanbanBoard: React.FC = () => {
                         type="button"
                         onClick={() => handleStatusChange(task.id, 'TODO')}
                         className="w-5 h-5 rounded-lg flex items-center justify-center bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 shadow-2xs active:scale-95 transition-all cursor-pointer"
-                        title="Kembalikan ke Rencana (←)"
+                        title={t.card.backToTodo}
                       >
                         <ArrowLeft className="w-3 h-3" />
                       </button>
@@ -1758,11 +1778,6 @@ export const KanbanBoard: React.FC = () => {
                         )
                       }
                       className="w-5 h-5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-2xs active:scale-95 transition-all cursor-pointer flex items-center justify-center p-0"
-                      title={
-                        task.status === 'TODO' && preferences.activeColumnCount !== 2
-                          ? 'Mulai Kerjakan (→)'
-                          : 'Selesaikan Misi (→)'
-                      }
                     >
                       <ArrowRight className="w-3 h-3" />
                     </button>
@@ -1770,7 +1785,7 @@ export const KanbanBoard: React.FC = () => {
                       type="button"
                       onClick={() => handleTogglePin(task.id)}
                       className="p-1 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-                      title="Lepas sematan fokus"
+                      title={t.card.unpinTitle}
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -1788,8 +1803,8 @@ export const KanbanBoard: React.FC = () => {
               {/* Kolom 1: TODO */}
               <KanbanColumn
                 id="TODO"
-                title={preferences.columns?.TODO?.title || 'Rencana Brilian'}
-                subtitle={preferences.columns?.TODO?.subtitle || 'Ide & tugas baru yang siap dieksekusi'}
+                title={getColTitle('TODO')}
+                subtitle={getColSubtitle('TODO')}
                 emoji={preferences.columns?.TODO?.emoji || '💡'}
                 status="TODO"
                 tasks={todoTasks}
@@ -1815,8 +1830,8 @@ export const KanbanBoard: React.FC = () => {
               {/* Kolom 2: IN_PROGRESS */}
               <KanbanColumn
                 id="IN_PROGRESS"
-                title={preferences.columns?.IN_PROGRESS?.title || 'Aksi Seru'}
-                subtitle={preferences.columns?.IN_PROGRESS?.subtitle || 'Sedang dikerjakan dengan semangat'}
+                title={getColTitle('IN_PROGRESS')}
+                subtitle={getColSubtitle('IN_PROGRESS')}
                 emoji={preferences.columns?.IN_PROGRESS?.emoji || '⚡'}
                 status="IN_PROGRESS"
                 tasks={inProgressTasks}
@@ -1842,8 +1857,8 @@ export const KanbanBoard: React.FC = () => {
               {/* Kolom 3: DONE */}
               <KanbanColumn
                 id="DONE"
-                title={preferences.columns?.DONE?.title || 'Misi Sukses'}
-                subtitle={preferences.columns?.DONE?.subtitle || 'Telah selesai dengan hasil gemilang! 🎉'}
+                title={getColTitle('DONE')}
+                subtitle={getColSubtitle('DONE')}
                 emoji={preferences.columns?.DONE?.emoji || '🏆'}
                 status="DONE"
                 tasks={doneTasks}
@@ -1874,8 +1889,8 @@ export const KanbanBoard: React.FC = () => {
               {/* Kolom 1: TODO (Simple Checklist) */}
               <KanbanColumn
                 id="TODO"
-                title={preferences.columns?.TODO?.title || 'Rencana Brilian'}
-                subtitle={preferences.columns?.TODO?.subtitle || 'Ide & tugas baru yang siap dieksekusi'}
+                title={getColTitle('TODO')}
+                subtitle={getColSubtitle('TODO')}
                 emoji={preferences.columns?.TODO?.emoji || '💡'}
                 status="TODO"
                 tasks={todoTasks}
@@ -1901,8 +1916,8 @@ export const KanbanBoard: React.FC = () => {
               {/* Kolom 2: DONE */}
               <KanbanColumn
                 id="DONE"
-                title={preferences.columns?.DONE?.title || 'Misi Sukses'}
-                subtitle={preferences.columns?.DONE?.subtitle || 'Telah selesai dengan hasil gemilang! 🎉'}
+                title={getColTitle('DONE')}
+                subtitle={getColSubtitle('DONE')}
                 emoji={preferences.columns?.DONE?.emoji || '🏆'}
                 status="DONE"
                 tasks={doneTasks}
@@ -1951,7 +1966,7 @@ export const KanbanBoard: React.FC = () => {
                   }`}
                 >
                   <span>{preferences.columns?.TODO?.emoji || '💡'}</span>
-                  <span className="truncate">{preferences.columns?.TODO?.title || 'Rencana'}</span>
+                  <span className="truncate">{getColTitle('TODO')}</span>
                   <span
                     className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
                       singleColumnTab === 'TODO'
@@ -1976,7 +1991,7 @@ export const KanbanBoard: React.FC = () => {
                   }`}
                 >
                   <span>{preferences.columns?.IN_PROGRESS?.emoji || '⚡'}</span>
-                  <span className="truncate">{preferences.columns?.IN_PROGRESS?.title || 'Aksi'}</span>
+                  <span className="truncate">{getColTitle('IN_PROGRESS')}</span>
                   <span
                     className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
                       singleColumnTab === 'IN_PROGRESS'
@@ -2001,7 +2016,7 @@ export const KanbanBoard: React.FC = () => {
                   }`}
                 >
                   <span>{preferences.columns?.DONE?.emoji || '🏆'}</span>
-                  <span className="truncate">{preferences.columns?.DONE?.title || 'Selesai'}</span>
+                  <span className="truncate">{getColTitle('DONE')}</span>
                   <span
                     className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
                       singleColumnTab === 'DONE'
@@ -2018,8 +2033,8 @@ export const KanbanBoard: React.FC = () => {
               {singleColumnTab === 'TODO' && (
                 <KanbanColumn
                   id="TODO"
-                  title={preferences.columns?.TODO?.title || 'Rencana Brilian'}
-                  subtitle={preferences.columns?.TODO?.subtitle || 'Ide & tugas baru yang siap dieksekusi'}
+                  title={getColTitle('TODO')}
+                  subtitle={getColSubtitle('TODO')}
                   emoji={preferences.columns?.TODO?.emoji || '💡'}
                   status="TODO"
                   tasks={todoTasks}
@@ -2046,8 +2061,8 @@ export const KanbanBoard: React.FC = () => {
               {singleColumnTab === 'IN_PROGRESS' && (
                 <KanbanColumn
                   id="IN_PROGRESS"
-                  title={preferences.columns?.IN_PROGRESS?.title || 'Aksi Seru'}
-                  subtitle={preferences.columns?.IN_PROGRESS?.subtitle || 'Sedang dikerjakan dengan semangat'}
+                  title={getColTitle('IN_PROGRESS')}
+                  subtitle={getColSubtitle('IN_PROGRESS')}
                   emoji={preferences.columns?.IN_PROGRESS?.emoji || '⚡'}
                   status="IN_PROGRESS"
                   tasks={inProgressTasks}
@@ -2074,8 +2089,8 @@ export const KanbanBoard: React.FC = () => {
               {singleColumnTab === 'DONE' && (
                 <KanbanColumn
                   id="DONE"
-                  title={preferences.columns?.DONE?.title || 'Misi Sukses'}
-                  subtitle={preferences.columns?.DONE?.subtitle || 'Telah selesai dengan hasil gemilang! 🎉'}
+                  title={getColTitle('DONE')}
+                  subtitle={getColSubtitle('DONE')}
                   emoji={preferences.columns?.DONE?.emoji || '🏆'}
                   status="DONE"
                   tasks={doneTasks}

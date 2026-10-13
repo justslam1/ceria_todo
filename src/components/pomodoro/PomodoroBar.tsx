@@ -7,6 +7,7 @@ import { playVictoryChime, playPopSound } from '@/lib/soundEffects';
 import { triggerCelebration } from '@/lib/confetti';
 import { SoundProfile } from '@/types/preferences';
 import { Task } from '@/types/task';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface PomodoroBarProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ export const PomodoroBar: React.FC<PomodoroBarProps> = ({
   onClearTask,
   soundProfile = 'pop',
 }) => {
+  const { t } = useLanguage();
   const [mode, setMode] = useState<'work' | 'shortBreak' | 'longBreak'>('work');
   const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [isRunning, setIsRunning] = useState(false);
@@ -123,7 +125,7 @@ export const PomodoroBar: React.FC<PomodoroBarProps> = ({
               setIsRunning(!isRunning);
             }}
             className="w-7 h-7 rounded-full bg-orange-500 hover:bg-orange-600 flex items-center justify-center text-white cursor-pointer active:scale-95"
-            title={isRunning ? 'Jeda' : 'Mulai'}
+            title={isRunning ? t.pomodoro.pauseBtn : t.pomodoro.startFocusBtn}
           >
             {isRunning ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 ml-0.5" />}
           </button>
@@ -133,14 +135,13 @@ export const PomodoroBar: React.FC<PomodoroBarProps> = ({
           </span>
 
           <span className="text-[11px] text-slate-300 max-w-[120px] truncate">
-            {effectiveTitle || (mode === 'work' ? 'Fokus' : 'Istirahat')}
+            {effectiveTitle || (mode === 'work' ? t.pomodoro.focusTab : t.pomodoro.breakLabel)}
           </span>
 
           <button
             type="button"
             onClick={() => setIsMinimized(false)}
             className="p-1 text-slate-400 hover:text-white rounded-lg cursor-pointer ml-1"
-            title="Buka panel penuh"
           >
             <Maximize2 className="w-3.5 h-3.5" />
           </button>
@@ -158,7 +159,7 @@ export const PomodoroBar: React.FC<PomodoroBarProps> = ({
             <div className="w-6 h-6 rounded-lg bg-orange-500/20 text-orange-400 flex items-center justify-center text-xs">
               ⏱️
             </div>
-            <span className="font-bold text-xs text-slate-200">Pomodoro Timer & Suara Cozy</span>
+            <span className="font-bold text-xs text-slate-200">{t.pomodoro.title}</span>
           </div>
 
           <div className="flex items-center gap-1">
@@ -166,7 +167,6 @@ export const PomodoroBar: React.FC<PomodoroBarProps> = ({
               type="button"
               onClick={() => setIsMinimized(true)}
               className="p-1 text-slate-400 hover:text-slate-200 rounded-lg cursor-pointer"
-              title="Perkecil ke tombol ringkas"
             >
               <Minimize2 className="w-3.5 h-3.5" />
             </button>
@@ -174,7 +174,6 @@ export const PomodoroBar: React.FC<PomodoroBarProps> = ({
               type="button"
               onClick={handleClose}
               className="p-1 text-slate-400 hover:text-rose-400 rounded-lg cursor-pointer"
-              title="Tutup timer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -190,7 +189,7 @@ export const PomodoroBar: React.FC<PomodoroBarProps> = ({
               mode === 'work' ? 'bg-orange-500 text-white shadow-xs' : 'text-slate-400 hover:text-white'
             }`}
           >
-            Fokus (25m)
+            {t.pomodoro.focusTab}
           </button>
           <button
             type="button"
@@ -199,7 +198,7 @@ export const PomodoroBar: React.FC<PomodoroBarProps> = ({
               mode === 'shortBreak' ? 'bg-emerald-500 text-white shadow-xs' : 'text-slate-400 hover:text-white'
             }`}
           >
-            Rehat (5m)
+            {t.pomodoro.shortBreakTab}
           </button>
           <button
             type="button"
@@ -208,7 +207,7 @@ export const PomodoroBar: React.FC<PomodoroBarProps> = ({
               mode === 'longBreak' ? 'bg-sky-500 text-white shadow-xs' : 'text-slate-400 hover:text-white'
             }`}
           >
-            Santai (15m)
+            {t.pomodoro.longBreakTab}
           </button>
         </div>
 
@@ -218,7 +217,7 @@ export const PomodoroBar: React.FC<PomodoroBarProps> = ({
             <div className="flex items-center gap-1.5 min-w-0">
               <Sparkles className="w-3.5 h-3.5 text-orange-400 shrink-0" />
               <span className="truncate text-orange-200 font-medium">
-                Misi: <strong className="text-white font-bold">{effectiveTitle}</strong>
+                {t.pomodoro.missionPrefix} <strong className="text-white font-bold">{effectiveTitle}</strong>
               </span>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
@@ -227,10 +226,9 @@ export const PomodoroBar: React.FC<PomodoroBarProps> = ({
                   type="button"
                   onClick={() => onTaskComplete(activeTask.id)}
                   className="px-2 py-0.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold cursor-pointer shrink-0 shadow-2xs flex items-center gap-1"
-                  title="Tandai tugas ini selesai 🎉"
                 >
                   <CheckCircle2 className="w-3 h-3" />
-                  <span>Selesai</span>
+                  <span>{t.common.done}</span>
                 </button>
               )}
               {onClearTask && (
@@ -238,9 +236,8 @@ export const PomodoroBar: React.FC<PomodoroBarProps> = ({
                   type="button"
                   onClick={onClearTask}
                   className="text-slate-400 hover:text-white text-[10px] cursor-pointer shrink-0"
-                  title="Lepas tugas aktif"
                 >
-                  Ganti
+                  {t.pomodoro.changeBtn}
                 </button>
               )}
             </div>
@@ -273,7 +270,6 @@ export const PomodoroBar: React.FC<PomodoroBarProps> = ({
               setIsRunning(false);
             }}
             className="p-2 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer active:scale-95 transition-transform"
-            title="Reset waktu"
           >
             <RotateCcw className="w-4 h-4" />
           </button>
@@ -289,12 +285,12 @@ export const PomodoroBar: React.FC<PomodoroBarProps> = ({
             {isRunning ? (
               <>
                 <Pause className="w-4 h-4" />
-                <span>Jeda</span>
+                <span>{t.pomodoro.pauseBtn}</span>
               </>
             ) : (
               <>
                 <Play className="w-4 h-4 fill-white" />
-                <span>Mulai Fokus</span>
+                <span>{t.pomodoro.startFocusBtn}</span>
               </>
             )}
           </button>
@@ -305,10 +301,10 @@ export const PomodoroBar: React.FC<PomodoroBarProps> = ({
           <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1.5 font-medium">
             <span className="flex items-center gap-1">
               <Volume2 className="w-3 h-3 text-amber-400" />
-              <span>Suara Latar (Ambient Cozy):</span>
+              <span>{t.pomodoro.ambientLabel}</span>
             </span>
             <span className="text-[10px] text-slate-500">
-              {ambient === 'none' ? 'Mati' : ambient.toUpperCase()}
+              {ambient === 'none' ? t.pomodoro.ambientOff : ambient.toUpperCase()}
             </span>
           </div>
 
@@ -322,7 +318,7 @@ export const PomodoroBar: React.FC<PomodoroBarProps> = ({
                   : 'bg-slate-850 border-slate-700/60 text-slate-400 hover:text-white'
               }`}
             >
-              Hening
+              {t.pomodoro.ambientNone}
             </button>
             <button
               type="button"
@@ -334,7 +330,7 @@ export const PomodoroBar: React.FC<PomodoroBarProps> = ({
               }`}
             >
               <CloudRain className="w-3 h-3 text-sky-400" />
-              <span>Hujan</span>
+              <span>{t.pomodoro.ambientRain}</span>
             </button>
             <button
               type="button"
@@ -346,7 +342,7 @@ export const PomodoroBar: React.FC<PomodoroBarProps> = ({
               }`}
             >
               <Flame className="w-3 h-3 text-orange-400" />
-              <span>Api</span>
+              <span>{t.pomodoro.ambientFire}</span>
             </button>
             <button
               type="button"
@@ -358,7 +354,7 @@ export const PomodoroBar: React.FC<PomodoroBarProps> = ({
               }`}
             >
               <Coffee className="w-3 h-3 text-amber-400" />
-              <span>Kafe</span>
+              <span>{t.pomodoro.ambientCafe}</span>
             </button>
           </div>
         </div>

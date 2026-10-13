@@ -35,6 +35,7 @@ import {
   X,
 } from 'lucide-react';
 import { parseTaskDescription } from '@/lib/subtasks';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface TaskCardProps {
   task: Task;
@@ -79,6 +80,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 }) => {
   const [isSubtasksExpanded, setIsSubtasksExpanded] = useState(false);
   const [showLightbox, setShowLightbox] = useState(false);
+  const { t, language } = useLanguage();
 
   const getNextStatus = (current: TaskStatus): TaskStatus | null => {
     if (current === 'TODO') return activeColumnCount === 2 ? 'DONE' : 'IN_PROGRESS';
@@ -102,7 +104,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   const formatCreatedTime = (isoString: string) => {
     if (!isoString) return '';
     const d = new Date(isoString);
-    return d.toLocaleDateString('id-ID', {
+    return d.toLocaleDateString(language === 'en' ? 'en-US' : 'id-ID', {
       day: 'numeric',
       month: 'short',
       hour: '2-digit',
@@ -222,12 +224,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               {isPinned && (
                 <span className="inline-flex items-center gap-0.5 px-2 py-0.2 rounded-full text-[10px] font-extrabold bg-amber-400 text-amber-950 border border-amber-500 shadow-2xs">
                   <Sparkles className="w-2.5 h-2.5" />
-                  <span>Fokus</span>
+                  <span>{t.card.focusBadge}</span>
                 </span>
               )}
               {activeColumnCount === 2 && task.status === 'IN_PROGRESS' && (
                 <span className="inline-flex items-center gap-0.5 px-2 py-0.2 rounded-full text-[10px] font-extrabold bg-sky-200 text-sky-950 border border-sky-300 shadow-2xs">
-                  ⚡ Aksi
+                  {t.card.actionBadge}
                 </span>
               )}
             </div>
@@ -243,7 +245,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                       ? 'text-amber-600 bg-amber-100/80 hover:bg-amber-200'
                       : 'text-slate-400 hover:text-amber-600 hover:bg-white/70'
                   }`}
-                  title={isPinned ? 'Lepas sematan fokus' : 'Sematkan ke Fokus Hari Ini 📌'}
+                  title={isPinned ? t.card.unpinTitle : t.card.pinTitle}
                 >
                   <Pin className={`w-3.5 h-3.5 ${isPinned ? 'fill-amber-500' : ''}`} />
                 </button>
@@ -253,7 +255,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                   type="button"
                   onClick={() => onStartPomodoro(task)}
                   className="p-1 text-slate-400 hover:text-orange-600 rounded-lg hover:bg-white/70 transition-colors cursor-pointer"
-                  title="Mulai Pomodoro Fokus ⏱️"
+                  title={t.card.pomodoroTitle}
                 >
                   <Timer className="w-3.5 h-3.5" />
                 </button>
@@ -262,7 +264,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 type="button"
                 onClick={() => onEdit(task)}
                 className="p-1 text-slate-500 hover:text-blue-700 rounded-lg hover:bg-white/70 transition-colors cursor-pointer"
-                title="Edit tugas"
+                title={t.card.editTitle}
               >
                 <Edit3 className="w-3.5 h-3.5" />
               </button>
@@ -270,7 +272,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 type="button"
                 onClick={() => onDelete(task.id)}
                 className="p-1 text-slate-500 hover:text-rose-700 rounded-lg hover:bg-white/70 transition-colors cursor-pointer"
-                title="Hapus tugas"
+                title={t.card.deleteTitle}
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -285,19 +287,18 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 e.stopPropagation();
                 setShowLightbox(true);
               }}
-              title="Klik untuk memperbesar gambar"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={task.imageUrl}
-                alt={task.title || 'Gambar Tugas'}
+                alt={task.title || 'Task Image'}
                 className="w-full max-h-44 object-cover group-hover:scale-[1.02] transition-transform duration-200"
                 loading="lazy"
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                 <span className="text-[11px] font-semibold text-white bg-black/60 px-2.5 py-1 rounded-full backdrop-blur-xs shadow-xs flex items-center gap-1">
                   <ZoomIn className="w-3 h-3" />
-                  Perbesar
+                  {t.common.zoom}
                 </span>
               </div>
             </div>
@@ -341,7 +342,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 >
                   <span className="flex items-center gap-1">
                     <CheckSquare className="w-2.5 h-2.5 text-amber-600" />
-                    <span>Sub-tugas: {subtasks.filter((s) => s.completed).length}/{subtasks.length}</span>
+                    <span>{t.card.subtasksLabel} {subtasks.filter((s) => s.completed).length}/{subtasks.length}</span>
                   </span>
                   <div className="flex items-center gap-1.5">
                     <div className="w-12 bg-black/10 dark:bg-white/10 h-1 rounded-full overflow-hidden">
@@ -386,7 +387,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
                   <span className="flex items-center gap-1">
                     <CheckSquare className="w-3 h-3 text-amber-600" />
-                    <span>Sub-tugas:</span>
+                    <span>{t.card.subtasksLabel}</span>
                   </span>
                   <span className="font-mono text-[10px] px-1.5 py-0.2 rounded-md bg-white/70 shadow-2xs font-bold text-slate-800">
                     {subtasks.filter((s) => s.completed).length}/{subtasks.length}
@@ -454,7 +455,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           {!isCompact && (
             <div className={`flex items-center gap-1 text-[10px] ${theme.subtleText} mb-2.5 font-medium`}>
               <History className="w-3 h-3 opacity-70" />
-              <span>Dibuat: {formatCreatedTime(task.createdAt)}</span>
+              <span>{t.card.createdPrefix} {formatCreatedTime(task.createdAt)}</span>
             </div>
           )}
 
@@ -474,8 +475,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                   className="w-6 h-6 rounded-xl flex items-center justify-center bg-white/80 hover:bg-white text-slate-600 dark:text-slate-300 dark:bg-slate-800/80 dark:hover:bg-slate-800 border border-slate-200/90 dark:border-slate-700 shadow-2xs transition-all active:scale-95 cursor-pointer"
                   title={
                     prevStatus === 'TODO'
-                      ? 'Kembalikan ke Rencana'
-                      : 'Kembalikan ke Sedang Dikerjakan'
+                      ? t.card.backToTodo
+                      : t.card.backToInProgress
                   }
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
@@ -487,7 +488,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                   type="button"
                   onClick={() => onStatusChange(task.id, nextStatus)}
                   className={`w-6 h-6 rounded-xl flex items-center justify-center text-xs font-bold ${theme.btnBg} border shadow-2xs transition-all active:scale-95 cursor-pointer`}
-                  title={nextStatus === 'DONE' ? 'Tandai selesai (→)' : 'Mulai kerjakan (→)'}
+                  title={nextStatus === 'DONE' ? t.card.markDone : t.card.startWork}
                 >
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
@@ -496,7 +497,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               {task.status === 'DONE' && (
                 <span className="inline-flex items-center gap-1 text-emerald-800 dark:text-emerald-300 font-bold text-[11px] px-1">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  Selesai
+                  {t.common.done}
                 </span>
               )}
             </div>

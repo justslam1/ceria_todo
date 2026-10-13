@@ -5,6 +5,7 @@ import { Task } from '@/types/task';
 import { X, Archive, RotateCcw, Trash2, CheckCircle2 } from 'lucide-react';
 import { playPopSound } from '@/lib/soundEffects';
 import { SoundProfile } from '@/types/preferences';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface ArchiveModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
   onClearAllArchived,
   soundProfile = 'pop',
 }) => {
+  const { language, t } = useLanguage();
   if (!isOpen) return null;
 
   return (
@@ -41,13 +43,13 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
             </div>
             <div>
               <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                Arsip Tugas Tuntas
+                {t.archiveModal.title}
                 <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-extrabold border border-emerald-300">
-                  {archivedTasks.length} Tugas
+                  {archivedTasks.length} {t.common.tasks}
                 </span>
               </h2>
               <p className="text-xs text-slate-500">
-                Koleksi misi yang telah berhasil kamu selesaikan dengan gemilang
+                {t.archiveModal.subtitle}
               </p>
             </div>
           </div>
@@ -67,10 +69,10 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
             </div>
             <div>
               <div className="text-xs font-bold text-slate-800">
-                Pencapaian Hebat!
+                {t.archiveModal.greatAchievement}
               </div>
               <div className="text-[11px] text-slate-500">
-                Tugas diarsipkan agar papan tetap rapi tanpa kehilangan riwayat kerja.
+                {t.archiveModal.achievementDesc}
               </div>
             </div>
           </div>
@@ -79,13 +81,13 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
             <button
               type="button"
               onClick={() => {
-                if (confirm('Hapus permanen semua tugas di arsip?')) {
+                if (confirm(t.archiveModal.clearConfirm)) {
                   onClearAllArchived();
                 }
               }}
               className="text-xs text-rose-500 hover:text-rose-700 font-semibold px-2 py-1 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
             >
-              Kosongkan Arsip
+              {t.archiveModal.clearArchiveBtn}
             </button>
           )}
         </div>
@@ -95,29 +97,35 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
           {archivedTasks.length === 0 ? (
             <div className="py-12 text-center text-slate-400 flex flex-col items-center justify-center gap-2">
               <Archive className="w-10 h-10 stroke-[1.5] text-slate-300" />
-              <p className="text-sm font-semibold text-slate-600">Belum ada tugas diarsipkan</p>
+              <p className="text-sm font-semibold text-slate-600">{t.archiveModal.emptyTitle}</p>
               <p className="text-xs max-w-xs text-slate-400">
-                Selesaikan tugas di kolom &quot;Done&quot;, lalu tekan tombol &quot;Arsipkan&quot; untuk menyimpannya di sini.
+                {t.archiveModal.emptyDesc}
               </p>
             </div>
           ) : (
-            archivedTasks.map((t) => (
+            archivedTasks.map((task) => (
               <div
-                key={t.id}
+                key={task.id}
                 className="p-3.5 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 shadow-2xs flex items-center justify-between gap-3 transition-all"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                   <div className="min-w-0">
                     <h4 className="text-xs sm:text-sm font-bold text-slate-800 truncate line-through opacity-85">
-                      {t.title}
+                      {task.title}
                     </h4>
                     <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
                       <span className="px-1.5 py-0.2 bg-slate-100 rounded text-slate-600 font-medium">
-                        {t.category}
+                        {task.category}
                       </span>
                       <span>•</span>
-                      <span>Selesai: {new Date(t.updatedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</span>
+                      <span>
+                        {t.archiveModal.completedPrefix}{' '}
+                        {new Date(task.updatedAt).toLocaleDateString(language === 'en' ? 'en-US' : 'id-ID', {
+                          day: 'numeric',
+                          month: 'short',
+                        })}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -127,10 +135,10 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
                     type="button"
                     onClick={() => {
                       playPopSound(soundProfile);
-                      onUnarchiveTask(t.id);
+                      onUnarchiveTask(task.id);
                     }}
                     className="p-1.5 rounded-xl text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors cursor-pointer"
-                    title="Kembalikan ke papan (Done)"
+                    title={t.archiveModal.restoreTitle}
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                   </button>
@@ -138,10 +146,10 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
                     type="button"
                     onClick={() => {
                       playPopSound(soundProfile);
-                      onDeleteArchivedTask(t.id);
+                      onDeleteArchivedTask(task.id);
                     }}
                     className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                    title="Hapus permanen"
+                    title={t.archiveModal.deletePermanentTitle}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

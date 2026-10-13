@@ -10,6 +10,7 @@ import { NoteModal } from '@/components/notes/NoteModal';
 import { playPopSound } from '@/lib/soundEffects';
 import { compressImage, getImageFileFromClipboard } from '@/lib/imageCompression';
 import { NOTES_BOARD_ICON_COLORS, getNotesBoardIconGradient } from '@/lib/userPreferences';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface NotesBoardProps {
   notes: NoteItem[];
@@ -55,6 +56,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
   editingNote,
   onSelectEditingNote,
 }) => {
+  const { language, t } = useLanguage();
   // Layout Mode: 'canvas' (desktop/tablet) | 'grid' (rapi/mobile)
   const [layoutMode, setLayoutMode] = useState<'canvas' | 'grid'>('canvas');
 
@@ -128,7 +130,11 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
   const activeEditingNote = editingNote !== undefined ? editingNote : internalEditingNote;
 
   // Customizable Board Title & Icon
-  const currentTitle = preferences?.notesBoardTitle || 'Papan Catatan Bebas';
+  const rawSavedTitle = preferences?.notesBoardTitle;
+  const currentTitle =
+    !rawSavedTitle || (rawSavedTitle === 'Papan Catatan Bebas' && language === 'en')
+      ? t.notesBoard.defaultTitle
+      : rawSavedTitle;
   const currentIcon = preferences?.notesBoardIcon || '📖';
   const currentIconColor = preferences?.notesBoardIconColor || 'amber';
   const currentIconGradient = getNotesBoardIconGradient(currentIconColor);
@@ -160,7 +166,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
   };
 
   const handleSaveTitle = () => {
-    const clean = draftTitle.trim() || 'Papan Catatan Bebas';
+    const clean = draftTitle.trim() || t.notesBoard.defaultTitle;
     setIsEditingTitle(false);
     setShowIconPicker(false);
     playPopSound(preferences?.soundProfile || 'pop');
@@ -494,7 +500,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
   };
 
   const handleDeleteWithConfirm = async (id: string) => {
-    if (window.confirm('Hapus catatan ini? Catatan yang dihapus tidak dapat dikembalikan.')) {
+    if (window.confirm(t.notesBoard.deleteConfirm)) {
       await onDeleteNote(id);
     }
   };
@@ -517,7 +523,6 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                 if (!isEditingTitle) toggleMinimize();
               }}
               className="flex items-center gap-2.5 cursor-pointer select-none group flex-1 min-w-0"
-              title={isEditingTitle ? undefined : 'Klik untuk membuka panel alat & filter'}
             >
               {/* Icon with picker */}
               <div className="relative" ref={iconPickerRef}>
@@ -527,7 +532,6 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                     setShowIconPicker((prev) => !prev);
                   }}
                   className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl ${currentIconGradient} text-white flex items-center justify-center shadow-xs shrink-0 group-hover:scale-105 transition-all text-sm cursor-pointer select-none`}
-                  title="Klik untuk mengganti ikon & warna background"
                 >
                   <span>{currentIcon}</span>
                 </div>
@@ -539,7 +543,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                   >
                     <div>
                       <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 px-0.5 pb-1 mb-1.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                        <span>Pilih Ikon</span>
+                        <span>Icon</span>
                         <span className="text-xs">{currentIcon}</span>
                       </div>
                       <div className="grid grid-cols-5 gap-1.5">
@@ -565,7 +569,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
 
                     <div>
                       <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 px-0.5 pb-1 mb-1.5 border-b border-slate-100 dark:border-slate-800">
-                        <span>Warna Background</span>
+                        <span>Background</span>
                       </div>
                       <div className="grid grid-cols-4 gap-1.5">
                         {NOTES_BOARD_ICON_COLORS.map((col) => (
@@ -611,12 +615,11 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                       autoFocus
                       maxLength={60}
                       className="px-2.5 py-1 rounded-xl text-xs sm:text-sm font-bold bg-white dark:bg-slate-800 border border-amber-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500 text-slate-800 dark:text-slate-100 w-full shadow-inner"
-                      placeholder="Nama papan..."
                     />
                     <button
                       type="submit"
                       className="p-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white transition-colors cursor-pointer shrink-0"
-                      title="Simpan nama"
+                      title={t.common.save}
                     >
                       <Check className="w-3.5 h-3.5" />
                     </button>
@@ -624,7 +627,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                       type="button"
                       onClick={handleCancelTitle}
                       className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer shrink-0"
-                      title="Batal"
+                      title={t.common.cancel}
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -637,15 +640,14 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                         handleStartEditTitle();
                       }}
                       className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 group-hover:text-amber-500 transition-colors truncate cursor-pointer"
-                      title="Klik untuk mengubah nama papan"
                     >
                       <span>{currentTitle}</span>
                     </h2>
                     <span className="text-[11px] px-2 py-0.5 rounded-full font-bold bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-200/60 dark:border-amber-700/60 shrink-0">
-                      {notes.length} Catatan
+                      {notes.length} {t.notesBoard.notesCountSuffix}
                     </span>
                     <span className="hidden sm:inline-block text-[10px] px-2 py-0.5 rounded-full font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 shrink-0">
-                      Mode: {layoutMode === 'canvas' ? 'Kanvas Bebas' : 'Grid Rapi'}
+                      {t.notesBoard.modeLabel} {layoutMode === 'canvas' ? t.notesBoard.modeCanvas : t.notesBoard.modeGrid}
                     </span>
                   </>
                 )}
@@ -660,10 +662,9 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                   ? 'bg-slate-800 border-slate-700 text-amber-300 hover:bg-slate-700'
                   : 'bg-white border-slate-200 text-amber-800 hover:bg-amber-50'
               }`}
-              title="Perluas panel alat & filter papan catatan"
             >
               <ChevronDown className="w-4 h-4 text-amber-500" />
-              <span>Perluas</span>
+              <span>{t.notesBoard.expandBtn}</span>
             </button>
           </div>
         ) : (
@@ -680,7 +681,6 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                       setShowIconPicker((prev) => !prev);
                     }}
                     className={`w-10 h-10 rounded-2xl ${currentIconGradient} text-white flex items-center justify-center shadow-md shrink-0 text-lg cursor-pointer hover:scale-105 transition-all select-none`}
-                    title="Klik untuk mengganti ikon & warna background"
                   >
                     <span>{currentIcon}</span>
                   </div>
@@ -692,7 +692,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                     >
                       <div>
                         <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 px-0.5 pb-1 mb-1.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                          <span>Pilih Ikon</span>
+                          <span>Icon</span>
                           <span className="text-xs">{currentIcon}</span>
                         </div>
                         <div className="grid grid-cols-5 gap-1.5">
@@ -718,7 +718,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
 
                       <div>
                         <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 px-0.5 pb-1 mb-1.5 border-b border-slate-100 dark:border-slate-800">
-                          <span>Warna Background</span>
+                          <span>Background</span>
                         </div>
                         <div className="grid grid-cols-4 gap-1.5">
                           {NOTES_BOARD_ICON_COLORS.map((col) => (
@@ -763,12 +763,11 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                         autoFocus
                         maxLength={60}
                         className="px-3 py-1 rounded-xl text-base font-black bg-white dark:bg-slate-800 border border-amber-400 focus:outline-hidden focus:ring-2 focus:ring-amber-500 text-slate-800 dark:text-slate-100 w-full shadow-inner"
-                        placeholder="Nama papan catatan..."
                       />
                       <button
                         type="submit"
                         className="p-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white transition-colors cursor-pointer shrink-0"
-                        title="Simpan nama"
+                        title={t.common.save}
                       >
                         <Check className="w-4 h-4" />
                       </button>
@@ -776,7 +775,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                         type="button"
                         onClick={handleCancelTitle}
                         className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer shrink-0"
-                        title="Batal"
+                        title={t.common.cancel}
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -786,19 +785,16 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                       <h2
                         onClick={handleStartEditTitle}
                         className="text-lg font-black text-slate-800 dark:text-slate-100 hover:text-amber-500 dark:hover:text-amber-400 transition-colors truncate cursor-pointer"
-                        title="Klik untuk mengubah nama papan"
                       >
                         <span>{currentTitle}</span>
                       </h2>
                       <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-200/60 dark:border-amber-700/60 shrink-0">
-                        {notes.length} Catatan
+                        {notes.length} {t.notesBoard.notesCountSuffix}
                       </span>
                     </div>
                   )}
                   <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                    {layoutMode === 'canvas'
-                      ? 'Tahan dan geser memo ke mana saja secara bebas di atas meja! 📌✨'
-                      : 'Tulis ide bebas, daftar belanja, draft, atau rangkuman. Bisa diubah jadi tugas kapan saja! ✨'}
+                    {layoutMode === 'canvas' ? t.notesBoard.canvasSubtitle : t.notesBoard.gridSubtitle}
                   </p>
                 </div>
               </div>
@@ -821,10 +817,9 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                         ? 'bg-amber-500 text-white shadow-2xs'
                         : 'hover:text-slate-900 dark:hover:text-white'
                     }`}
-                    title="Mode Kanvas Bebas (Bisa digeser ke mana saja)"
                   >
                     <Move className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Kanvas Bebas</span>
+                    <span className="hidden sm:inline">{t.notesBoard.modeCanvas}</span>
                   </button>
 
                   <button
@@ -835,10 +830,9 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                         ? 'bg-amber-500 text-white shadow-2xs'
                         : 'hover:text-slate-900 dark:hover:text-white'
                     }`}
-                    title="Mode Grid Rapi"
                   >
                     <LayoutGrid className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Grid Rapi</span>
+                    <span className="hidden sm:inline">{t.notesBoard.modeGrid}</span>
                   </button>
                 </div>
 
@@ -852,10 +846,9 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                         ? 'bg-slate-800 border-slate-700 text-amber-300 hover:bg-slate-700'
                         : 'bg-white border-slate-200 text-amber-700 hover:bg-amber-50'
                     }`}
-                    title="Tata ulang semua memo secara rapi & berbaris"
                   >
                     <Wand2 className="w-3.5 h-3.5 text-amber-500" />
-                    <span className="hidden md:inline">Rapikan Posisi</span>
+                    <span className="hidden md:inline">{t.notesBoard.autoArrangeBtn}</span>
                   </button>
                 )}
 
@@ -866,7 +859,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Cari catatan..."
+                    placeholder={t.notesBoard.searchPlaceholder}
                     style={{ color: themeConfig.isDark ? '#ffffff' : '#0f172a' }}
                     className={`w-full pl-9 pr-7 py-1.5 rounded-xl border text-xs transition-all outline-hidden ${
                       themeConfig.isDark
@@ -895,7 +888,6 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                       ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
                       : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                   } ${isLoading ? 'opacity-50 animate-spin' : ''}`}
-                  title="Muat ulang catatan"
                 >
                   <RefreshCw className="w-4 h-4" />
                 </button>
@@ -909,10 +901,9 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                       ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white'
                       : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900'
                   }`}
-                  title="Minimalkan panel papan catatan agar area kanvas lebih luas"
                 >
                   <ChevronUp className="w-4 h-4 text-slate-400" />
-                  <span className="hidden sm:inline">Minimalkan</span>
+                  <span className="hidden sm:inline">{t.notesBoard.minimizeBtn}</span>
                 </button>
               </div>
             </div>
@@ -921,7 +912,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
             <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1.5 flex-wrap">
               <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1 mr-1">
                 <Filter className="w-3 h-3" />
-                <span>Warna:</span>
+                <span>{t.notesBoard.colorFilterLabel}</span>
               </span>
 
               <button
@@ -933,7 +924,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                     : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
-                Semua ({notes.length})
+                {t.common.all} ({notes.length})
               </button>
 
               {(['yellow', 'pink', 'blue', 'green', 'purple', 'cream'] as NoteColor[]).map((c) => {
@@ -973,13 +964,13 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
           </div>
           <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 mb-1">
             {searchQuery || selectedColor !== 'all'
-              ? 'Tidak ada catatan yang cocok'
-              : 'Belum ada catatan di papan'}
+              ? t.notesBoard.emptySearchTitle
+              : t.notesBoard.emptyBoardTitle}
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mb-4">
             {searchQuery || selectedColor !== 'all'
-              ? 'Coba ubah kata kunci pencarian atau bersihkan filter warna.'
-              : 'Tulis ide, coretan, memo, atau daftar apa saja dengan bebas di sini.'}
+              ? t.notesBoard.emptySearchDesc
+              : t.notesBoard.emptyBoardDesc}
           </p>
           <button
             type="button"
@@ -987,7 +978,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
             className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-md active:scale-95 transition-all cursor-pointer ${themeConfig.primaryButton}`}
           >
             <Plus className="w-4 h-4" />
-            <span>Tulis Catatan Pertamamu</span>
+            <span>{t.notesBoard.writeFirstNoteBtn}</span>
           </button>
         </div>
       ) : layoutMode === 'canvas' ? (
@@ -1069,7 +1060,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
               <div className="flex items-center gap-2 mb-3">
                 <Pin className="w-4 h-4 text-amber-500 fill-amber-500" />
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Catatan Tersemat ({pinnedNotes.length})
+                  {t.notesBoard.pinnedSectionTitle} ({pinnedNotes.length})
                 </h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
@@ -1111,7 +1102,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
               {pinnedNotes.length > 0 && (
                 <div className="flex items-center gap-2 mb-3 pt-2">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                    Catatan Lainnya ({otherNotes.length})
+                    {t.notesBoard.otherSectionTitle} ({otherNotes.length})
                   </h3>
                 </div>
               )}

@@ -3,6 +3,7 @@ import { Sparkles, Plus, Volume2, VolumeX, Palette, Timer, Archive, Check, X } f
 import { UserPreferences, ThemeConfig } from '@/types/preferences';
 import { UserAuthButton } from '@/components/ui/UserAuthButton';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface NavbarProps {
   onOpenQuickPaste?: () => void;
@@ -49,6 +50,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [isEditingMotto, setIsEditingMotto] = useState(false);
   const [draftMotto, setDraftMotto] = useState('');
+  const { t } = useLanguage();
 
   const handleStartEditMotto = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -102,13 +104,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                     ? 'bg-white p-0.5 border border-amber-200 shadow-orange-100'
                     : `bg-gradient-to-tr ${themeConfig.accentGradient} text-white text-base`
                 }`}
-                title="Klik untuk ubah logo & nama aplikasi"
               >
                 {preferences.customLogoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={preferences.customLogoUrl}
-                    alt={preferences.appName || 'Logo Aplikasi'}
+                    alt={preferences.appName || 'Logo'}
                     className="w-full h-full object-cover rounded-xl"
                   />
                 ) : preferences.appIconPreset ? (
@@ -123,9 +124,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <h1
                   onClick={onOpenPersonalization}
                   className={`text-lg sm:text-xl font-black bg-gradient-to-r ${themeConfig.accentTextGradient} bg-clip-text text-transparent cursor-pointer hover:opacity-90 transition-opacity whitespace-nowrap`}
-                  title="Klik untuk ubah nama aplikasi"
                 >
-                  {preferences.appName || 'Ceria Todo'}
+                  {preferences.appName === 'Papan Catatan' ? t.common.appName : (preferences.appName || t.common.appName)}
                 </h1>
                 <span
                   className={`text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded-full font-semibold border shrink-0 ${themeConfig.badgeBg} ${themeConfig.badgeText} ${themeConfig.badgeBorder}`}
@@ -152,12 +152,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                     autoFocus
                     maxLength={100}
                     className="px-2 py-0.5 rounded-lg text-xs bg-white dark:bg-slate-800 border border-amber-400 focus:outline-hidden focus:ring-1 focus:ring-amber-500 text-slate-800 dark:text-slate-100 shadow-inner w-52 sm:w-72"
-                    placeholder="Tulis tagline..."
+                    placeholder={t.navbar.editMottoPlaceholder}
                   />
                   <button
                     type="submit"
                     className="p-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white transition-colors cursor-pointer shrink-0"
-                    title="Simpan tagline"
+                    title={t.common.save}
                   >
                     <Check className="w-3 h-3" />
                   </button>
@@ -165,7 +165,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     type="button"
                     onClick={handleCancelMotto}
                     className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer shrink-0"
-                    title="Batal"
+                    title={t.common.cancel}
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -176,7 +176,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className={`text-xs font-medium truncate max-w-[150px] sm:max-w-xs md:max-w-[160px] lg:max-w-xs xl:max-w-sm hidden sm:block cursor-pointer hover:text-amber-500 dark:hover:text-amber-400 transition-colors ${
                     themeConfig.isDark ? 'text-slate-400' : 'text-slate-500'
                   }`}
-                  title="Klik untuk mengubah tagline"
                 >
                   {preferences.dailyMotto || 'Kelola tugas lebih ringan & menyenangkan! ✨'}
                 </p>
@@ -205,10 +204,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                     ? 'text-slate-400 hover:text-slate-200'
                     : 'text-amber-800/70 hover:text-amber-950'
                 }`}
-                title="Buka Papan Tugas (Kanban)"
               >
                 <span>📋</span>
-                <span>Tugas</span>
+                <span>{t.navbar.tasksTab}</span>
                 <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 font-bold">
                   {counts.total}
                 </span>
@@ -226,10 +224,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                     ? 'text-slate-400 hover:text-slate-200'
                     : 'text-amber-800/70 hover:text-amber-950'
                 }`}
-                title="Buka Papan Catatan Bebas"
               >
                 <span>📝</span>
-                <span>Catatan</span>
+                <span>{t.navbar.notesTab}</span>
                 {notesCount > 0 && (
                   <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 font-bold">
                     {notesCount}
@@ -256,13 +253,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                     ? 'bg-amber-100/85 hover:bg-amber-100 border-amber-300 text-amber-950'
                     : 'bg-amber-100/60 hover:bg-amber-100 border-amber-200/80 text-amber-900'
                 }`}
-                title="Buka Timer Pomodoro & Suara Santai Ambient ⏱️"
               >
                 {isPlayful && !themeConfig.isDark && (
                   <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-5 h-1.5 bg-amber-200/90 border-y border-dashed border-amber-400/60 rounded-2xs pointer-events-none" />
                 )}
                 <Timer className="w-4 h-4 text-amber-600 shrink-0" />
-                <span className="hidden xl:inline text-xs font-bold">Fokus</span>
+                <span className="hidden xl:inline text-xs font-bold">{t.navbar.focusBtn}</span>
               </button>
             )}
 
@@ -280,13 +276,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                     ? 'bg-emerald-100/85 hover:bg-emerald-100 border-emerald-300 text-emerald-950'
                     : 'bg-emerald-100/60 hover:bg-emerald-100 border-emerald-200/80 text-emerald-900'
                 }`}
-                title="Buka Riwayat Arsip Tugas Selesai 🗂️"
               >
                 {isPlayful && !themeConfig.isDark && (
                   <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-5 h-1.5 bg-emerald-200/90 border-y border-dashed border-emerald-400/60 rounded-2xs pointer-events-none" />
                 )}
                 <Archive className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span className="hidden xl:inline text-xs font-bold">Arsip</span>
+                <span className="hidden xl:inline text-xs font-bold">{t.navbar.archiveBtn}</span>
                 {archivedCount > 0 && (
                   <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-emerald-500 text-white shrink-0">
                     {archivedCount}
@@ -309,12 +304,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                     ? 'bg-rose-100/85 hover:bg-rose-100 border-rose-300 text-rose-950'
                     : 'bg-rose-100/60 hover:bg-rose-100 border-rose-200/80 text-rose-900'
                 }`}
-                title="Buka Galeri Komunitas & Pamerkan Mejamu 🏛️"
               >
                 {isPlayful && !themeConfig.isDark && (
                   <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-5 h-1.5 bg-rose-200/90 border-y border-dashed border-rose-400/60 rounded-2xs pointer-events-none" />
                 )}
-                <span className="text-xs font-bold">Galeri</span>
+                <span className="text-xs font-bold">{t.navbar.galleryBtn}</span>
               </button>
             )}
 
@@ -333,14 +327,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                   ? 'bg-orange-100/80 hover:bg-orange-100 border-orange-300 text-orange-950'
                   : 'bg-orange-50 hover:bg-orange-100/70 border-orange-200/80 text-orange-950'
               }`}
-              title="Pengaturan Nama, Papan, Tema & Efek"
             >
               {isPlayful && !themeConfig.isDark && (
                 <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-5 h-1.5 bg-amber-200/90 border-y border-dashed border-amber-400/60 rounded-2xs pointer-events-none" />
               )}
               <Palette className="w-4 h-4 text-orange-600 shrink-0" />
               <span className="hidden xl:inline text-xs font-bold">
-                Pengaturan
+                {t.navbar.settingsBtn}
               </span>
             </button>
 
@@ -360,8 +353,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               }`}
               title={
                 isSoundMuted
-                  ? 'Efek Suara: Bisu (Klik untuk aktifkan)'
-                  : 'Efek Suara: Aktif (Klik untuk bisukan)'
+                  ? t.navbar.soundMutedTitle
+                  : t.navbar.soundActiveTitle
               }
             >
               {isSoundMuted ? (
@@ -389,8 +382,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className="absolute -top-1 left-2.5 w-4 h-1.5 bg-amber-200/90 border-y border-dashed border-amber-400/60 rounded-2xs pointer-events-none -rotate-6" />
               )}
               <Plus className="w-4 h-4 shrink-0 stroke-[2.5]" />
-              <span className="hidden sm:inline">{activeTab === 'notes' ? 'Tambah Catatan' : 'Tambah Tugas'}</span>
-              <span className="sm:hidden">{activeTab === 'notes' ? 'Catatan' : 'Tugas'}</span>
+              <span className="hidden sm:inline">{activeTab === 'notes' ? t.navbar.addNoteBtn : t.navbar.addTaskBtn}</span>
+              <span className="sm:hidden">{activeTab === 'notes' ? t.navbar.notesTab : t.navbar.tasksTab}</span>
             </button>
           </div>
         </div>
