@@ -9,6 +9,7 @@ import {
   saveUserPreferences,
   getThemeConfig,
   DEFAULT_PREFERENCES,
+  DESK_BUDDY_OPTIONS,
 } from '@/lib/userPreferences';
 import { KanbanColumn } from './KanbanColumn';
 import { NotesBoard } from '@/components/notes/NotesBoard';
@@ -23,6 +24,7 @@ import { QuoteStickerModal } from '@/components/modals/QuoteStickerModal';
 import { PixelArtModal } from '@/components/modals/PixelArtModal';
 import { ShowcaseModal } from '@/components/modals/ShowcaseModal';
 import { StickyNotesMatchModal } from '@/components/modals/StickyNotesMatchModal';
+import { WhackADistractionModal } from '@/components/modals/WhackADistractionModal';
 import { DeskBuddy } from '@/components/ui/DeskBuddy';
 import { BoardStickers } from '@/components/ui/BoardStickers';
 import {
@@ -58,6 +60,16 @@ import {
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 const MEMORY_TRIGGER_WORDS = ['gabut', 'rehat', 'game'];
+const KONAMI_SEQUENCE = [
+  'ArrowUp',
+  'ArrowUp',
+  'ArrowDown',
+  'ArrowDown',
+  'ArrowLeft',
+  'ArrowRight',
+  'ArrowLeft',
+  'ArrowRight',
+];
 
 export const KanbanBoard: React.FC = () => {
   const { t, language } = useLanguage();
@@ -96,6 +108,7 @@ export const KanbanBoard: React.FC = () => {
   const [isShowcaseOpen, setIsShowcaseOpen] = useState(false);
   const [isStickyMatchOpen, setIsStickyMatchOpen] = useState(false);
   const [stickyMatchTriggerWord, setStickyMatchTriggerWord] = useState('rehat');
+  const [isWhackGameOpen, setIsWhackGameOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [defaultStatusForNew, setDefaultStatusForNew] = useState<TaskStatus>('TODO');
   const [singleColumnTab, setSingleColumnTab] = useState<TaskStatus>('TODO');
@@ -110,13 +123,17 @@ export const KanbanBoard: React.FC = () => {
   const [currentDate, setCurrentDate] = useState('');
   const [currentTime, setCurrentTime] = useState('');
 
-  // Easter Egg Trigger: Mengetik kata 'gabut', 'rehat', atau 'game'
+  // Easter Egg Triggers:
+  // 1) Mengetik kata 'gabut', 'rehat', atau 'game' -> Sticky Notes Match
+  // 2) Konami Code (↑ ↑ ↓ ↓ ← → ← →) -> Procrastination Invaders (Whack-a-Distraction)
   useEffect(() => {
     let keyBuffer = '';
     let lastKeyTime = 0;
+    let konamiIndex = 0;
+    let lastKonamiTime = 0;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (isStickyMatchOpen) return;
+      if (isStickyMatchOpen || isWhackGameOpen) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
 
       const target = e.target as HTMLElement | null;
@@ -127,8 +144,31 @@ export const KanbanBoard: React.FC = () => {
         }
       }
 
+      const now = Date.now();
+
+      // Check Konami Code sequence (↑ ↑ ↓ ↓ ← → ← →)
+      if (now - lastKonamiTime > 3000) {
+        konamiIndex = 0;
+      }
+      if (e.key === KONAMI_SEQUENCE[konamiIndex]) {
+        konamiIndex += 1;
+        lastKonamiTime = now;
+        if (konamiIndex === KONAMI_SEQUENCE.length) {
+          konamiIndex = 0;
+          e.preventDefault();
+          playVictoryChime('arcade');
+          setIsWhackGameOpen(true);
+          return;
+        }
+      } else if (e.key === KONAMI_SEQUENCE[0]) {
+        konamiIndex = 1;
+        lastKonamiTime = now;
+      } else if (e.key.startsWith('Arrow')) {
+        konamiIndex = 0;
+      }
+
+      // Check word buffer ('gabut', 'rehat', 'game')
       if (e.key.length === 1 && /[a-zA-Z]/.test(e.key)) {
-        const now = Date.now();
         if (now - lastKeyTime > 2000) {
           keyBuffer = '';
         }
@@ -159,7 +199,7 @@ export const KanbanBoard: React.FC = () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('ceria-open-memory-game', handleCustomOpen);
     };
-  }, [isStickyMatchOpen]);
+  }, [isStickyMatchOpen, isWhackGameOpen]);
 
   useEffect(() => {
     const locale = language === 'en' ? 'en-US' : 'id-ID';
@@ -2297,6 +2337,21 @@ export const KanbanBoard: React.FC = () => {
         isOpen={isStickyMatchOpen}
         onClose={() => setIsStickyMatchOpen(false)}
         triggerWord={stickyMatchTriggerWord}
+        soundProfile={preferences.soundProfile}
+      />
+
+      {/* Easter Egg: Procrastination Invaders / Whack-a-Distraction (triggered by Konami Code) */}
+      <WhackADistractionModal
+        isOpen={isWhackGameOpen}
+        onClose={() => setIsWhackGameOpen(false)}
+        buddyAvatar={
+          DESK_BUDDY_OPTIONS.find((b) => b.id === preferences.deskBuddy)?.avatar || '🐱'
+        }
+        buddyName={
+          preferences.deskBuddyCustomName?.trim() ||
+          DESK_BUDDY_OPTIONS.find((b) => b.id === preferences.deskBuddy)?.name ||
+          'Desk Buddy'
+        }
         soundProfile={preferences.soundProfile}
       />
 
