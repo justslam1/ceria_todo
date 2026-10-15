@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback, useSyncExternalStore } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useSyncExternalStore, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { DragDropContext, DropResult } from '@hello-pangea/dnd';
 import { Task, TaskStatus, CreateTaskInput, UpdateTaskInput } from '@/types/task';
@@ -148,6 +148,10 @@ export const KanbanBoard: React.FC = () => {
   const [isBoardModalOpen, setIsBoardModalOpen] = useState(false);
   const [editingBoard, setEditingBoard] = useState<Board | null>(null);
   const [newBoardInitialType, setNewBoardInitialType] = useState<BoardType>('TASK');
+
+  // Abort controllers to prevent race conditions during rapid tab/board switching
+  const tasksAbortRef = useRef<AbortController | null>(null);
+  const notesAbortRef = useRef<AbortController | null>(null);
 
   const [currentDate, setCurrentDate] = useState('');
   const [currentTime, setCurrentTime] = useState('');
@@ -343,11 +347,19 @@ export const KanbanBoard: React.FC = () => {
   };
 
   // Fetch tasks for a specific board
-  const fetchTasks = useCallback(async (boardId?: string) => {
-    setIsLoading(true);
+  const fetchTasks = useCallback(async (boardId?: string, silent = false) => {
+    if (tasksAbortRef.current) {
+      tasksAbortRef.current.abort();
+    }
+    const controller = new AbortController();
+    tasksAbortRef.current = controller;
+
+    if (!silent) {
+      setIsLoading(true);
+    }
     try {
       const url = boardId ? `/api/tasks?boardId=${encodeURIComponent(boardId)}` : '/api/tasks';
-      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      const res = await fetch(url, { signal: controller.signal });
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
         setTasks(data.data);
@@ -355,20 +367,34 @@ export const KanbanBoard: React.FC = () => {
       } else {
         setNetworkError(data.error || 'Format data dari server tidak sesuai.');
       }
-    } catch (err) {
+    } catch (err: unknown) {
+      if (err instanceof Error && (err.name === 'AbortError' || controller.signal.aborted)) {
+        return;
+      }
       console.error('Gagal mengambil data tugas:', err);
       setNetworkError('Gagal memuat tugas. Periksa koneksi atau status database.');
     } finally {
-      setIsLoading(false);
+      if (tasksAbortRef.current === controller) {
+        setIsLoading(false);
+        tasksAbortRef.current = null;
+      }
     }
   }, []);
 
   // Fetch notes for a specific board
-  const fetchNotes = useCallback(async (boardId?: string) => {
-    setIsNotesLoading(true);
+  const fetchNotes = useCallback(async (boardId?: string, silent = false) => {
+    if (notesAbortRef.current) {
+      notesAbortRef.current.abort();
+    }
+    const controller = new AbortController();
+    notesAbortRef.current = controller;
+
+    if (!silent) {
+      setIsNotesLoading(true);
+    }
     try {
       const url = boardId ? `/api/notes?boardId=${encodeURIComponent(boardId)}` : '/api/notes';
-      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      const res = await fetch(url, { signal: controller.signal });
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
         setNotes(
@@ -379,10 +405,16 @@ export const KanbanBoard: React.FC = () => {
           }))
         );
       }
-    } catch (err) {
+    } catch (err: unknown) {
+      if (err instanceof Error && (err.name === 'AbortError' || controller.signal.aborted)) {
+        return;
+      }
       console.error('Gagal mengambil data catatan:', err);
     } finally {
-      setIsNotesLoading(false);
+      if (notesAbortRef.current === controller) {
+        setIsNotesLoading(false);
+        notesAbortRef.current = null;
+      }
     }
   }, []);
 
@@ -1573,7 +1605,7 @@ export const KanbanBoard: React.FC = () => {
                 if (typeof window !== 'undefined') {
                   localStorage.setItem('ceria_active_board_id', noteBoard.id);
                 }
-                fetchNotes(noteBoard.id);
+                fetchNotes(noteBoard.id, notes.length > 0);
               }
             } else if (tab === 'tasks' && activeBoard?.type !== 'TASK') {
               const taskBoard = boards.find((b) => b.type === 'TASK');
@@ -1582,7 +1614,7 @@ export const KanbanBoard: React.FC = () => {
                 if (typeof window !== 'undefined') {
                   localStorage.setItem('ceria_active_board_id', taskBoard.id);
                 }
-                fetchTasks(taskBoard.id);
+                fetchTasks(taskBoard.id, tasks.length > 0);
               }
             }
           }}

@@ -37,20 +37,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Auto-claim only orphan tasks (userId null or deleted legacy users that don't exist in User table)
-    const existingUsers = await prisma.user.findMany({ select: { id: true } });
-    const existingUserIds = existingUsers.map((u) => u.id);
-
-    await prisma.task.updateMany({
-      where: {
-        OR: [
-          { userId: null },
-          { userId: { notIn: existingUserIds } },
-        ],
-      },
-      data: { userId },
-    });
-
     const searchParams = request.nextUrl.searchParams;
     const statusParam = searchParams.get('status');
     const boardIdParam = searchParams.get('boardId');
