@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, Plus, Volume2, VolumeX, Palette, Timer, Archive, Check, X } from 'lucide-react';
+import { Sparkles, Images, Plus, Volume2, VolumeX, Palette, Timer, Archive, Check, X } from 'lucide-react';
 import { UserPreferences, ThemeConfig } from '@/types/preferences';
 import { UserAuthButton } from '@/components/ui/UserAuthButton';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
@@ -338,7 +338,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 {isPlayful && !themeConfig.isDark && (
                   <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-4 h-1.5 bg-rose-200/90 border-y border-dashed border-rose-400/60 rounded-2xs pointer-events-none" />
                 )}
-                <Sparkles className="w-4 h-4 text-rose-500 dark:text-rose-400 shrink-0" />
+                <Images className="w-4 h-4 text-rose-500 dark:text-rose-400 shrink-0" />
               </button>
             )}
 
