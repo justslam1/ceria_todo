@@ -5,7 +5,7 @@ import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface LanguageSwitcherProps {
   className?: string;
-  variant?: 'pill' | 'minimal' | 'badge';
+  variant?: 'pill' | 'minimal' | 'badge' | 'compact';
 }
 
 function FlagID({ className = 'w-4 h-3' }: { className?: string }) {
@@ -47,6 +47,25 @@ function FlagGB({ className = 'w-4 h-3' }: { className?: string }) {
 
 export function LanguageSwitcher({ className = '', variant = 'pill' }: LanguageSwitcherProps) {
   const { language, setLanguage } = useLanguage();
+
+  if (variant === 'compact') {
+    const isID = language === 'id';
+    return (
+      <button
+        type="button"
+        onClick={() => setLanguage(isID ? 'en' : 'id')}
+        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer select-none active:scale-95 shadow-2xs hover:-translate-y-0.5 ${
+          language === 'id'
+            ? 'bg-amber-100/70 hover:bg-amber-100 border-amber-300/80 text-amber-950 dark:bg-slate-800/80 dark:border-slate-700 dark:text-slate-200'
+            : 'bg-sky-100/70 hover:bg-sky-100 border-sky-300/80 text-sky-950 dark:bg-slate-800/80 dark:border-slate-700 dark:text-slate-200'
+        } ${className}`}
+        title={isID ? 'Ganti ke English (EN)' : 'Switch to Bahasa Indonesia (ID)'}
+      >
+        {isID ? <FlagID className="w-4 h-3 shrink-0" /> : <FlagGB className="w-4 h-3 shrink-0" />}
+        <span>{isID ? 'ID' : 'EN'}</span>
+      </button>
+    );
+  }
 
   if (variant === 'badge') {
     return (

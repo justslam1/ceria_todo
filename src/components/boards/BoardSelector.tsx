@@ -71,7 +71,7 @@ export const BoardSelector: React.FC<BoardSelectorProps> = ({
         <span className="text-base select-none shrink-0 group-hover:scale-110 transition-transform">
           {currentIcon}
         </span>
-        <span className="max-w-[130px] sm:max-w-[190px] md:max-w-[220px] truncate text-left">
+        <span className="max-w-[110px] sm:max-w-[150px] md:max-w-[180px] lg:max-w-[210px] truncate text-left">
           {currentTitle}
         </span>
         <ChevronDown

@@ -273,7 +273,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={onOpenPomodoro}
-                className={`relative inline-flex items-center gap-1.5 px-2 sm:px-2.5 xl:px-3 py-1.5 rounded-xl border transition-all duration-150 cursor-pointer active:scale-95 shrink-0 ${
+                className={`relative inline-flex items-center justify-center p-2 rounded-xl border transition-all duration-150 cursor-pointer active:scale-95 shrink-0 ${
                   isPlayful ? '-rotate-1 hover:rotate-0 hover:-translate-y-0.5 shadow-xs' : 'hover:-translate-y-0.5 shadow-2xs'
                 } ${
                   themeConfig.isDark
@@ -282,12 +282,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                     ? 'bg-amber-100/85 hover:bg-amber-100 border-amber-300 text-amber-950'
                     : 'bg-amber-100/60 hover:bg-amber-100 border-amber-200/80 text-amber-900'
                 }`}
+                title={t.navbar.focusBtn}
               >
                 {isPlayful && !themeConfig.isDark && (
-                  <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-5 h-1.5 bg-amber-200/90 border-y border-dashed border-amber-400/60 rounded-2xs pointer-events-none" />
+                  <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-4 h-1.5 bg-amber-200/90 border-y border-dashed border-amber-400/60 rounded-2xs pointer-events-none" />
                 )}
-                <Timer className="w-4 h-4 text-amber-600 shrink-0" />
-                <span className="hidden xl:inline text-xs font-bold">{t.navbar.focusBtn}</span>
+                <Timer className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
               </button>
             )}
 
@@ -296,7 +296,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={onOpenArchive}
-                className={`relative inline-flex items-center gap-1.5 px-2 sm:px-2 xl:px-2.5 py-1.5 rounded-xl border transition-all duration-150 cursor-pointer active:scale-95 shrink-0 ${
+                className={`relative inline-flex items-center justify-center p-2 rounded-xl border transition-all duration-150 cursor-pointer active:scale-95 shrink-0 ${
                   isPlayful ? 'rotate-1 hover:rotate-0 hover:-translate-y-0.5 shadow-xs' : 'hover:-translate-y-0.5 shadow-2xs'
                 } ${
                   themeConfig.isDark
@@ -305,14 +305,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                     ? 'bg-emerald-100/85 hover:bg-emerald-100 border-emerald-300 text-emerald-950'
                     : 'bg-emerald-100/60 hover:bg-emerald-100 border-emerald-200/80 text-emerald-900'
                 }`}
+                title={`${t.navbar.archiveBtn} (${archivedCount})`}
               >
                 {isPlayful && !themeConfig.isDark && (
-                  <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-5 h-1.5 bg-emerald-200/90 border-y border-dashed border-emerald-400/60 rounded-2xs pointer-events-none" />
+                  <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-4 h-1.5 bg-emerald-200/90 border-y border-dashed border-emerald-400/60 rounded-2xs pointer-events-none" />
                 )}
-                <Archive className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span className="hidden xl:inline text-xs font-bold">{t.navbar.archiveBtn}</span>
+                <Archive className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 {archivedCount > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-emerald-500 text-white shrink-0">
+                  <span className="absolute -top-1 -right-1 px-1.5 py-0.2 min-w-4 text-[9px] font-black rounded-full bg-emerald-500 text-white shadow-xs flex items-center justify-center">
                     {archivedCount}
                   </span>
                 )}
@@ -324,7 +324,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={onOpenShowcase}
-                className={`relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-150 cursor-pointer active:scale-95 shrink-0 ${
+                className={`relative inline-flex items-center justify-center p-2 rounded-xl border transition-all duration-150 cursor-pointer active:scale-95 shrink-0 ${
                   isPlayful ? '-rotate-1.5 hover:rotate-0 hover:-translate-y-0.5 shadow-xs' : 'hover:-translate-y-0.5 shadow-2xs'
                 } ${
                   themeConfig.isDark
@@ -333,21 +333,22 @@ export const Navbar: React.FC<NavbarProps> = ({
                     ? 'bg-rose-100/85 hover:bg-rose-100 border-rose-300 text-rose-950'
                     : 'bg-rose-100/60 hover:bg-rose-100 border-rose-200/80 text-rose-900'
                 }`}
+                title={t.navbar.galleryBtn}
               >
                 {isPlayful && !themeConfig.isDark && (
-                  <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-5 h-1.5 bg-rose-200/90 border-y border-dashed border-rose-400/60 rounded-2xs pointer-events-none" />
+                  <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-4 h-1.5 bg-rose-200/90 border-y border-dashed border-rose-400/60 rounded-2xs pointer-events-none" />
                 )}
-                <span className="text-xs font-bold">{t.navbar.galleryBtn}</span>
+                <Sparkles className="w-4 h-4 text-rose-500 dark:text-rose-400 shrink-0" />
               </button>
             )}
 
             {/* Language Switcher */}
-            <LanguageSwitcher variant="badge" className="hidden sm:inline-flex" />
+            <LanguageSwitcher variant="compact" className="hidden sm:inline-flex" />
 
             {/* Personalization / Settings Button */}
             <button
               onClick={onOpenPersonalization}
-              className={`relative inline-flex items-center gap-1.5 px-2.5 sm:px-2.5 xl:px-3 py-1.5 rounded-xl border transition-all duration-150 cursor-pointer active:scale-95 shrink-0 ${
+              className={`relative inline-flex items-center justify-center p-2 rounded-xl border transition-all duration-150 cursor-pointer active:scale-95 shrink-0 ${
                 isPlayful ? 'rotate-1 hover:rotate-0 hover:-translate-y-0.5 shadow-xs' : 'hover:-translate-y-0.5 shadow-2xs'
               } ${
                 themeConfig.isDark
@@ -356,14 +357,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                   ? 'bg-orange-100/80 hover:bg-orange-100 border-orange-300 text-orange-950'
                   : 'bg-orange-50 hover:bg-orange-100/70 border-orange-200/80 text-orange-950'
               }`}
+              title={t.navbar.settingsBtn}
             >
               {isPlayful && !themeConfig.isDark && (
-                <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-5 h-1.5 bg-amber-200/90 border-y border-dashed border-amber-400/60 rounded-2xs pointer-events-none" />
+                <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-4 h-1.5 bg-amber-200/90 border-y border-dashed border-amber-400/60 rounded-2xs pointer-events-none" />
               )}
-              <Palette className="w-4 h-4 text-orange-600 shrink-0" />
-              <span className="hidden xl:inline text-xs font-bold">
-                {t.navbar.settingsBtn}
-              </span>
+              <Palette className="w-4 h-4 text-orange-600 dark:text-orange-400 shrink-0" />
             </button>
 
             {/* Sound Effects Toggle Button */}
