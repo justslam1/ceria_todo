@@ -18,6 +18,7 @@ interface QuickPasteModalProps {
   onClose: () => void;
   onTasksSaved: (createdTasks: Task[]) => void;
   customCategories?: CustomCategory[];
+  boardId?: string | null;
 }
 
 export const QuickPasteModal: React.FC<QuickPasteModalProps> = ({
@@ -25,6 +26,7 @@ export const QuickPasteModal: React.FC<QuickPasteModalProps> = ({
   onClose,
   onTasksSaved,
   customCategories,
+  boardId,
 }) => {
   const [rawText, setRawText] = useState('');
   const [parsedItems, setParsedItems] = useState<ParsedTask[]>([]);
@@ -89,6 +91,7 @@ export const QuickPasteModal: React.FC<QuickPasteModalProps> = ({
         dueDate: item.dueDate || null,
         estimatedTime: item.estimatedTime || null,
         order: idx,
+        boardId: boardId || undefined,
       }));
 
       const res = await fetch('/api/tasks', {

@@ -3,6 +3,8 @@ export type Priority = 'LOW' | 'MEDIUM' | 'HIGH';
 
 export interface Task {
   id: string;
+  userId?: string | null;
+  boardId?: string | null;
   title: string;
   description: string | null;
   status: TaskStatus;
@@ -18,6 +20,7 @@ export interface Task {
 
 export interface CreateTaskInput {
   title: string;
+  boardId?: string | null;
   description?: string | null;
   status?: TaskStatus;
   priority?: Priority;
@@ -30,6 +33,7 @@ export interface CreateTaskInput {
 
 export interface UpdateTaskInput {
   title?: string;
+  boardId?: string | null;
   description?: string | null;
   status?: TaskStatus;
   priority?: Priority;

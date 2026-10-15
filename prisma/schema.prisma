@@ -19,6 +19,11 @@ enum Priority {
   HIGH
 }
 
+enum BoardType {
+  TASK
+  NOTE
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -29,6 +34,7 @@ model User {
   sessions      Session[]
   tasks         Task[]
   notes         Note[]
+  boards        Board[]
   showcases     BoardShowcase[]
   boardLikes    BoardLike[]
   createdAt     DateTime  @default(now())
@@ -75,6 +81,7 @@ model VerificationToken {
 model Task {
   id            String     @id @default(uuid())
   userId        String?
+  boardId       String?
   title         String
   description   String?    @db.Text
   status        TaskStatus @default(TODO)
@@ -87,15 +94,18 @@ model Task {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
-  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user  User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  board Board? @relation(fields: [boardId], references: [id], onDelete: Cascade)
 
   @@index([userId, status])
+  @@index([boardId])
   @@index([status])
 }
 
 model Note {
   id        String   @id @default(uuid())
   userId    String?
+  boardId   String?
   title     String
   content   String   @db.Text
   imageUrl  String?  @db.LongText
@@ -110,10 +120,32 @@ model Note {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user  User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  board Board? @relation(fields: [boardId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([boardId])
   @@index([isPinned])
+}
+
+model Board {
+  id          String     @id @default(uuid())
+  userId      String?
+  title       String
+  type        BoardType  @default(TASK)
+  icon        String     @default("📋")
+  color       String     @default("amber")
+  isDefault   Boolean    @default(false)
+  order       Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  user  User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks Task[]
+  notes Note[]
+
+  @@index([userId])
+  @@index([type])
 }
 
 model BoardShowcase {

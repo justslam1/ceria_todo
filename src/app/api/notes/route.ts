@@ -33,10 +33,12 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('q')?.trim() || '';
+    const boardIdParam = searchParams.get('boardId');
 
     const notes = await prisma.note.findMany({
       where: {
         userId,
+        ...(boardIdParam ? { boardId: boardIdParam } : {}),
         ...(search
           ? {
               OR: [
@@ -76,7 +78,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, content, imageUrl, isSticker, color, isPinned, posX, posY, width, rotation, order } = body;
+    const { title, boardId, content, imageUrl, isSticker, color, isPinned, posX, posY, width, rotation, order } = body;
 
     const trimmedTitle = typeof title === 'string' ? title.trim().slice(0, 200) : '';
     const trimmedContent = typeof content === 'string' ? content.trim().slice(0, 20000) : '';
@@ -91,9 +93,23 @@ export async function POST(request: NextRequest) {
 
     const validColor = VALID_COLORS.includes(color) ? color : 'yellow';
 
+    // Find default note board if boardId is not provided
+    let effectiveBoardId = boardId;
+    if (!effectiveBoardId) {
+      const defaultBoard = await prisma.board.findFirst({
+        where: { userId, type: 'NOTE', isDefault: true },
+        select: { id: true },
+      }) || await prisma.board.findFirst({
+        where: { userId, type: 'NOTE' },
+        select: { id: true },
+      });
+      effectiveBoardId = defaultBoard?.id || null;
+    }
+
     const note = await prisma.note.create({
       data: {
         userId,
+        boardId: effectiveBoardId,
         title: trimmedTitle || (isSticker ? '' : validImageUrl ? 'Catatan Gambar' : 'Catatan Baru'),
         content: trimmedContent,
         imageUrl: validImageUrl,

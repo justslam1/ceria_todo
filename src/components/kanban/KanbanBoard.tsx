@@ -26,6 +26,8 @@ import { PixelArtModal } from '@/components/modals/PixelArtModal';
 import { ShowcaseModal } from '@/components/modals/ShowcaseModal';
 import { DeskBuddy } from '@/components/ui/DeskBuddy';
 import { BoardStickers } from '@/components/ui/BoardStickers';
+import { Board, BoardType, CreateBoardInput, UpdateBoardInput } from '@/types/board';
+import { BoardFormModal } from '@/components/modals/BoardFormModal';
 
 const StickyNotesMatchModal = dynamic(
   () => import('@/components/modals/StickyNotesMatchModal').then((m) => m.StickyNotesMatchModal),
@@ -139,6 +141,13 @@ export const KanbanBoard: React.FC = () => {
   const [isNotesLoading, setIsNotesLoading] = useState(false);
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<NoteItem | null>(null);
+
+  // Multi-Board State
+  const [boards, setBoards] = useState<Board[]>([]);
+  const [activeBoard, setActiveBoard] = useState<Board | null>(null);
+  const [isBoardModalOpen, setIsBoardModalOpen] = useState(false);
+  const [editingBoard, setEditingBoard] = useState<Board | null>(null);
+  const [newBoardInitialType, setNewBoardInitialType] = useState<BoardType>('TASK');
 
   const [currentDate, setCurrentDate] = useState('');
   const [currentTime, setCurrentTime] = useState('');
@@ -333,67 +342,12 @@ export const KanbanBoard: React.FC = () => {
     saveUserPreferences(newPrefs);
   };
 
-  // Initial load on mount
-  useEffect(() => {
-    let ignore = false;
-
-    async function loadInitialTasks() {
-      try {
-        const res = await fetch('/api/tasks', { signal: AbortSignal.timeout(8000) });
-        const data = await res.json();
-        if (!ignore) {
-          if (data.success && Array.isArray(data.data)) {
-            setTasks(data.data);
-            setNetworkError(null);
-          } else {
-            setNetworkError(data.error || 'Format data dari server tidak sesuai.');
-          }
-        }
-      } catch (err) {
-        if (!ignore) {
-          console.error('Gagal mengambil data tugas:', err);
-          setNetworkError('Gagal memuat tugas. Periksa koneksi atau status database.');
-        }
-      } finally {
-        if (!ignore) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    async function loadInitialNotes() {
-      try {
-        const res = await fetch('/api/notes', { signal: AbortSignal.timeout(8000) });
-        const data = await res.json();
-        if (!ignore && data.success && Array.isArray(data.data)) {
-          setNotes(
-            data.data.map((n: NoteItem) => ({
-              ...n,
-              flipH: n.flipH !== undefined ? n.flipH : Boolean(n.content?.includes('[FLIP_H]')),
-              flipV: n.flipV !== undefined ? n.flipV : Boolean(n.content?.includes('[FLIP_V]')),
-            }))
-          );
-        }
-      } catch (err) {
-        if (!ignore) {
-          console.error('Gagal mengambil data catatan:', err);
-        }
-      }
-    }
-
-    loadInitialTasks();
-    loadInitialNotes();
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
-
-  // Manual refresh handler
-  const handleRefreshTasks = useCallback(async () => {
+  // Fetch tasks for a specific board
+  const fetchTasks = useCallback(async (boardId?: string) => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/tasks', { signal: AbortSignal.timeout(8000) });
+      const url = boardId ? `/api/tasks?boardId=${encodeURIComponent(boardId)}` : '/api/tasks';
+      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
         setTasks(data.data);
@@ -408,6 +362,198 @@ export const KanbanBoard: React.FC = () => {
       setIsLoading(false);
     }
   }, []);
+
+  // Fetch notes for a specific board
+  const fetchNotes = useCallback(async (boardId?: string) => {
+    setIsNotesLoading(true);
+    try {
+      const url = boardId ? `/api/notes?boardId=${encodeURIComponent(boardId)}` : '/api/notes';
+      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data)) {
+        setNotes(
+          data.data.map((n: NoteItem) => ({
+            ...n,
+            flipH: n.flipH !== undefined ? n.flipH : Boolean(n.content?.includes('[FLIP_H]')),
+            flipV: n.flipV !== undefined ? n.flipV : Boolean(n.content?.includes('[FLIP_V]')),
+          }))
+        );
+      }
+    } catch (err) {
+      console.error('Gagal mengambil data catatan:', err);
+    } finally {
+      setIsNotesLoading(false);
+    }
+  }, []);
+
+  // Fetch all boards and initialize active board
+  const fetchBoards = useCallback(async (preferredBoardId?: string) => {
+    try {
+      const res = await fetch('/api/boards');
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+        const fetchedBoards: Board[] = data.data;
+        setBoards(fetchedBoards);
+
+        const savedBoardId =
+          preferredBoardId ||
+          (typeof window !== 'undefined' ? localStorage.getItem('ceria_active_board_id') : null);
+        let target = fetchedBoards.find((b) => b.id === savedBoardId);
+        if (!target) {
+          target = fetchedBoards.find((b) => b.isDefault && b.type === 'TASK') || fetchedBoards[0];
+        }
+        setActiveBoard(target);
+        if (typeof window !== 'undefined' && target) {
+          localStorage.setItem('ceria_active_board_id', target.id);
+        }
+
+        if (target.type === 'NOTE') {
+          setActiveTab('notes');
+          fetchNotes(target.id);
+        } else {
+          setActiveTab('tasks');
+          fetchTasks(target.id);
+        }
+      }
+    } catch (err) {
+      console.error('Gagal memuat daftar papan:', err);
+      // Fallback: try loading tasks directly if boards fail
+      fetchTasks();
+    }
+  }, [fetchNotes, fetchTasks]);
+
+  // Initial load on mount
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadData() {
+      if (!ignore) {
+        await fetchBoards();
+      }
+    }
+
+    loadData();
+
+    return () => {
+      ignore = true;
+    };
+  }, [fetchBoards]);
+
+  // Manual refresh handler
+  const handleRefreshTasks = useCallback(async () => {
+    if (activeBoard?.type === 'TASK' && activeBoard?.id) {
+      await fetchTasks(activeBoard.id);
+    } else {
+      await fetchTasks();
+    }
+  }, [activeBoard, fetchTasks]);
+
+  // Board selector handler
+  const handleSelectBoard = (board: Board) => {
+    setActiveBoard(board);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ceria_active_board_id', board.id);
+    }
+    playPopSound(preferences.soundProfile);
+    if (board.type === 'NOTE') {
+      setActiveTab('notes');
+      fetchNotes(board.id);
+    } else {
+      setActiveTab('tasks');
+      fetchTasks(board.id);
+    }
+  };
+
+  // Board CRUD handlers
+  const handleOpenCreateBoard = (type?: BoardType) => {
+    setEditingBoard(null);
+    setNewBoardInitialType(type || (activeTab === 'notes' ? 'NOTE' : 'TASK'));
+    setIsBoardModalOpen(true);
+  };
+
+  const handleEditBoard = (board: Board) => {
+    setEditingBoard(board);
+    setIsBoardModalOpen(true);
+  };
+
+  const handleSaveBoard = async (data: CreateBoardInput | UpdateBoardInput, boardId?: string) => {
+    try {
+      if (boardId) {
+        const res = await fetch(`/api/boards/${boardId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        const resData = await res.json();
+        if (!res.ok || !resData.success) {
+          throw new Error(resData.error || 'Gagal memperbarui papan');
+        }
+        const updated: Board = resData.data;
+        setBoards((prev) => prev.map((b) => (b.id === boardId ? { ...b, ...updated } : b)));
+        if (activeBoard?.id === boardId) {
+          setActiveBoard((prev) => (prev ? { ...prev, ...updated } : updated));
+        }
+        playPopSound(preferences.soundProfile);
+      } else {
+        const res = await fetch('/api/boards', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        const resData = await res.json();
+        if (!res.ok || !resData.success) {
+          throw new Error(resData.error || 'Gagal membuat papan baru');
+        }
+        const created: Board = resData.data;
+        setBoards((prev) => [...prev, created]);
+        handleSelectBoard(created);
+        triggerCelebration(preferences.celebrationFx);
+        playVictoryChime(preferences.soundProfile);
+      }
+      setIsBoardModalOpen(false);
+    } catch (err: unknown) {
+      console.error('Error saving board:', err);
+      throw err;
+    }
+  };
+
+  const handleDeleteBoard = async (board: Board) => {
+    if (board.isDefault) {
+      alert(t.boards.cannotDeleteDefault);
+      return;
+    }
+    if (!confirm(t.boards.deleteBoardConfirm)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/boards/${board.id}`, {
+        method: 'DELETE',
+      });
+      const resData = await res.json();
+      if (!res.ok || !resData.success) {
+        throw new Error(resData.error || 'Gagal menghapus papan');
+      }
+
+      playPopSound(preferences.soundProfile);
+
+      const remainingBoards = boards.filter((b) => b.id !== board.id);
+      setBoards(remainingBoards);
+
+      if (activeBoard?.id === board.id) {
+        const fallback =
+          remainingBoards.find((b) => b.type === board.type && b.isDefault) ||
+          remainingBoards.find((b) => b.type === board.type) ||
+          remainingBoards[0];
+        if (fallback) {
+          handleSelectBoard(fallback);
+        }
+      }
+    } catch (err) {
+      console.error('Gagal menghapus papan:', err);
+      alert(err instanceof Error ? err.message : 'Gagal menghapus papan');
+    }
+  };
 
   // Global paste handler on Kanban Board: Paste image opens TaskForm with image cover
   useEffect(() => {
@@ -467,28 +613,6 @@ export const KanbanBoard: React.FC = () => {
     preferences.soundProfile,
   ]);
 
-  // Fetch notes from API for manual refresh
-  const fetchNotes = useCallback(async () => {
-    setIsNotesLoading(true);
-    try {
-      const res = await fetch('/api/notes', { signal: AbortSignal.timeout(8000) });
-      const data = await res.json();
-      if (data.success && Array.isArray(data.data)) {
-        setNotes(
-          data.data.map((n: NoteItem) => ({
-            ...n,
-            flipH: n.flipH !== undefined ? n.flipH : Boolean(n.content?.includes('[FLIP_H]')),
-            flipV: n.flipV !== undefined ? n.flipV : Boolean(n.content?.includes('[FLIP_V]')),
-          }))
-        );
-      }
-    } catch (err) {
-      console.error('Gagal mengambil data catatan:', err);
-    } finally {
-      setIsNotesLoading(false);
-    }
-  }, []);
-
   const handleCreateNote = async (data: {
     title: string;
     content: string;
@@ -498,12 +622,17 @@ export const KanbanBoard: React.FC = () => {
     isPinned: boolean;
     posX?: number;
     posY?: number;
+    boardId?: string | null;
   }) => {
     try {
+      const payload = {
+        ...data,
+        boardId: data.boardId || (activeBoard?.type === 'NOTE' ? activeBoard.id : undefined),
+      };
       const res = await fetch('/api/notes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
       const resData = await res.json();
       if (resData.success && resData.data) {
@@ -516,6 +645,15 @@ export const KanbanBoard: React.FC = () => {
           },
           ...prev,
         ]);
+        if (activeBoard) {
+          setBoards((prev) =>
+            prev.map((b) =>
+              b.id === activeBoard.id
+                ? { ...b, _count: { ...b._count, tasks: b._count?.tasks ?? 0, notes: (b._count?.notes ?? 0) + 1 } }
+                : b
+            )
+          );
+        }
         playPopSound(preferences.soundProfile);
       }
     } catch (err) {
@@ -550,23 +688,34 @@ export const KanbanBoard: React.FC = () => {
       }
     } catch (err) {
       console.error('Gagal memperbarui catatan:', err);
-      fetchNotes();
+      fetchNotes(activeBoard?.id);
     }
   };
 
   const handleDeleteNote = async (id: string) => {
     setNotes((prev) => prev.filter((n) => n.id !== id));
+    if (activeBoard) {
+      setBoards((prev) =>
+        prev.map((b) =>
+          b.id === activeBoard.id
+            ? { ...b, _count: { ...b._count, tasks: b._count?.tasks ?? 0, notes: Math.max(0, (b._count?.notes ?? 1) - 1) } }
+            : b
+        )
+      );
+    }
     try {
       await fetch(`/api/notes/${id}`, { method: 'DELETE' });
       playPopSound(preferences.soundProfile);
     } catch (err) {
       console.error('Gagal menghapus catatan:', err);
-      fetchNotes();
+      fetchNotes(activeBoard?.id);
     }
   };
 
   const handleConvertNoteToTask = async (note: NoteItem) => {
     try {
+      const targetTaskBoard =
+        activeBoard?.type === 'TASK' ? activeBoard : boards.find((b) => b.type === 'TASK');
       const newTaskInput: CreateTaskInput = {
         title: note.title.trim() || (note.isSticker ? 'Stiker Catatan' : 'Catatan Baru'),
         description: note.content || '',
@@ -574,6 +723,7 @@ export const KanbanBoard: React.FC = () => {
         status: 'TODO',
         priority: 'MEDIUM',
         category: 'Catatan Bebas',
+        boardId: targetTaskBoard?.id,
       };
       const res = await fetch('/api/tasks', {
         method: 'POST',
@@ -582,10 +732,14 @@ export const KanbanBoard: React.FC = () => {
       });
       const data = await res.json();
       if (data.success && data.data) {
-        setTasks((prev) => [data.data, ...prev]);
+        if (targetTaskBoard) {
+          handleSelectBoard(targetTaskBoard);
+        } else {
+          setTasks((prev) => [data.data, ...prev]);
+          setActiveTab('tasks');
+        }
         triggerCelebration(preferences.celebrationFx);
         playVictoryChime(preferences.soundProfile);
-        setActiveTab('tasks');
       }
     } catch (err) {
       console.error('Gagal mengonversi catatan ke tugas:', err);
@@ -786,6 +940,12 @@ export const KanbanBoard: React.FC = () => {
   const inProgressCount = activeTasks.filter((t) => t.status === 'IN_PROGRESS').length;
   const todoCount = activeTasks.filter((t) => t.status === 'TODO').length;
   const completionPercentage = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+  const totalNotesCount = useMemo(() => {
+    if (notes.length > 0) return notes.length;
+    return boards
+      .filter((b) => b.type === 'NOTE')
+      .reduce((acc, b) => acc + (b._count?.notes || 0), 0);
+  }, [notes.length, boards]);
 
   // Dynamic Background Style
   const backgroundPatternStyle = useMemo(() => {
@@ -922,6 +1082,15 @@ export const KanbanBoard: React.FC = () => {
     playPopSound(preferences.soundProfile);
     const previousTasks = [...tasks];
     setTasks((prev) => prev.filter((t) => t.id !== id));
+    if (activeBoard) {
+      setBoards((prev) =>
+        prev.map((b) =>
+          b.id === activeBoard.id
+            ? { ...b, _count: { ...b._count, notes: b._count?.notes ?? 0, tasks: Math.max(0, (b._count?.tasks ?? 1) - 1) } }
+            : b
+        )
+      );
+    }
 
     try {
       const res = await fetch(`/api/tasks/${id}`, {
@@ -1128,6 +1297,7 @@ export const KanbanBoard: React.FC = () => {
           category: it.category || 'General',
           dueDate: it.dueDate || null,
           estimatedTime: it.estimatedTime || null,
+          boardId: activeBoard?.type === 'TASK' ? activeBoard.id : undefined,
         }));
 
         const res = await fetch('/api/tasks', {
@@ -1177,10 +1347,16 @@ export const KanbanBoard: React.FC = () => {
         }
         setTasks((prev) => prev.map((t) => (t.id === id ? data.data : t)));
       } else {
+        const payload = {
+          ...taskData,
+          boardId:
+            (taskData as CreateTaskInput).boardId ||
+            (activeBoard?.type === 'TASK' ? activeBoard.id : undefined),
+        };
         const res = await fetch('/api/tasks', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(taskData),
+          body: JSON.stringify(payload),
           signal: AbortSignal.timeout(8000),
         });
         const data = await res.json();
@@ -1197,6 +1373,15 @@ export const KanbanBoard: React.FC = () => {
         }
 
         setTasks((prev) => [data.data, ...prev]);
+        if (activeBoard) {
+          setBoards((prev) =>
+            prev.map((b) =>
+              b.id === activeBoard.id
+                ? { ...b, _count: { ...b._count, notes: b._count?.notes ?? 0, tasks: (b._count?.tasks ?? 0) + 1 } }
+                : b
+            )
+          );
+        }
       }
     } catch (err: unknown) {
       if (err instanceof Error && err.name === 'TimeoutError') {
@@ -1216,6 +1401,15 @@ export const KanbanBoard: React.FC = () => {
   const handleTasksSavedFromWhatsApp = (newTasks: Task[]) => {
     playPopSound(preferences.soundProfile);
     setTasks((prev) => [...newTasks, ...prev]);
+    if (activeBoard) {
+      setBoards((prev) =>
+        prev.map((b) =>
+          b.id === activeBoard.id
+            ? { ...b, _count: { ...b._count, notes: b._count?.notes ?? 0, tasks: (b._count?.tasks ?? 0) + newTasks.length } }
+            : b
+        )
+      );
+    }
   };
 
   const handleOpenEdit = (task: Task) => {
@@ -1372,13 +1566,48 @@ export const KanbanBoard: React.FC = () => {
           onTabChange={(tab) => {
             playPopSound(preferences.soundProfile);
             setActiveTab(tab);
+            if (tab === 'notes' && activeBoard?.type !== 'NOTE') {
+              const noteBoard = boards.find((b) => b.type === 'NOTE');
+              if (noteBoard) {
+                setActiveBoard(noteBoard);
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('ceria_active_board_id', noteBoard.id);
+                }
+                fetchNotes(noteBoard.id);
+              }
+            } else if (tab === 'tasks' && activeBoard?.type !== 'TASK') {
+              const taskBoard = boards.find((b) => b.type === 'TASK');
+              if (taskBoard) {
+                setActiveBoard(taskBoard);
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('ceria_active_board_id', taskBoard.id);
+                }
+                fetchTasks(taskBoard.id);
+              }
+            }
           }}
-          notesCount={notes.length}
+          notesCount={totalNotesCount}
           onOpenNewNote={() => {
             setActiveTab('notes');
+            if (activeBoard?.type !== 'NOTE') {
+              const noteBoard = boards.find((b) => b.type === 'NOTE');
+              if (noteBoard) {
+                setActiveBoard(noteBoard);
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('ceria_active_board_id', noteBoard.id);
+                }
+                fetchNotes(noteBoard.id);
+              }
+            }
             setEditingNote(null);
             setIsNoteModalOpen(true);
           }}
+          boards={boards}
+          activeBoard={activeBoard}
+          onSelectBoard={handleSelectBoard}
+          onOpenCreateBoard={handleOpenCreateBoard}
+          onEditBoard={handleEditBoard}
+          onDeleteBoard={handleDeleteBoard}
         />
 
         {/* Main Board Container */}
@@ -1394,7 +1623,7 @@ export const KanbanBoard: React.FC = () => {
               onUpdateNote={handleUpdateNote}
               onDeleteNote={handleDeleteNote}
               onConvertToTask={handleConvertNoteToTask}
-              onRefreshNotes={fetchNotes}
+              onRefreshNotes={() => fetchNotes(activeBoard?.id)}
               isModalOpen={isNoteModalOpen}
               onOpenCreateModal={() => {
                 setEditingNote(null);
@@ -2315,6 +2544,7 @@ export const KanbanBoard: React.FC = () => {
         onClose={() => setIsQuickPasteOpen(false)}
         onTasksSaved={handleTasksSavedFromWhatsApp}
         customCategories={preferences.customCategories}
+        boardId={activeBoard?.type === 'TASK' ? activeBoard.id : undefined}
       />
 
       {/* Task Creation & Edit Form Modal */}
@@ -2387,6 +2617,16 @@ export const KanbanBoard: React.FC = () => {
           tasks={tasks}
         />
       )}
+
+      {/* Board Creation & Edit Form Modal */}
+      <BoardFormModal
+        isOpen={isBoardModalOpen}
+        onClose={() => setIsBoardModalOpen(false)}
+        onSave={handleSaveBoard}
+        initialType={newBoardInitialType}
+        boardToEdit={editingBoard}
+        themeConfig={themeConfig}
+      />
 
       {/* Easter Egg: Memory Card Sticky Notes Match Modal (triggered by typing gabut, rehat, game) */}
       {isStickyMatchOpen && (

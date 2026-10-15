@@ -3,6 +3,7 @@ export type NoteColor = 'yellow' | 'pink' | 'blue' | 'green' | 'purple' | 'cream
 export interface NoteItem {
   id: string;
   userId?: string | null;
+  boardId?: string | null;
   title: string;
   content: string;
   imageUrl?: string | null;

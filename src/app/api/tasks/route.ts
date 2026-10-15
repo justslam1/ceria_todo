@@ -53,12 +53,14 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const statusParam = searchParams.get('status');
+    const boardIdParam = searchParams.get('boardId');
     const status = statusParam && VALID_STATUSES.includes(statusParam as TaskStatus)
       ? (statusParam as TaskStatus)
       : null;
 
     const where: Prisma.TaskWhereInput = {
       userId,
+      ...(boardIdParam ? { boardId: boardIdParam } : {}),
       ...(status ? { status } : {}),
     };
 
@@ -95,6 +97,19 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
+    // Helper to find target boardId if not provided
+    const getEffectiveBoardId = async (providedBoardId?: string | null) => {
+      if (providedBoardId) return providedBoardId;
+      const defaultBoard = await prisma.board.findFirst({
+        where: { userId, type: 'TASK', isDefault: true },
+        select: { id: true },
+      }) || await prisma.board.findFirst({
+        where: { userId, type: 'TASK' },
+        select: { id: true },
+      });
+      return defaultBoard?.id || null;
+    };
+
     // Batch creation (WhatsApp Quick Paste / Restore)
     if (Array.isArray(body)) {
       if (body.length === 0) {
@@ -112,10 +127,13 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      const fallbackBoardId = await getEffectiveBoardId(body[0]?.boardId);
+
       const tasksToCreate = body
         .filter((item) => item && typeof item.title === 'string' && item.title.trim().length > 0)
         .map((item, index) => ({
           userId,
+          boardId: item.boardId || fallbackBoardId,
           title: item.title.trim().slice(0, 150),
           description: typeof item.description === 'string' ? item.description.slice(0, 10000) : null,
           status: parseStatus(item.status),
@@ -145,7 +163,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Single task creation with strict bounds
-    const { title, description, status, priority, category, dueDate, estimatedTime, imageUrl, order } = body;
+    const { title, boardId, description, status, priority, category, dueDate, estimatedTime, imageUrl, order } = body;
 
     if (!title || typeof title !== 'string' || !title.trim()) {
       return NextResponse.json(
@@ -154,9 +172,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const effectiveBoardId = await getEffectiveBoardId(boardId);
+
     const newTask = await prisma.task.create({
       data: {
         userId,
+        boardId: effectiveBoardId,
         title: title.trim().slice(0, 150),
         description: typeof description === 'string' ? description.slice(0, 10000) : null,
         status: parseStatus(status),

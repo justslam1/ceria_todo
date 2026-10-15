@@ -4,6 +4,8 @@ import { UserPreferences, ThemeConfig } from '@/types/preferences';
 import { UserAuthButton } from '@/components/ui/UserAuthButton';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { Board } from '@/types/board';
+import { BoardSelector } from '@/components/boards/BoardSelector';
 
 interface NavbarProps {
   onOpenQuickPaste?: () => void;
@@ -28,6 +30,12 @@ interface NavbarProps {
   onTabChange?: (tab: 'tasks' | 'notes') => void;
   notesCount?: number;
   onOpenNewNote?: () => void;
+  boards?: Board[];
+  activeBoard?: Board | null;
+  onSelectBoard?: (board: Board) => void;
+  onOpenCreateBoard?: () => void;
+  onEditBoard?: (board: Board) => void;
+  onDeleteBoard?: (board: Board) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -47,6 +55,12 @@ export const Navbar: React.FC<NavbarProps> = ({
   onTabChange,
   notesCount = 0,
   onOpenNewNote,
+  boards = [],
+  activeBoard = null,
+  onSelectBoard,
+  onOpenCreateBoard,
+  onEditBoard,
+  onDeleteBoard,
 }) => {
   const [isEditingMotto, setIsEditingMotto] = useState(false);
   const [draftMotto, setDraftMotto] = useState('');
@@ -183,58 +197,73 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-          {/* View Mode Switcher: Papan Tugas ↔ Papan Catatan */}
-          {onTabChange && (
-            <div
-              className={`flex items-center p-1 rounded-2xl transition-all self-center shrink-0 ${
-                themeConfig.isDark
-                  ? 'bg-slate-800/80 border border-slate-700/80 shadow-2xs'
-                  : 'bg-amber-100/50 border border-amber-200/70 shadow-2xs'
-              }`}
-            >
-              <button
-                type="button"
-                onClick={() => onTabChange('tasks')}
-                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeTab === 'tasks'
-                    ? themeConfig.isDark
-                      ? 'bg-slate-700 text-white shadow-xs'
-                      : 'bg-[#fffdfa] text-amber-950 shadow-[0_2px_6px_rgba(180,83,9,0.12)] border border-amber-200/70'
-                    : themeConfig.isDark
-                    ? 'text-slate-400 hover:text-slate-200'
-                    : 'text-amber-800/70 hover:text-amber-950'
-                }`}
-              >
-                <span>📋</span>
-                <span>{t.navbar.tasksTab}</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 font-bold">
-                  {counts.total}
-                </span>
-              </button>
+          {/* Board Selector & View Mode Switcher */}
+          <div className="flex items-center gap-2 self-center shrink-0 flex-wrap sm:flex-nowrap justify-center">
+            {boards.length > 0 && onSelectBoard && onOpenCreateBoard && (
+              <BoardSelector
+                boards={boards}
+                activeBoard={activeBoard}
+                onSelectBoard={onSelectBoard}
+                onOpenCreateBoard={onOpenCreateBoard}
+                onEditBoard={onEditBoard || (() => {})}
+                onDeleteBoard={onDeleteBoard || (() => {})}
+                themeConfig={themeConfig}
+              />
+            )}
 
-              <button
-                type="button"
-                onClick={() => onTabChange('notes')}
-                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeTab === 'notes'
-                    ? themeConfig.isDark
-                      ? 'bg-slate-700 text-white shadow-xs'
-                      : 'bg-[#fffdfa] text-amber-950 shadow-[0_2px_6px_rgba(180,83,9,0.12)] border border-amber-200/70'
-                    : themeConfig.isDark
-                    ? 'text-slate-400 hover:text-slate-200'
-                    : 'text-amber-800/70 hover:text-amber-950'
+            {/* View Mode Switcher: Papan Tugas ↔ Papan Catatan */}
+            {onTabChange && (
+              <div
+                className={`flex items-center p-1 rounded-2xl transition-all self-center shrink-0 ${
+                  themeConfig.isDark
+                    ? 'bg-slate-800/80 border border-slate-700/80 shadow-2xs'
+                    : 'bg-amber-100/50 border border-amber-200/70 shadow-2xs'
                 }`}
               >
-                <span>📝</span>
-                <span>{t.navbar.notesTab}</span>
-                {notesCount > 0 && (
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 font-bold">
-                    {notesCount}
+                <button
+                  type="button"
+                  onClick={() => onTabChange('tasks')}
+                  className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    activeTab === 'tasks'
+                      ? themeConfig.isDark
+                        ? 'bg-slate-700 text-white shadow-xs'
+                        : 'bg-[#fffdfa] text-amber-950 shadow-[0_2px_6px_rgba(180,83,9,0.12)] border border-amber-200/70'
+                      : themeConfig.isDark
+                      ? 'text-slate-400 hover:text-slate-200'
+                      : 'text-amber-800/70 hover:text-amber-950'
+                  }`}
+                >
+                  <span>📋</span>
+                  <span>{t.navbar.tasksTab}</span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 font-bold">
+                    {counts.total}
                   </span>
-                )}
-              </button>
-            </div>
-          )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onTabChange('notes')}
+                  className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    activeTab === 'notes'
+                      ? themeConfig.isDark
+                        ? 'bg-slate-700 text-white shadow-xs'
+                        : 'bg-[#fffdfa] text-amber-950 shadow-[0_2px_6px_rgba(180,83,9,0.12)] border border-amber-200/70'
+                      : themeConfig.isDark
+                      ? 'text-slate-400 hover:text-slate-200'
+                      : 'text-amber-800/70 hover:text-amber-950'
+                  }`}
+                >
+                  <span>📝</span>
+                  <span>{t.navbar.notesTab}</span>
+                  {notesCount > 0 && (
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 font-bold">
+                      {notesCount}
+                    </span>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Counters & Action Buttons */}
           <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 shrink-0">
