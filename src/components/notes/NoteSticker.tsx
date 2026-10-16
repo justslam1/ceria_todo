@@ -16,6 +16,7 @@ import {
   SendToBack,
   FlipHorizontal,
   FlipVertical,
+  Copy,
 } from 'lucide-react';
 import { NoteItem } from '@/types/note';
 
@@ -42,6 +43,7 @@ export function updateNoteFlipContent(
 
 interface NoteStickerProps {
   note: NoteItem;
+  onDuplicate?: (note: NoteItem) => void;
   onDelete: (id: string) => void;
   onTogglePin?: (id: string, currentPinned: boolean) => void;
   onToggleSticker?: (id: string, isSticker: boolean) => void;
@@ -58,6 +60,7 @@ interface NoteStickerProps {
 
 export const NoteSticker: React.FC<NoteStickerProps> = ({
   note,
+  onDuplicate,
   onDelete,
   onTogglePin,
   onToggleSticker,
@@ -420,6 +423,21 @@ export const NoteSticker: React.FC<NoteStickerProps> = ({
             title="Ubah menjadi Kartu Memo Catatan 📝"
           >
             <StickyNote className="w-3.5 h-3.5" />
+          </button>
+        )}
+
+        {/* Duplicate Sticker */}
+        {onDuplicate && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDuplicate(note);
+            }}
+            className="p-1 text-white/80 hover:text-emerald-300 hover:bg-emerald-500/30 rounded-lg transition-colors cursor-pointer"
+            title="Duplikasi Stiker"
+          >
+            <Copy className="w-3.5 h-3.5" />
           </button>
         )}
 

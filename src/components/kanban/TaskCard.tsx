@@ -33,6 +33,7 @@ import {
   ChevronUp,
   ZoomIn,
   X,
+  Copy,
 } from 'lucide-react';
 import { parseTaskDescription } from '@/lib/subtasks';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
@@ -41,6 +42,7 @@ interface TaskCardProps {
   task: Task;
   index: number;
   onEdit: (task: Task) => void;
+  onDuplicate?: (task: Task) => void;
   onDelete: (id: string) => void;
   onStatusChange: (id: string, newStatus: TaskStatus) => void;
   onToggleSubtask?: (taskId: string, subtaskIndex: number) => void;
@@ -62,6 +64,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   task,
   index,
   onEdit,
+  onDuplicate,
   onDelete,
   onStatusChange,
   onToggleSubtask,
@@ -258,6 +261,16 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                   title={t.card.pomodoroTitle}
                 >
                   <Timer className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {onDuplicate && (
+                <button
+                  type="button"
+                  onClick={() => onDuplicate(task)}
+                  className="p-1 text-slate-500 hover:text-emerald-700 rounded-lg hover:bg-white/70 transition-colors cursor-pointer"
+                  title={t.card.duplicateTitle}
+                >
+                  <Copy className="w-3.5 h-3.5" />
                 </button>
               )}
               <button

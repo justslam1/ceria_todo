@@ -126,3 +126,17 @@ export function setTaskArchived(rawDesc: string | null | undefined, archived: bo
   }
   return text;
 }
+
+/**
+ * Resets all subtasks checklist to unchecked [ ], clears pin and archive tags,
+ * while preserving note body and color tag for duplication.
+ */
+export function resetSubtasksInRawDescription(rawDesc: string | null | undefined): string {
+  if (!rawDesc) return '';
+  const parsed = parseTaskDescription(rawDesc);
+  const resetSubtasks = parsed.subtasks.map((st) => ({
+    ...st,
+    completed: false,
+  }));
+  return stringifyTaskDescription(parsed.note, resetSubtasks, parsed.colorTag);
+}

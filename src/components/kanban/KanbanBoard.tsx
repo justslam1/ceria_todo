@@ -51,6 +51,7 @@ import {
   toggleTaskPin,
   isTaskArchived,
   setTaskArchived,
+  resetSubtasksInRawDescription,
 } from '@/lib/subtasks';
 import { compressImage, getImageFileFromClipboard } from '@/lib/imageCompression';
 import { triggerCelebration } from '@/lib/confetti';
@@ -744,6 +745,63 @@ export const KanbanBoard: React.FC = () => {
     }
   };
 
+  const handleDuplicateNote = async (note: NoteItem) => {
+    try {
+      const offsetX = 28;
+      const offsetY = 28;
+      const duplicateTitle = note.title ? `${note.title} (copy)` : (note.isSticker ? 'Stiker (copy)' : 'Catatan (copy)');
+      const payload = {
+        title: duplicateTitle,
+        content: note.content || '',
+        imageUrl: note.imageUrl || null,
+        isSticker: note.isSticker ?? false,
+        color: note.color,
+        isPinned: false,
+        posX: (note.posX || 0) + offsetX,
+        posY: (note.posY || 0) + offsetY,
+        boardId: note.boardId || (activeBoard?.type === 'NOTE' ? activeBoard.id : undefined),
+      };
+
+      const res = await fetch('/api/notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const resData = await res.json();
+      if (resData.success && resData.data) {
+        const created = resData.data;
+        const formatted = {
+          ...created,
+          flipH: created.flipH !== undefined ? created.flipH : Boolean(created.content?.includes('[FLIP_H]')),
+          flipV: created.flipV !== undefined ? created.flipV : Boolean(created.content?.includes('[FLIP_V]')),
+        };
+
+        setNotes((prev) => {
+          const idx = prev.findIndex((n) => n.id === note.id);
+          if (idx !== -1) {
+            const next = [...prev];
+            next.splice(idx + 1, 0, formatted);
+            return next;
+          }
+          return [formatted, ...prev];
+        });
+
+        if (activeBoard) {
+          setBoards((prev) =>
+            prev.map((b) =>
+              b.id === activeBoard.id
+                ? { ...b, _count: { ...b._count, tasks: b._count?.tasks ?? 0, notes: (b._count?.notes ?? 0) + 1 } }
+                : b
+            )
+          );
+        }
+        playPopSound(preferences.soundProfile);
+      }
+    } catch (err) {
+      console.error('Gagal menduplikasi catatan:', err);
+    }
+  };
+
   const handleConvertNoteToTask = async (note: NoteItem) => {
     try {
       const targetTaskBoard =
@@ -1139,6 +1197,59 @@ export const KanbanBoard: React.FC = () => {
       console.warn('Gagal menghapus tugas (koneksi terganggu):', err);
       setTasks(previousTasks);
       setNetworkError('Koneksi terputus saat menghapus tugas.');
+    }
+  };
+
+  // Duplicate task handler
+  const handleDuplicateTask = async (task: Task) => {
+    try {
+      const resetDescription = resetSubtasksInRawDescription(task.description);
+      const payload: CreateTaskInput = {
+        title: `${task.title} (copy)`,
+        description: resetDescription,
+        status: task.status,
+        priority: task.priority,
+        category: task.category,
+        dueDate: task.dueDate ? new Date(task.dueDate).toISOString() : null,
+        imageUrl: task.imageUrl || null,
+        boardId: task.boardId || (activeBoard?.type === 'TASK' ? activeBoard.id : undefined),
+      };
+
+      const res = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(8000),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Gagal menduplikasi tugas');
+      }
+
+      playPopSound(preferences.soundProfile);
+
+      setTasks((prev) => {
+        const idx = prev.findIndex((t) => t.id === task.id);
+        if (idx !== -1) {
+          const next = [...prev];
+          next.splice(idx + 1, 0, data.data);
+          return next;
+        }
+        return [data.data, ...prev];
+      });
+
+      if (activeBoard) {
+        setBoards((prev) =>
+          prev.map((b) =>
+            b.id === activeBoard.id
+              ? { ...b, _count: { ...b._count, notes: b._count?.notes ?? 0, tasks: (b._count?.tasks ?? 0) + 1 } }
+              : b
+          )
+        );
+      }
+    } catch (err: unknown) {
+      console.error('Gagal menduplikasi tugas:', err);
+      alert(err instanceof Error ? err.message : 'Gagal menduplikasi tugas');
     }
   };
 
@@ -1653,6 +1764,7 @@ export const KanbanBoard: React.FC = () => {
               onSavePreferences={handleSavePreferences}
               onCreateNote={handleCreateNote}
               onUpdateNote={handleUpdateNote}
+              onDuplicateNote={handleDuplicateNote}
               onDeleteNote={handleDeleteNote}
               onConvertToTask={handleConvertNoteToTask}
               onRefreshNotes={() => fetchNotes(activeBoard?.id)}
@@ -2243,6 +2355,7 @@ export const KanbanBoard: React.FC = () => {
                 paperTexture={preferences.paperTexture}
                 activeColumnCount={3}
                 onEditTask={handleOpenEdit}
+                onDuplicateTask={handleDuplicateTask}
                 onDeleteTask={handleDeleteTask}
                 onStatusChange={handleStatusChange}
                 onAddTaskToColumn={handleOpenNewInColumn}
@@ -2270,6 +2383,7 @@ export const KanbanBoard: React.FC = () => {
                 paperTexture={preferences.paperTexture}
                 activeColumnCount={3}
                 onEditTask={handleOpenEdit}
+                onDuplicateTask={handleDuplicateTask}
                 onDeleteTask={handleDeleteTask}
                 onStatusChange={handleStatusChange}
                 onAddTaskToColumn={handleOpenNewInColumn}
@@ -2297,6 +2411,7 @@ export const KanbanBoard: React.FC = () => {
                 paperTexture={preferences.paperTexture}
                 activeColumnCount={3}
                 onEditTask={handleOpenEdit}
+                onDuplicateTask={handleDuplicateTask}
                 onDeleteTask={handleDeleteTask}
                 onStatusChange={handleStatusChange}
                 onAddTaskToColumn={handleOpenNewInColumn}
@@ -2329,6 +2444,7 @@ export const KanbanBoard: React.FC = () => {
                 paperTexture={preferences.paperTexture}
                 activeColumnCount={2}
                 onEditTask={handleOpenEdit}
+                onDuplicateTask={handleDuplicateTask}
                 onDeleteTask={handleDeleteTask}
                 onStatusChange={handleStatusChange}
                 onAddTaskToColumn={handleOpenNewInColumn}
@@ -2356,6 +2472,7 @@ export const KanbanBoard: React.FC = () => {
                 paperTexture={preferences.paperTexture}
                 activeColumnCount={2}
                 onEditTask={handleOpenEdit}
+                onDuplicateTask={handleDuplicateTask}
                 onDeleteTask={handleDeleteTask}
                 onStatusChange={handleStatusChange}
                 onAddTaskToColumn={handleOpenNewInColumn}
@@ -2473,6 +2590,7 @@ export const KanbanBoard: React.FC = () => {
                   paperTexture={preferences.paperTexture}
                   activeColumnCount={1}
                   onEditTask={handleOpenEdit}
+                  onDuplicateTask={handleDuplicateTask}
                   onDeleteTask={handleDeleteTask}
                   onStatusChange={handleStatusChange}
                   onAddTaskToColumn={handleOpenNewInColumn}
@@ -2501,6 +2619,7 @@ export const KanbanBoard: React.FC = () => {
                   paperTexture={preferences.paperTexture}
                   activeColumnCount={1}
                   onEditTask={handleOpenEdit}
+                  onDuplicateTask={handleDuplicateTask}
                   onDeleteTask={handleDeleteTask}
                   onStatusChange={handleStatusChange}
                   onAddTaskToColumn={handleOpenNewInColumn}
@@ -2529,6 +2648,7 @@ export const KanbanBoard: React.FC = () => {
                   paperTexture={preferences.paperTexture}
                   activeColumnCount={1}
                   onEditTask={handleOpenEdit}
+                  onDuplicateTask={handleDuplicateTask}
                   onDeleteTask={handleDeleteTask}
                   onStatusChange={handleStatusChange}
                   onAddTaskToColumn={handleOpenNewInColumn}

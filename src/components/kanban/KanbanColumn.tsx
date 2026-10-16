@@ -35,6 +35,7 @@ interface KanbanColumnProps {
   paperTexture?: PaperTexture;
   activeColumnCount?: ActiveColumnCount;
   onEditTask: (task: Task) => void;
+  onDuplicateTask?: (task: Task) => void;
   onDeleteTask: (id: string) => void;
   onStatusChange: (id: string, newStatus: TaskStatus) => void;
   onAddTaskToColumn?: (status: TaskStatus) => void;
@@ -62,6 +63,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
   paperTexture = 'plain',
   activeColumnCount = 3,
   onEditTask,
+  onDuplicateTask,
   onDeleteTask,
   onStatusChange,
   onAddTaskToColumn,
@@ -231,6 +233,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
                   paperTexture={paperTexture}
                   activeColumnCount={activeColumnCount}
                   onEdit={onEditTask}
+                  onDuplicate={onDuplicateTask}
                   onDelete={onDeleteTask}
                   onStatusChange={onStatusChange}
                   onToggleSubtask={onToggleSubtask}

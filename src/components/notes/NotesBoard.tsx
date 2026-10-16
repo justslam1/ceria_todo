@@ -29,6 +29,7 @@ interface NotesBoardProps {
     posY?: number;
   }) => Promise<void>;
   onUpdateNote: (id: string, data: Partial<NoteItem>) => Promise<void>;
+  onDuplicateNote?: (note: NoteItem) => void;
   onDeleteNote: (id: string) => Promise<void>;
   onConvertToTask: (note: NoteItem) => void;
   onRefreshNotes: () => void;
@@ -47,6 +48,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
   onSavePreferences,
   onCreateNote,
   onUpdateNote,
+  onDuplicateNote,
   onDeleteNote,
   onConvertToTask,
   onRefreshNotes,
@@ -1040,6 +1042,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                 {note.isSticker && note.imageUrl ? (
                   <NoteSticker
                     note={note}
+                    onDuplicate={onDuplicateNote}
                     onDelete={handleDeleteWithConfirm}
                     onTogglePin={handleTogglePin}
                     onToggleSticker={handleToggleSticker}
@@ -1057,6 +1060,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                     isDragging={isDragging}
                     onDragStart={(e) => handleStartDrag(e, note, pos.x, pos.y)}
                     onEdit={handleOpenEditModal}
+                    onDuplicate={onDuplicateNote}
                     onDelete={handleDeleteWithConfirm}
                     onTogglePin={handleTogglePin}
                     onChangeColor={handleChangeColor}
@@ -1088,6 +1092,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                     <div key={note.id} className="flex justify-center items-center w-full">
                       <NoteSticker
                         note={note}
+                        onDuplicate={onDuplicateNote}
                         onDelete={handleDeleteWithConfirm}
                         onTogglePin={handleTogglePin}
                         onToggleSticker={handleToggleSticker}
@@ -1102,6 +1107,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                       themeConfig={themeConfig}
                       isCanvasMode={false}
                       onEdit={handleOpenEditModal}
+                      onDuplicate={onDuplicateNote}
                       onDelete={handleDeleteWithConfirm}
                       onTogglePin={handleTogglePin}
                       onChangeColor={handleChangeColor}
@@ -1131,6 +1137,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                     <div key={note.id} className="flex justify-center items-center w-full">
                       <NoteSticker
                         note={note}
+                        onDuplicate={onDuplicateNote}
                         onDelete={handleDeleteWithConfirm}
                         onTogglePin={handleTogglePin}
                         onToggleSticker={handleToggleSticker}
@@ -1145,6 +1152,7 @@ export const NotesBoard: React.FC<NotesBoardProps> = ({
                       themeConfig={themeConfig}
                       isCanvasMode={false}
                       onEdit={handleOpenEditModal}
+                      onDuplicate={onDuplicateNote}
                       onDelete={handleDeleteWithConfirm}
                       onTogglePin={handleTogglePin}
                       onChangeColor={handleChangeColor}

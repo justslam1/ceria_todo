@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Pin, Trash2, Edit3, Sparkles, MoreHorizontal, X, ZoomIn, Sticker, BringToFront, SendToBack } from 'lucide-react';
+import { Pin, Trash2, Edit3, Sparkles, MoreHorizontal, X, ZoomIn, Sticker, BringToFront, SendToBack, Copy } from 'lucide-react';
 import { NoteItem, NoteColor, NOTE_COLOR_STYLES } from '@/types/note';
 import { ThemeConfig } from '@/types/preferences';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
@@ -11,6 +11,7 @@ interface NoteCardProps {
   note: NoteItem;
   themeConfig: ThemeConfig;
   onEdit: (note: NoteItem) => void;
+  onDuplicate?: (note: NoteItem) => void;
   onDelete: (id: string) => void;
   onTogglePin: (id: string, currentPinned: boolean) => void;
   onChangeColor: (id: string, color: NoteColor) => void;
@@ -26,6 +27,7 @@ interface NoteCardProps {
 export const NoteCard: React.FC<NoteCardProps> = ({
   note,
   onEdit,
+  onDuplicate,
   onDelete,
   onTogglePin,
   onChangeColor,
@@ -306,6 +308,18 @@ export const NoteCard: React.FC<NoteCardProps> = ({
               className="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-slate-500 hover:text-purple-600 dark:text-slate-300 dark:hover:text-purple-400 transition-colors cursor-pointer"
             >
               <Sticker className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          {/* Duplicate Note */}
+          {onDuplicate && (
+            <button
+              type="button"
+              onClick={() => onDuplicate(note)}
+              className="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-slate-500 hover:text-emerald-600 dark:text-slate-300 dark:hover:text-emerald-400 transition-colors cursor-pointer"
+              title={t.notesBoard.duplicateNoteBtn}
+            >
+              <Copy className="w-3.5 h-3.5" />
             </button>
           )}
 
