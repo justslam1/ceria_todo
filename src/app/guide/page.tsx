@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -51,7 +51,9 @@ export default function GuidePage() {
   const [preferences] = useState<UserPreferences>(() =>
     typeof window !== 'undefined' ? loadUserPreferences() : ({} as UserPreferences)
   );
-  const themeConfig = getThemeConfig(preferences);
+  const themeConfig = useMemo(() => {
+    return getThemeConfig(preferences.theme || 'warm', preferences.customTheme);
+  }, [preferences.theme, preferences.customTheme]);
   const [muted, setMuted] = useState<boolean>(() =>
     typeof window !== 'undefined' ? isSoundMuted() : false
   );
