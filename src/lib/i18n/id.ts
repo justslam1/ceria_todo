@@ -48,6 +48,7 @@ export const id = {
     focusBtn: 'Fokus',
     archiveBtn: 'Arsip',
     galleryBtn: 'Galeri',
+    guideBtn: 'Quick Guide',
     settingsBtn: 'Pengaturan',
     addTaskBtn: 'Tambah Tugas',
     addNoteBtn: 'Tambah Catatan',

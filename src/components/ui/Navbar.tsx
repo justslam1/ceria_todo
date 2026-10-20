@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Sparkles, Images, Plus, Volume2, VolumeX, Palette, Timer, Archive, Check, X } from 'lucide-react';
+import Link from 'next/link';
+import { Sparkles, Images, Plus, Volume2, VolumeX, Palette, Timer, Archive, Check, X, HelpCircle } from 'lucide-react';
 import { UserPreferences, ThemeConfig } from '@/types/preferences';
 import { UserAuthButton } from '@/components/ui/UserAuthButton';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
@@ -341,6 +342,29 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <Images className="w-4 h-4 text-rose-500 dark:text-rose-400 shrink-0" />
               </button>
             )}
+
+            {/* Quick Guide Button */}
+            <Link
+              href="/guide"
+              className={`relative inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all duration-150 cursor-pointer active:scale-95 shrink-0 ${
+                isPlayful ? 'rotate-1 hover:rotate-0 hover:-translate-y-0.5 shadow-xs' : 'hover:-translate-y-0.5 shadow-2xs'
+              } ${
+                themeConfig.isDark
+                  ? 'bg-slate-800/80 hover:bg-slate-800 border-slate-700 text-sky-300'
+                  : isPlayful
+                  ? 'bg-sky-100/85 hover:bg-sky-100 border-sky-300 text-sky-950'
+                  : 'bg-sky-100/60 hover:bg-sky-100 border-sky-200/80 text-sky-900'
+              }`}
+              title="Quick Guide"
+            >
+              {isPlayful && !themeConfig.isDark && (
+                <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-4 h-1.5 bg-sky-200/90 border-y border-dashed border-sky-400/60 rounded-2xs pointer-events-none" />
+              )}
+              <HelpCircle className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />
+              <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-sky-500 text-white shadow-xs">
+                Quick Guide
+              </span>
+            </Link>
 
             {/* Language Switcher */}
             <LanguageSwitcher variant="compact" className="hidden sm:inline-flex" />

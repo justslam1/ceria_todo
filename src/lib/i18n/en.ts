@@ -50,6 +50,7 @@ export const en: Translations = {
     focusBtn: 'Focus',
     archiveBtn: 'Archive',
     galleryBtn: 'Gallery',
+    guideBtn: 'Quick Guide',
     settingsBtn: 'Settings',
     addTaskBtn: 'Add Task',
     addNoteBtn: 'Add Note',
