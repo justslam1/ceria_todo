@@ -64,6 +64,11 @@ export const en: Translations = {
   kanban: {
     loadingBoard: 'Loading Sticky Notes Board...',
     greetingPrefix: 'Hello,',
+    greetingTime: (hour: number): string => {
+      if (hour >= 4 && hour < 12) return 'Good morning,';
+      if (hour >= 12 && hour < 17) return 'Good afternoon,';
+      return 'Good evening,';
+    },
     emptyBoardGreeting: 'Your board is ready. Click "+ Add Task" or "Quick Paste" to get started!',
     allCompletedGreeting: 'Awesome! All missions have been completed today!',
     progressGreeting: (done: number, total: number, pct: number) =>

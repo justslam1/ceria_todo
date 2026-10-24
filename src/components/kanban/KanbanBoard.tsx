@@ -156,6 +156,10 @@ export const KanbanBoard: React.FC = () => {
 
   const [currentDate, setCurrentDate] = useState('');
   const [currentTime, setCurrentTime] = useState('');
+  const [currentHour, setCurrentHour] = useState<number>(() => {
+    if (typeof window !== 'undefined') return new Date().getHours();
+    return 8;
+  });
 
   // Easter Egg Triggers:
   // 1) Mengetik kata 'gabut', 'rehat', atau 'game' -> Sticky Notes Match
@@ -263,6 +267,7 @@ export const KanbanBoard: React.FC = () => {
     const locale = language === 'en' ? 'en-US' : 'id-ID';
     const updateDateTime = () => {
       const now = new Date();
+      setCurrentHour(now.getHours());
       setCurrentDate(
         now.toLocaleDateString(locale, {
           weekday: 'long',
@@ -1844,7 +1849,7 @@ export const KanbanBoard: React.FC = () => {
                 >
                   {preferences.userName && (
                     <span className="font-semibold text-orange-500 mr-1">
-                      {t.kanban.greetingPrefix} {preferences.userName}! {preferences.avatarIcon}
+                      {t.kanban.greetingTime ? t.kanban.greetingTime(currentHour) : (currentHour >= 4 && currentHour < 11 ? 'Selamat Pagi,' : currentHour >= 11 && currentHour < 15 ? 'Selamat Siang,' : currentHour >= 15 && currentHour < 19 ? 'Selamat Sore,' : 'Selamat Malam,')} {preferences.userName.replace(/✨/g, '').trim()}!{preferences.avatarIcon && preferences.avatarIcon !== '✨' ? ` ${preferences.avatarIcon}` : ''}
                     </span>
                   )}
                   {totalCount === 0
