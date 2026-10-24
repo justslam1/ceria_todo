@@ -9,6 +9,7 @@ interface AnnouncementData {
   type: 'info' | 'celebration' | 'warning';
   isActive: boolean;
   linkUrl: string | null;
+  updatedAt?: string;
 }
 
 export const SystemAnnouncementBanner: React.FC = () => {
@@ -20,9 +21,12 @@ export const SystemAnnouncementBanner: React.FC = () => {
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.announcement && data.announcement.isActive) {
-          const dismissedId = sessionStorage.getItem('dismissed_announcement');
-          if (dismissedId !== data.announcement.id) {
-            setAnnouncement(data.announcement);
+          const item = data.announcement;
+          const currentSignature = `${item.id}_${item.updatedAt || ''}_${item.message}`;
+          const dismissedSignature = sessionStorage.getItem('dismissed_announcement_signature');
+
+          if (dismissedSignature !== currentSignature) {
+            setAnnouncement(item);
           }
         }
       })
@@ -35,7 +39,8 @@ export const SystemAnnouncementBanner: React.FC = () => {
 
   const handleDismiss = () => {
     setIsDismissed(true);
-    sessionStorage.setItem('dismissed_announcement', announcement.id);
+    const currentSignature = `${announcement.id}_${announcement.updatedAt || ''}_${announcement.message}`;
+    sessionStorage.setItem('dismissed_announcement_signature', currentSignature);
   };
 
   const getStyle = () => {

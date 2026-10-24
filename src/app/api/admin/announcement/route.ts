@@ -67,6 +67,7 @@ export async function POST(request: NextRequest) {
           type: ['info', 'celebration', 'warning'].includes(type) ? type : 'info',
           isActive: Boolean(isActive),
           linkUrl: linkUrl ? String(linkUrl).trim() : null,
+          updatedAt: new Date(),
         },
       });
     } else {
@@ -76,6 +77,7 @@ export async function POST(request: NextRequest) {
           type: ['info', 'celebration', 'warning'].includes(type) ? type : 'info',
           isActive: Boolean(isActive),
           linkUrl: linkUrl ? String(linkUrl).trim() : null,
+          updatedAt: new Date(),
         },
       });
     }
