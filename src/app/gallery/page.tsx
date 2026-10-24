@@ -24,6 +24,7 @@ import { Task } from '@/types/task';
 import { ShowcaseItem, SHOWCASE_CATEGORIES } from '@/types/showcase';
 import { loadUserPreferences, saveUserPreferences, getThemeConfig } from '@/lib/userPreferences';
 import { UserAuthButton } from '@/components/ui/UserAuthButton';
+import { SystemAnnouncementBanner } from '@/components/ui/SystemAnnouncementBanner';
 import { ShowcaseDetailModal } from '@/components/gallery/ShowcaseDetailModal';
 import { BoardSnapshotRenderer } from '@/components/gallery/BoardSnapshotRenderer';
 import { captureNodeAsJpeg } from '@/lib/boardCapture';
@@ -368,6 +369,7 @@ export default function GalleryPage() {
     >
       {/* Top Application Navbar */}
       <header className="sticky top-0 z-30 w-full bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-amber-200/60 dark:border-slate-800 shadow-2xs">
+        <SystemAnnouncementBanner />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center justify-between gap-4">
             {/* Left: Back button & Title */}

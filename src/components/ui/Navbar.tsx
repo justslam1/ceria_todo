@@ -7,6 +7,7 @@ import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { Board } from '@/types/board';
 import { BoardSelector } from '@/components/boards/BoardSelector';
+import { SystemAnnouncementBanner } from '@/components/ui/SystemAnnouncementBanner';
 
 interface NavbarProps {
   onOpenQuickPaste?: () => void;
@@ -99,6 +100,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           : 'bg-[#faf7f2]/95 border-b border-amber-900/10 shadow-[0_2px_10px_rgba(180,83,9,0.03)]'
       }`}
     >
+      <SystemAnnouncementBanner />
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-2.5">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 sm:gap-3 lg:gap-4">
           {/* Logo & Tagline */}
