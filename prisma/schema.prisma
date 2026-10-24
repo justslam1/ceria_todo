@@ -30,6 +30,8 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
+  role          String    @default("USER")
+  isSuspended   Boolean   @default(false)
   accounts      Account[]
   sessions      Session[]
   tasks         Task[]
@@ -159,6 +161,7 @@ model BoardShowcase {
   configJson  String      @db.LongText
   likesCount  Int         @default(0)
   clonesCount Int         @default(0)
+  isFeatured  Boolean     @default(false)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   likes       BoardLike[]
@@ -166,6 +169,7 @@ model BoardShowcase {
   @@index([userId])
   @@index([likesCount])
   @@index([createdAt])
+  @@index([isFeatured])
 }
 
 model BoardLike {
@@ -179,5 +183,17 @@ model BoardLike {
   @@unique([userId, showcaseId])
   @@index([userId])
   @@index([showcaseId])
+}
+
+model SystemAnnouncement {
+  id        String   @id @default(uuid())
+  message   String   @db.Text
+  type      String   @default("info")
+  isActive  Boolean  @default(true)
+  linkUrl   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
 }
 

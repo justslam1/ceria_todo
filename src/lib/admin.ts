@@ -3,7 +3,8 @@
  * Reads comma-separated email list from process.env.ADMIN_EMAILS.
  * Defaults to justslam@gmail.com if not configured.
  */
-export function isUserAdmin(email?: string | null): boolean {
+export function isUserAdmin(email?: string | null, role?: string | null): boolean {
+  if (role === 'ADMIN') return true;
   if (!email) return false;
   const adminEmailsStr = process.env.ADMIN_EMAILS || 'justslam@gmail.com';
   const adminEmails = adminEmailsStr

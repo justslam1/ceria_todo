@@ -39,8 +39,8 @@ export async function GET(request: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const orderBy: any =
       sort === 'latest'
-        ? [{ createdAt: 'desc' }]
-        : [{ likesCount: 'desc' }, { clonesCount: 'desc' }, { createdAt: 'desc' }];
+        ? [{ isFeatured: 'desc' }, { createdAt: 'desc' }]
+        : [{ isFeatured: 'desc' }, { likesCount: 'desc' }, { clonesCount: 'desc' }, { createdAt: 'desc' }];
 
     const showcases = await prisma.boardShowcase.findMany({
       where,

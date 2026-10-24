@@ -14,6 +14,7 @@ export interface ShowcaseItem {
   configJson: string;
   likesCount: number;
   clonesCount: number;
+  isFeatured?: boolean;
   createdAt: string;
   updatedAt: string;
   user: ShowcaseUser;

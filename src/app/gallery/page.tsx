@@ -638,9 +638,16 @@ export default function GalleryPage() {
 
                         {/* Top Badges */}
                         <div className="relative z-10 flex items-center justify-between">
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-white/95 dark:bg-slate-900/95 text-slate-800 dark:text-slate-100 shadow-xs backdrop-blur-xs">
-                            🏷️ {item.category}
-                          </span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-white/95 dark:bg-slate-900/95 text-slate-800 dark:text-slate-100 shadow-xs backdrop-blur-xs">
+                              🏷️ {item.category}
+                            </span>
+                            {item.isFeatured && (
+                              <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-amber-400 text-stone-900 shadow-xs flex items-center gap-1 border border-amber-300">
+                                🌟 Pilihan Editor
+                              </span>
+                            )}
+                          </div>
                           <div className="flex items-center gap-1.5">
                             {mascot !== 'none' && (
                               <span
