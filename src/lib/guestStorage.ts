@@ -13,7 +13,7 @@ const DEFAULT_GUEST_BOARDS: Board[] = [
     userId: null,
     title: 'Papan Tugas Utama',
     type: 'TASK',
-    icon: 'clipboard',
+    icon: '📋',
     color: 'amber',
     isDefault: true,
     order: 0,
@@ -25,7 +25,7 @@ const DEFAULT_GUEST_BOARDS: Board[] = [
     userId: null,
     title: 'Papan Catatan Utama',
     type: 'NOTE',
-    icon: 'book',
+    icon: '📖',
     color: 'amber',
     isDefault: true,
     order: 1,
@@ -127,7 +127,26 @@ export function getGuestBoards(): Board[] {
     const data = localStorage.getItem(GUEST_BOARDS_KEY);
     if (!data) return DEFAULT_GUEST_BOARDS;
     const parsed = JSON.parse(data);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_GUEST_BOARDS;
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      // Auto-heal nilai teks 'clipboard' atau 'book' ke simbol bawaan
+      let updated = false;
+      const healed = parsed.map((b: Board) => {
+        if (b.icon === 'clipboard') {
+          updated = true;
+          return { ...b, icon: '📋' };
+        }
+        if (b.icon === 'book') {
+          updated = true;
+          return { ...b, icon: '📖' };
+        }
+        return b;
+      });
+      if (updated) {
+        localStorage.setItem(GUEST_BOARDS_KEY, JSON.stringify(healed));
+      }
+      return healed;
+    }
+    return DEFAULT_GUEST_BOARDS;
   } catch {
     return DEFAULT_GUEST_BOARDS;
   }
@@ -156,7 +175,7 @@ export function saveGuestBoard(data: CreateBoardInput | UpdateBoardInput, boardI
       userId: null,
       title: input.title,
       type: input.type,
-      icon: input.icon || (input.type === 'TASK' ? 'clipboard' : 'book'),
+      icon: input.icon || (input.type === 'TASK' ? '📋' : '📖'),
       color: input.color || 'amber',
       isDefault: false,
       order: boards.length,
