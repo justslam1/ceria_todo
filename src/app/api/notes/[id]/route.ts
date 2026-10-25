@@ -21,6 +21,13 @@ export async function GET(request: NextRequest, context: RouteContext) {
       );
     }
 
+    if (session?.user?.isSuspended) {
+      return NextResponse.json(
+        { success: false, error: 'Akun Anda telah ditangguhkan. Silakan hubungi administrator.' },
+        { status: 403 }
+      );
+    }
+
     const { id } = await context.params;
     const note = await prisma.note.findUnique({
       where: { id },
@@ -33,22 +40,14 @@ export async function GET(request: NextRequest, context: RouteContext) {
       );
     }
 
-    if (note.userId && note.userId !== userId) {
-      const ownerExists = await prisma.user.findUnique({ where: { id: note.userId } });
-      if (ownerExists) {
-        return NextResponse.json(
-          { success: false, error: 'Anda tidak memiliki hak akses ke catatan ini' },
-          { status: 403 }
-        );
-      }
-      // If legacy orphan user, adopt to current user
-      await prisma.note.update({
-        where: { id },
-        data: { userId },
-      });
+    if (!note.userId || note.userId !== userId) {
+      return NextResponse.json(
+        { success: false, error: 'Anda tidak memiliki hak akses ke catatan ini' },
+        { status: 403 }
+      );
     }
 
-    return NextResponse.json({ success: true, data: { ...note, userId } });
+    return NextResponse.json({ success: true, data: note });
   } catch (error) {
     console.error('Error getting note:', error);
     return NextResponse.json(
@@ -71,6 +70,13 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       );
     }
 
+    if (session?.user?.isSuspended) {
+      return NextResponse.json(
+        { success: false, error: 'Akun Anda telah ditangguhkan. Silakan hubungi administrator.' },
+        { status: 403 }
+      );
+    }
+
     const { id } = await context.params;
     const existing = await prisma.note.findUnique({ where: { id } });
 
@@ -81,22 +87,29 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       );
     }
 
-    if (existing.userId && existing.userId !== userId) {
-      const ownerExists = await prisma.user.findUnique({ where: { id: existing.userId } });
-      if (ownerExists) {
-        return NextResponse.json(
-          { success: false, error: 'Anda tidak memiliki hak akses untuk mengubah catatan ini' },
-          { status: 403 }
-        );
-      }
-      await prisma.note.update({
-        where: { id },
-        data: { userId },
-      });
+    if (!existing.userId || existing.userId !== userId) {
+      return NextResponse.json(
+        { success: false, error: 'Anda tidak memiliki hak akses untuk mengubah catatan ini' },
+        { status: 403 }
+      );
     }
 
     const body = await request.json();
     const updateData: Record<string, unknown> = {};
+
+    if (body.boardId !== undefined) {
+      if (body.boardId === null) {
+        updateData.boardId = null;
+      } else if (typeof body.boardId === 'string') {
+        const userBoard = await prisma.board.findFirst({
+          where: { id: body.boardId, userId, type: 'NOTE' },
+          select: { id: true },
+        });
+        if (userBoard) {
+          updateData.boardId = userBoard.id;
+        }
+      }
+    }
 
     if (body.title !== undefined) {
       updateData.title = typeof body.title === 'string' ? body.title.trim().slice(0, 200) : 'Catatan';
@@ -105,7 +118,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       updateData.content = typeof body.content === 'string' ? body.content.trim().slice(0, 20000) : '';
     }
     if (body.imageUrl !== undefined) {
-      updateData.imageUrl = typeof body.imageUrl === 'string' && body.imageUrl.startsWith('data:image/')
+      updateData.imageUrl = typeof body.imageUrl === 'string' && body.imageUrl.startsWith('data:image/') && body.imageUrl.length <= 2_500_000
         ? body.imageUrl
         : null;
     }
@@ -166,6 +179,13 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       );
     }
 
+    if (session?.user?.isSuspended) {
+      return NextResponse.json(
+        { success: false, error: 'Akun Anda telah ditangguhkan. Silakan hubungi administrator.' },
+        { status: 403 }
+      );
+    }
+
     const { id } = await context.params;
     const existing = await prisma.note.findUnique({ where: { id } });
 
@@ -176,7 +196,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       );
     }
 
-    if (existing.userId && existing.userId !== userId) {
+    if (!existing.userId || existing.userId !== userId) {
       return NextResponse.json(
         { success: false, error: 'Anda tidak memiliki hak akses untuk menghapus catatan ini' },
         { status: 403 }

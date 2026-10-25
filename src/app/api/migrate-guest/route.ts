@@ -15,8 +15,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (session?.user?.isSuspended) {
+      return NextResponse.json(
+        { success: false, error: 'Akun Anda telah ditangguhkan. Silakan hubungi administrator.' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const { tasks = [], notes = [], boards = [] } = body;
+
+    if (!Array.isArray(tasks) || !Array.isArray(notes) || !Array.isArray(boards)) {
+      return NextResponse.json(
+        { success: false, error: 'Format data migrasi tidak valid.' },
+        { status: 400 }
+      );
+    }
+
+    // Batasi jumlah payload untuk mencegah Denial of Service / Kehabisan Memori
+    if (tasks.length > 100 || notes.length > 100 || boards.length > 10) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Batas maksimum migrasi terlampaui (maksimal 100 tugas, 100 catatan, 10 papan).',
+        },
+        { status: 400 }
+      );
+    }
 
     // Pastikan user memiliki papan default
     let userBoards = await prisma.board.findMany({
@@ -59,17 +84,17 @@ export async function POST(request: NextRequest) {
     boardIdMap.set('guest-board-task', defaultTaskBoard.id);
     boardIdMap.set('guest-board-note', defaultNoteBoard.id);
 
-    // Jika ada papan kustom dari guest, buatkan untuk user
-    for (const b of boards) {
-      if (b.id !== 'guest-board-task' && b.id !== 'guest-board-note') {
+    // Jika ada papan kustom dari guest, buatkan untuk user (maksimal 10)
+    for (const b of boards.slice(0, 10)) {
+      if (b && typeof b.title === 'string' && b.id !== 'guest-board-task' && b.id !== 'guest-board-note') {
         try {
           const createdBoard = await prisma.board.create({
             data: {
               userId,
-              title: b.title || 'Papan Kustom',
+              title: b.title.trim().slice(0, 80) || 'Papan Kustom',
               type: b.type === 'NOTE' ? 'NOTE' : 'TASK',
-              icon: b.icon === 'clipboard' ? '📋' : b.icon === 'book' ? '📖' : (b.icon || '📁'),
-              color: b.color || 'amber',
+              icon: typeof b.icon === 'string' && b.icon.trim() ? b.icon.trim().slice(0, 20) : '📁',
+              color: typeof b.color === 'string' && b.color.trim() ? b.color.trim().slice(0, 30) : 'amber',
               isDefault: false,
               order: userBoards.length + 1,
             },
@@ -81,12 +106,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    let importedTasksCount = 0;
-    let importedNotesCount = 0;
-
-    // Migrasi Tasks
+    // Persiapkan data tasks dengan validasi ketat
+    const tasksToCreate = [];
     for (const t of tasks) {
-      if (!t.title) continue;
+      if (!t || typeof t.title !== 'string' || !t.title.trim()) continue;
       const targetBoardId = (t.boardId && boardIdMap.get(t.boardId)) || defaultTaskBoard.id;
 
       const validStatuses: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'DONE'];
@@ -103,54 +126,72 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      await prisma.task.create({
-        data: {
-          userId,
-          boardId: targetBoardId,
-          title: String(t.title).slice(0, 255),
-          description: t.description ? String(t.description) : null,
-          status,
-          priority,
-          category: t.category ? String(t.category).slice(0, 50) : 'Personal',
-          dueDate: parsedDueDate,
-          estimatedTime: t.estimatedTime ? String(t.estimatedTime).slice(0, 50) : null,
-          imageUrl: t.imageUrl || null,
-          order: typeof t.order === 'number' ? t.order : 0,
-        },
+      const validImg = typeof t.imageUrl === 'string' && t.imageUrl.length > 0 && t.imageUrl.length <= 2_500_000 ? t.imageUrl : null;
+
+      tasksToCreate.push({
+        userId,
+        boardId: targetBoardId,
+        title: t.title.trim().slice(0, 150),
+        description: typeof t.description === 'string' ? t.description.slice(0, 10000) : null,
+        status,
+        priority,
+        category: typeof t.category === 'string' ? t.category.trim().slice(0, 50) : 'Personal',
+        dueDate: parsedDueDate,
+        estimatedTime: typeof t.estimatedTime === 'string' ? t.estimatedTime.trim().slice(0, 50) : null,
+        imageUrl: validImg,
+        order: typeof t.order === 'number' && Number.isFinite(t.order) ? Math.max(0, Math.floor(t.order)) : 0,
       });
-      importedTasksCount++;
     }
 
-    // Migrasi Notes
+    // Persiapkan data notes dengan validasi ketat
+    const notesToCreate = [];
     for (const n of notes) {
-      if (!n.title && !n.content) continue;
-      const targetBoardId = (n.boardId && boardIdMap.get(n.boardId)) || defaultNoteBoard.id;
+      if (!n) continue;
+      const titleStr = typeof n.title === 'string' ? n.title.trim().slice(0, 200) : '';
+      const contentStr = typeof n.content === 'string' ? n.content.trim().slice(0, 20000) : '';
+      const validImg = typeof n.imageUrl === 'string' && n.imageUrl.startsWith('data:image/') && n.imageUrl.length <= 2_500_000 ? n.imageUrl : null;
 
-      await prisma.note.create({
-        data: {
-          userId,
-          boardId: targetBoardId,
-          title: n.title ? String(n.title).slice(0, 255) : '',
-          content: n.content ? String(n.content) : '',
-          imageUrl: n.imageUrl || null,
-          isSticker: Boolean(n.isSticker),
-          color: n.color || 'yellow',
-          isPinned: Boolean(n.isPinned),
-          posX: typeof n.posX === 'number' ? n.posX : 50,
-          posY: typeof n.posY === 'number' ? n.posY : 50,
-          width: typeof n.width === 'number' ? n.width : null,
-          rotation: typeof n.rotation === 'number' ? n.rotation : 0,
-          order: typeof n.order === 'number' ? n.order : 0,
-        },
+      if (!titleStr && !contentStr && !validImg) continue;
+
+      const targetBoardId = (n.boardId && boardIdMap.get(n.boardId)) || defaultNoteBoard.id;
+      const validColors = ['yellow', 'pink', 'blue', 'green', 'purple', 'cream'];
+      const color = validColors.includes(n.color) ? n.color : 'yellow';
+
+      notesToCreate.push({
+        userId,
+        boardId: targetBoardId,
+        title: titleStr || (n.isSticker ? '' : validImg ? 'Catatan Gambar' : 'Catatan Baru'),
+        content: contentStr,
+        imageUrl: validImg,
+        isSticker: Boolean(n.isSticker),
+        color,
+        isPinned: Boolean(n.isPinned),
+        posX: typeof n.posX === 'number' && Number.isFinite(n.posX) ? n.posX : 50,
+        posY: typeof n.posY === 'number' && Number.isFinite(n.posY) ? n.posY : 50,
+        width: typeof n.width === 'number' && Number.isFinite(n.width) ? Math.max(120, Math.min(800, n.width)) : null,
+        rotation: typeof n.rotation === 'number' && Number.isFinite(n.rotation) ? n.rotation : 0,
+        order: typeof n.order === 'number' && Number.isFinite(n.order) ? Math.max(0, Math.floor(n.order)) : 0,
       });
-      importedNotesCount++;
+    }
+
+    // Eksekusi migrasi batch secara transaksional
+    if (tasksToCreate.length > 0) {
+      await prisma.$transaction(
+        tasksToCreate.map((data) => prisma.task.create({ data }))
+      );
+    }
+
+    if (notesToCreate.length > 0) {
+      await prisma.$transaction(
+        notesToCreate.map((data) => prisma.note.create({ data }))
+      );
     }
 
     return NextResponse.json({
       success: true,
       data: {
-        tasksCount: importedTasksCount,
-        notesCount: importedNotesCount,
+        tasksCount: tasksToCreate.length,
+        notesCount: notesToCreate.length,
       },
     });
   } catch (error: unknown) {

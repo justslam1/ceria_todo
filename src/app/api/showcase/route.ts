@@ -99,6 +99,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (session?.user?.isSuspended) {
+      return NextResponse.json(
+        { success: false, error: 'Akun Anda telah ditangguhkan. Silakan hubungi administrator.' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const { title, description, category, thumbnail, configJson } = body;
 

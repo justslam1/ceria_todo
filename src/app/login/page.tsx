@@ -1,25 +1,27 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { useSession, signIn } from 'next-auth/react';
+import { useSession, signIn, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { CheckCircle2, MessageSquareShare, ArrowRight, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, MessageSquareShare, ArrowRight, ShieldCheck, AlertTriangle } from 'lucide-react';
 import AppLogo from '@/components/ui/AppLogo';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 
 export default function LoginPage() {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const { t } = useLanguage();
 
-  // Jika sudah login, otomatis alihkan ke Dashboard
+  const isSuspended = !!session?.user?.isSuspended;
+
+  // Jika sudah login dan tidak ditangguhkan, otomatis alihkan ke Dashboard
   useEffect(() => {
-    if (status === 'authenticated') {
+    if (status === 'authenticated' && !isSuspended) {
       router.replace('/');
     }
-  }, [status, router]);
+  }, [status, isSuspended, router]);
 
   return (
     <div className="min-h-screen bg-[#faf8f5] bg-[radial-gradient(#e2e8f0_1.2px,transparent_1.2px)] [background-size:20px_20px] flex flex-col items-center justify-center p-4 font-sans relative overflow-hidden">
@@ -49,6 +51,26 @@ export default function LoginPage() {
             {t.login.subtitle}
           </p>
         </div>
+
+        {/* Suspended Account Banner */}
+        {isSuspended && (
+          <div className="mb-5 p-3.5 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-2.5 text-rose-800 text-xs shadow-xs">
+            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-bold">Akun Anda Ditangguhkan</p>
+              <p className="text-rose-700 leading-relaxed">
+                Akses ke akun ini telah dinonaktifkan oleh administrator. Silakan hubungi admin untuk informasi lebih lanjut.
+              </p>
+              <button
+                type="button"
+                onClick={() => signOut({ callbackUrl: '/login' })}
+                className="mt-1 text-xs font-semibold text-rose-700 underline hover:text-rose-900 cursor-pointer"
+              >
+                Keluar dari akun ini
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Feature Highlights Pills */}
         <div className="bg-white/70 backdrop-blur-xs rounded-2xl p-4 border border-amber-200/80 mb-6 space-y-2.5 text-xs text-slate-700">

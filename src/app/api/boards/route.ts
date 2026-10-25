@@ -15,6 +15,13 @@ export async function GET() {
       );
     }
 
+    if (session?.user?.isSuspended) {
+      return NextResponse.json(
+        { success: false, error: 'Akun Anda telah ditangguhkan. Silakan hubungi administrator.' },
+        { status: 403 }
+      );
+    }
+
     let boards = await prisma.board.findMany({
       where: { userId },
       orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
@@ -131,6 +138,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized: Silakan masuk ke akun Anda terlebih dahulu' },
         { status: 401 }
+      );
+    }
+
+    if (session?.user?.isSuspended) {
+      return NextResponse.json(
+        { success: false, error: 'Akun Anda telah ditangguhkan. Silakan hubungi administrator.' },
+        { status: 403 }
       );
     }
 

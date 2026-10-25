@@ -17,6 +17,13 @@ export async function PATCH(
       );
     }
 
+    if (session?.user?.isSuspended) {
+      return NextResponse.json(
+        { success: false, error: 'Akun Anda telah ditangguhkan. Silakan hubungi administrator.' },
+        { status: 403 }
+      );
+    }
+
     const { id } = await context.params;
     const body = await request.json();
     const { title, icon, color, order } = body;
@@ -64,6 +71,13 @@ export async function DELETE(
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
+      );
+    }
+
+    if (session?.user?.isSuspended) {
+      return NextResponse.json(
+        { success: false, error: 'Akun Anda telah ditangguhkan. Silakan hubungi administrator.' },
+        { status: 403 }
       );
     }
 

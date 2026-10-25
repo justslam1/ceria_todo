@@ -26,6 +26,13 @@ export async function GET(
       );
     }
 
+    if (session?.user?.isSuspended) {
+      return NextResponse.json(
+        { success: false, error: 'Akun Anda telah ditangguhkan. Silakan hubungi administrator.' },
+        { status: 403 }
+      );
+    }
+
     const { id } = await context.params;
 
     const task = await prisma.task.findUnique({
@@ -39,14 +46,7 @@ export async function GET(
       );
     }
 
-    // Auto-claim legacy task without owner, or verify ownership
-    if (!task.userId) {
-      await prisma.task.update({
-        where: { id },
-        data: { userId },
-      });
-      task.userId = userId;
-    } else if (task.userId !== userId) {
+    if (!task.userId || task.userId !== userId) {
       return NextResponse.json(
         { success: false, error: 'Anda tidak memiliki hak akses ke tugas ini' },
         { status: 403 }
@@ -79,6 +79,13 @@ export async function PATCH(
       );
     }
 
+    if (session?.user?.isSuspended) {
+      return NextResponse.json(
+        { success: false, error: 'Akun Anda telah ditangguhkan. Silakan hubungi administrator.' },
+        { status: 403 }
+      );
+    }
+
     const { id } = await context.params;
 
     // Check existing task
@@ -90,13 +97,7 @@ export async function PATCH(
       );
     }
 
-    // Auto-claim legacy task or verify ownership
-    if (!existingTask.userId) {
-      await prisma.task.update({
-        where: { id },
-        data: { userId },
-      });
-    } else if (existingTask.userId !== userId) {
+    if (!existingTask.userId || existingTask.userId !== userId) {
       return NextResponse.json(
         { success: false, error: 'Anda tidak memiliki hak mengubah tugas ini' },
         { status: 403 }
@@ -163,7 +164,7 @@ export async function PATCH(
     if (body.imageUrl !== undefined) {
       if (body.imageUrl === null || body.imageUrl === '') {
         updateData.imageUrl = null;
-      } else if (typeof body.imageUrl === 'string') {
+      } else if (typeof body.imageUrl === 'string' && body.imageUrl.length <= 2_500_000) {
         updateData.imageUrl = body.imageUrl;
       }
     }
@@ -206,6 +207,13 @@ export async function DELETE(
       );
     }
 
+    if (session?.user?.isSuspended) {
+      return NextResponse.json(
+        { success: false, error: 'Akun Anda telah ditangguhkan. Silakan hubungi administrator.' },
+        { status: 403 }
+      );
+    }
+
     const { id } = await context.params;
 
     const existingTask = await prisma.task.findUnique({ where: { id } });
@@ -216,7 +224,7 @@ export async function DELETE(
       );
     }
 
-    if (existingTask.userId && existingTask.userId !== userId) {
+    if (!existingTask.userId || existingTask.userId !== userId) {
       return NextResponse.json(
         { success: false, error: 'Anda tidak memiliki hak menghapus tugas ini' },
         { status: 403 }

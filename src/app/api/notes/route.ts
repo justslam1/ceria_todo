@@ -17,6 +17,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    if (session?.user?.isSuspended) {
+      return NextResponse.json(
+        { success: false, error: 'Akun Anda telah ditangguhkan. Silakan hubungi administrator.' },
+        { status: 403 }
+      );
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('q')?.trim() || '';
     const boardIdParam = searchParams.get('boardId');
@@ -63,12 +70,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (session?.user?.isSuspended) {
+      return NextResponse.json(
+        { success: false, error: 'Akun Anda telah ditangguhkan. Silakan hubungi administrator.' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const { title, boardId, content, imageUrl, isSticker, color, isPinned, posX, posY, width, rotation, order } = body;
 
     const trimmedTitle = typeof title === 'string' ? title.trim().slice(0, 200) : '';
     const trimmedContent = typeof content === 'string' ? content.trim().slice(0, 20000) : '';
-    const validImageUrl = typeof imageUrl === 'string' && imageUrl.startsWith('data:image/') ? imageUrl : null;
+    const validImageUrl = typeof imageUrl === 'string' && imageUrl.startsWith('data:image/') && imageUrl.length <= 2_500_000 ? imageUrl : null;
 
     if (!trimmedTitle && !trimmedContent && !validImageUrl) {
       return NextResponse.json(
@@ -79,8 +93,16 @@ export async function POST(request: NextRequest) {
 
     const validColor = VALID_COLORS.includes(color) ? color : 'yellow';
 
-    // Find default note board if boardId is not provided
-    let effectiveBoardId = boardId;
+    // Verify boardId ownership or fallback to user's default note board
+    let effectiveBoardId: string | null = null;
+    if (boardId) {
+      const userBoard = await prisma.board.findFirst({
+        where: { id: boardId, userId, type: 'NOTE' },
+        select: { id: true },
+      });
+      effectiveBoardId = userBoard?.id || null;
+    }
+
     if (!effectiveBoardId) {
       const defaultBoard = await prisma.board.findFirst({
         where: { userId, type: 'NOTE', isDefault: true },

@@ -37,6 +37,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    if (session?.user?.isSuspended) {
+      return NextResponse.json(
+        { success: false, error: 'Akun Anda telah ditangguhkan. Silakan hubungi administrator.' },
+        { status: 403 }
+      );
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const statusParam = searchParams.get('status');
     const boardIdParam = searchParams.get('boardId');
@@ -81,11 +88,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (session?.user?.isSuspended) {
+      return NextResponse.json(
+        { success: false, error: 'Akun Anda telah ditangguhkan. Silakan hubungi administrator.' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
 
-    // Helper to find target boardId if not provided
+    // Helper to find target boardId with strict ownership verification
     const getEffectiveBoardId = async (providedBoardId?: string | null) => {
-      if (providedBoardId) return providedBoardId;
+      if (providedBoardId) {
+        const userBoard = await prisma.board.findFirst({
+          where: { id: providedBoardId, userId },
+          select: { id: true },
+        });
+        if (userBoard) return userBoard.id;
+      }
       const defaultBoard = await prisma.board.findFirst({
         where: { userId, type: 'TASK', isDefault: true },
         select: { id: true },
@@ -113,23 +133,33 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const fallbackBoardId = await getEffectiveBoardId(body[0]?.boardId);
+      // Pre-fetch all user's boards of type TASK to validate ownership efficiently
+      const userBoards = await prisma.board.findMany({
+        where: { userId, type: 'TASK' },
+        select: { id: true, isDefault: true },
+      });
+      const validBoardIds = new Set(userBoards.map((b) => b.id));
+      const defaultBoardId = userBoards.find((b) => b.isDefault)?.id || userBoards[0]?.id || null;
 
       const tasksToCreate = body
         .filter((item) => item && typeof item.title === 'string' && item.title.trim().length > 0)
-        .map((item, index) => ({
-          userId,
-          boardId: item.boardId || fallbackBoardId,
-          title: item.title.trim().slice(0, 150),
-          description: typeof item.description === 'string' ? item.description.slice(0, 10000) : null,
-          status: parseStatus(item.status),
-          priority: parsePriority(item.priority),
-          category: typeof item.category === 'string' ? item.category.trim().slice(0, 50) : 'Personal',
-          dueDate: parseDueDate(item.dueDate),
-          estimatedTime: typeof item.estimatedTime === 'string' ? item.estimatedTime.trim().slice(0, 50) : null,
-          imageUrl: typeof item.imageUrl === 'string' && item.imageUrl.length > 0 ? item.imageUrl : null,
-          order: typeof item.order === 'number' && Number.isFinite(item.order) ? Math.max(0, Math.floor(item.order)) : index,
-        }));
+        .map((item, index) => {
+          const targetBoardId = item.boardId && validBoardIds.has(item.boardId) ? item.boardId : defaultBoardId;
+          const validImg = typeof item.imageUrl === 'string' && item.imageUrl.length > 0 && item.imageUrl.length <= 2_500_000 ? item.imageUrl : null;
+          return {
+            userId,
+            boardId: targetBoardId,
+            title: item.title.trim().slice(0, 150),
+            description: typeof item.description === 'string' ? item.description.slice(0, 10000) : null,
+            status: parseStatus(item.status),
+            priority: parsePriority(item.priority),
+            category: typeof item.category === 'string' ? item.category.trim().slice(0, 50) : 'Personal',
+            dueDate: parseDueDate(item.dueDate),
+            estimatedTime: typeof item.estimatedTime === 'string' ? item.estimatedTime.trim().slice(0, 50) : null,
+            imageUrl: validImg,
+            order: typeof item.order === 'number' && Number.isFinite(item.order) ? Math.max(0, Math.floor(item.order)) : index,
+          };
+        });
 
       if (tasksToCreate.length === 0) {
         return NextResponse.json(
@@ -171,7 +201,7 @@ export async function POST(request: NextRequest) {
         category: typeof category === 'string' ? category.trim().slice(0, 50) : 'Personal',
         dueDate: parseDueDate(dueDate),
         estimatedTime: typeof estimatedTime === 'string' ? estimatedTime.trim().slice(0, 50) : null,
-        imageUrl: typeof imageUrl === 'string' && imageUrl.length > 0 ? imageUrl : null,
+        imageUrl: typeof imageUrl === 'string' && imageUrl.length > 0 && imageUrl.length <= 2_500_000 ? imageUrl : null,
         order: typeof order === 'number' && Number.isFinite(order) ? Math.max(0, Math.floor(order)) : 0,
       },
     });

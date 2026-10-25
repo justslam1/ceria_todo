@@ -77,6 +77,13 @@ export async function DELETE(
       );
     }
 
+    if (session?.user?.isSuspended) {
+      return NextResponse.json(
+        { success: false, error: 'Akun Anda telah ditangguhkan. Silakan hubungi administrator.' },
+        { status: 403 }
+      );
+    }
+
     const { id } = await context.params;
 
     const showcase = await prisma.boardShowcase.findUnique({
