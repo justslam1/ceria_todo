@@ -74,6 +74,10 @@ export const SystemAnnouncementBanner: React.FC = () => {
 
   const style = getStyle();
 
+  const isSafeUrl =
+    Boolean(announcement.linkUrl) &&
+    (announcement.linkUrl!.startsWith('/') || /^https?:\/\//i.test(announcement.linkUrl!));
+
   return (
     <div
       className={`relative w-full px-3 sm:px-6 py-2 text-xs transition-all duration-200 z-50 ${style.container}`}
@@ -89,11 +93,11 @@ export const SystemAnnouncementBanner: React.FC = () => {
           <p className="font-semibold truncate text-xs sm:text-sm">
             {announcement.message}
           </p>
-          {announcement.linkUrl && (
+          {isSafeUrl && (
             <a
-              href={announcement.linkUrl}
-              target={announcement.linkUrl.startsWith('http') ? '_blank' : undefined}
-              rel={announcement.linkUrl.startsWith('http') ? 'noopener noreferrer' : undefined}
+              href={announcement.linkUrl!}
+              target={announcement.linkUrl!.startsWith('http') ? '_blank' : undefined}
+              rel={announcement.linkUrl!.startsWith('http') ? 'noopener noreferrer' : undefined}
               className={`inline-flex items-center gap-1 font-bold underline hover:opacity-80 shrink-0 ml-1 ${style.link}`}
             >
               <span>Pelajari</span>

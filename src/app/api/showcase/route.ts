@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify configJson is valid JSON
+    // Verify configJson is valid JSON and within size limit
     let serializedConfig = '';
     if (typeof configJson === 'string') {
       try {
@@ -147,13 +147,27 @@ export async function POST(request: NextRequest) {
       serializedConfig = JSON.stringify(configJson);
     }
 
+    if (serializedConfig.length > 500_000) {
+      return NextResponse.json(
+        { success: false, error: 'Ukuran data konfigurasi melebihi batas (maksimal 500 KB)' },
+        { status: 400 }
+      );
+    }
+
+    const validThumbnail =
+      typeof thumbnail === 'string' &&
+      thumbnail.length <= 2_500_000 &&
+      (thumbnail.startsWith('data:image/') || /^https?:\/\//i.test(thumbnail))
+        ? thumbnail
+        : null;
+
     const newShowcase = await prisma.boardShowcase.create({
       data: {
         userId,
         title: trimmedTitle,
-        description: (description || '').trim() || null,
-        category: (category || 'Aesthetic').trim(),
-        thumbnail: thumbnail || null,
+        description: typeof description === 'string' ? description.trim().slice(0, 500) : null,
+        category: (category || 'Aesthetic').trim().slice(0, 50),
+        thumbnail: validThumbnail,
         configJson: serializedConfig,
       },
       include: {

@@ -3,6 +3,17 @@ import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { isUserAdmin } from '@/lib/admin';
 
+function sanitizeLinkUrl(url?: unknown): string | null {
+  if (!url || typeof url !== 'string') return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  // Hanya izinkan skema https://, http://, atau path internal relatif /
+  if (trimmed.startsWith('/') || /^https?:\/\//i.test(trimmed)) {
+    return trimmed.slice(0, 1000);
+  }
+  return null;
+}
+
 export async function GET() {
   try {
     const session = await auth();
@@ -66,7 +77,7 @@ export async function POST(request: NextRequest) {
           message: message.trim(),
           type: ['info', 'celebration', 'warning'].includes(type) ? type : 'info',
           isActive: Boolean(isActive),
-          linkUrl: linkUrl ? String(linkUrl).trim() : null,
+          linkUrl: sanitizeLinkUrl(linkUrl),
           updatedAt: new Date(),
         },
       });
@@ -76,7 +87,7 @@ export async function POST(request: NextRequest) {
           message: message.trim(),
           type: ['info', 'celebration', 'warning'].includes(type) ? type : 'info',
           isActive: Boolean(isActive),
-          linkUrl: linkUrl ? String(linkUrl).trim() : null,
+          linkUrl: sanitizeLinkUrl(linkUrl),
           updatedAt: new Date(),
         },
       });
