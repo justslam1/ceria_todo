@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
 const cspHeader = `
@@ -11,6 +12,7 @@ const cspHeader = `
 `.replace(/\s{2,}/g, ' ').trim();
 
 const nextConfig: NextConfig = {
+  outputFileTracingRoot: path.join(__dirname),
   images: {
     remotePatterns: [
       {
