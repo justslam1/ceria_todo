@@ -16,6 +16,23 @@ import { KanbanColumn } from './KanbanColumn';
 import { NotesBoard } from '@/components/notes/NotesBoard';
 import { NoteItem, NoteColor } from '@/types/note';
 import { Navbar } from '@/components/ui/Navbar';
+import { useSession } from 'next-auth/react';
+import { GuestModeBanner } from '@/components/ui/GuestModeBanner';
+import {
+  getGuestBoards,
+  saveGuestBoard,
+  deleteGuestBoard,
+  getGuestTasks,
+  saveGuestTask,
+  updateGuestTask,
+  deleteGuestTask,
+  getGuestNotes,
+  saveGuestNote,
+  updateGuestNote,
+  deleteGuestNote,
+  hasGuestData,
+  clearGuestStorage,
+} from '@/lib/guestStorage';
 import { QuickPasteModal } from '@/components/modals/QuickPasteModal';
 import { TaskFormModal } from '@/components/modals/TaskFormModal';
 import { PersonalizationModal } from '@/components/modals/PersonalizationModal';
@@ -94,6 +111,12 @@ const KONAMI_SEQUENCE = [
 
 export const KanbanBoard: React.FC = () => {
   const { t, language } = useLanguage();
+  const { data: session, status: authStatus } = useSession();
+  const isGuest = authStatus === 'unauthenticated' || (!session?.user && authStatus !== 'loading');
+  const isGuestRef = useRef(isGuest);
+  useEffect(() => {
+    isGuestRef.current = isGuest;
+  }, [isGuest]);
   const isMounted = useSyncExternalStore(
     () => () => {},
     () => true,
@@ -354,6 +377,19 @@ export const KanbanBoard: React.FC = () => {
 
   // Fetch tasks for a specific board
   const fetchTasks = useCallback(async (boardId?: string, silent = false) => {
+    if (isGuestRef.current) {
+      if (!silent) {
+        setIsLoading(true);
+      }
+      const guestTasks = getGuestTasks(boardId);
+      setTasks(guestTasks);
+      setNetworkError(null);
+      if (!silent) {
+        setIsLoading(false);
+      }
+      return;
+    }
+
     if (tasksAbortRef.current) {
       tasksAbortRef.current.abort();
     }
@@ -389,6 +425,24 @@ export const KanbanBoard: React.FC = () => {
 
   // Fetch notes for a specific board
   const fetchNotes = useCallback(async (boardId?: string, silent = false) => {
+    if (isGuestRef.current) {
+      if (!silent) {
+        setIsNotesLoading(true);
+      }
+      const guestNotes = getGuestNotes(boardId);
+      setNotes(
+        guestNotes.map((n: NoteItem) => ({
+          ...n,
+          flipH: n.flipH !== undefined ? n.flipH : Boolean(n.content?.includes('[FLIP_H]')),
+          flipV: n.flipV !== undefined ? n.flipV : Boolean(n.content?.includes('[FLIP_V]')),
+        }))
+      );
+      if (!silent) {
+        setIsNotesLoading(false);
+      }
+      return;
+    }
+
     if (notesAbortRef.current) {
       notesAbortRef.current.abort();
     }
@@ -426,6 +480,32 @@ export const KanbanBoard: React.FC = () => {
 
   // Fetch all boards and initialize active board
   const fetchBoards = useCallback(async (preferredBoardId?: string) => {
+    if (isGuestRef.current) {
+      const guestBoards = getGuestBoards();
+      setBoards(guestBoards);
+
+      const savedBoardId =
+        preferredBoardId ||
+        (typeof window !== 'undefined' ? localStorage.getItem('ceria_active_board_id') : null);
+      let target = guestBoards.find((b) => b.id === savedBoardId);
+      if (!target) {
+        target = guestBoards.find((b) => b.isDefault && b.type === 'TASK') || guestBoards[0];
+      }
+      setActiveBoard(target);
+      if (typeof window !== 'undefined' && target) {
+        localStorage.setItem('ceria_active_board_id', target.id);
+      }
+
+      if (target?.type === 'NOTE') {
+        setActiveTab('notes');
+        fetchNotes(target.id);
+      } else if (target) {
+        setActiveTab('tasks');
+        fetchTasks(target.id);
+      }
+      return;
+    }
+
     try {
       const res = await fetch('/api/boards');
       const data = await res.json();
@@ -465,9 +545,31 @@ export const KanbanBoard: React.FC = () => {
     let ignore = false;
 
     async function loadData() {
-      if (!ignore) {
-        await fetchBoards();
+      if (authStatus === 'loading') return;
+      if (ignore) return;
+
+      // Jika user sudah login dan ada data mode tamu, jalankan migrasi otomatis
+      if (authStatus === 'authenticated' && session?.user && hasGuestData()) {
+        try {
+          const guestTasks = getGuestTasks();
+          const guestNotes = getGuestNotes();
+          const guestBoards = getGuestBoards();
+          await fetch('/api/migrate-guest', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              tasks: guestTasks,
+              notes: guestNotes,
+              boards: guestBoards,
+            }),
+          });
+          clearGuestStorage();
+        } catch (e) {
+          console.error('Gagal migrasi data tamu:', e);
+        }
       }
+
+      await fetchBoards();
     }
 
     loadData();
@@ -475,7 +577,7 @@ export const KanbanBoard: React.FC = () => {
     return () => {
       ignore = true;
     };
-  }, [fetchBoards]);
+  }, [authStatus, session?.user, fetchBoards]);
 
   // Manual refresh handler
   const handleRefreshTasks = useCallback(async () => {
@@ -516,6 +618,24 @@ export const KanbanBoard: React.FC = () => {
 
   const handleSaveBoard = async (data: CreateBoardInput | UpdateBoardInput, boardId?: string) => {
     try {
+      if (isGuestRef.current) {
+        const saved = saveGuestBoard(data, boardId);
+        if (boardId) {
+          setBoards((prev) => prev.map((b) => (b.id === boardId ? { ...b, ...saved } : b)));
+          if (activeBoard?.id === boardId) {
+            setActiveBoard((prev) => (prev ? { ...prev, ...saved } : saved));
+          }
+          playPopSound(preferences.soundProfile);
+        } else {
+          setBoards((prev) => [...prev, saved]);
+          handleSelectBoard(saved);
+          triggerCelebration(preferences.celebrationFx);
+          playVictoryChime(preferences.soundProfile);
+        }
+        setIsBoardModalOpen(false);
+        return;
+      }
+
       if (boardId) {
         const res = await fetch(`/api/boards/${boardId}`, {
           method: 'PATCH',
@@ -565,6 +685,23 @@ export const KanbanBoard: React.FC = () => {
     }
 
     try {
+      if (isGuestRef.current) {
+        deleteGuestBoard(board.id);
+        playPopSound(preferences.soundProfile);
+        const remainingBoards = boards.filter((b) => b.id !== board.id);
+        setBoards(remainingBoards);
+        if (activeBoard?.id === board.id) {
+          const fallback =
+            remainingBoards.find((b) => b.type === board.type && b.isDefault) ||
+            remainingBoards.find((b) => b.type === board.type) ||
+            remainingBoards[0];
+          if (fallback) {
+            handleSelectBoard(fallback);
+          }
+        }
+        return;
+      }
+
       const res = await fetch(`/api/boards/${board.id}`, {
         method: 'DELETE',
       });
@@ -667,6 +804,30 @@ export const KanbanBoard: React.FC = () => {
         ...data,
         boardId: data.boardId || (activeBoard?.type === 'NOTE' ? activeBoard.id : undefined),
       };
+
+      if (isGuestRef.current) {
+        const created = saveGuestNote(payload);
+        setNotes((prev) => [
+          {
+            ...created,
+            flipH: created.flipH !== undefined ? created.flipH : Boolean(created.content?.includes('[FLIP_H]')),
+            flipV: created.flipV !== undefined ? created.flipV : Boolean(created.content?.includes('[FLIP_V]')),
+          },
+          ...prev,
+        ]);
+        if (activeBoard) {
+          setBoards((prev) =>
+            prev.map((b) =>
+              b.id === activeBoard.id
+                ? { ...b, _count: { ...b._count, tasks: b._count?.tasks ?? 0, notes: (b._count?.notes ?? 0) + 1 } }
+                : b
+            )
+          );
+        }
+        playPopSound(preferences.soundProfile);
+        return;
+      }
+
       const res = await fetch('/api/notes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -703,6 +864,10 @@ export const KanbanBoard: React.FC = () => {
     setNotes((prev) =>
       prev.map((n) => (n.id === id ? { ...n, ...updateData, updatedAt: new Date().toISOString() } : n))
     );
+    if (isGuestRef.current) {
+      updateGuestNote(id, updateData);
+      return;
+    }
     try {
       const res = await fetch(`/api/notes/${id}`, {
         method: 'PATCH',
@@ -741,6 +906,11 @@ export const KanbanBoard: React.FC = () => {
         )
       );
     }
+    if (isGuestRef.current) {
+      deleteGuestNote(id);
+      playPopSound(preferences.soundProfile);
+      return;
+    }
     try {
       await fetch(`/api/notes/${id}`, { method: 'DELETE' });
       playPopSound(preferences.soundProfile);
@@ -766,6 +936,35 @@ export const KanbanBoard: React.FC = () => {
         posY: (note.posY || 0) + offsetY,
         boardId: note.boardId || (activeBoard?.type === 'NOTE' ? activeBoard.id : undefined),
       };
+
+      if (isGuestRef.current) {
+        const created = saveGuestNote(payload);
+        const formatted = {
+          ...created,
+          flipH: created.flipH !== undefined ? created.flipH : Boolean(created.content?.includes('[FLIP_H]')),
+          flipV: created.flipV !== undefined ? created.flipV : Boolean(created.content?.includes('[FLIP_V]')),
+        };
+        setNotes((prev) => {
+          const idx = prev.findIndex((n) => n.id === note.id);
+          if (idx !== -1) {
+            const next = [...prev];
+            next.splice(idx + 1, 0, formatted);
+            return next;
+          }
+          return [formatted, ...prev];
+        });
+        if (activeBoard) {
+          setBoards((prev) =>
+            prev.map((b) =>
+              b.id === activeBoard.id
+                ? { ...b, _count: { ...b._count, tasks: b._count?.tasks ?? 0, notes: (b._count?.notes ?? 0) + 1 } }
+                : b
+            )
+          );
+        }
+        playPopSound(preferences.soundProfile);
+        return;
+      }
 
       const res = await fetch('/api/notes', {
         method: 'POST',
@@ -1108,6 +1307,14 @@ export const KanbanBoard: React.FC = () => {
       return updated;
     });
 
+    if (isGuestRef.current) {
+      updateGuestTask(draggableId, {
+        status: newStatus,
+        order: destination.index,
+      });
+      return;
+    }
+
     try {
       const res = await fetch(`/api/tasks/${draggableId}`, {
         method: 'PATCH',
@@ -1150,6 +1357,11 @@ export const KanbanBoard: React.FC = () => {
       prev.map((t) => (t.id === id ? { ...t, status: newStatus } : t))
     );
 
+    if (isGuestRef.current) {
+      updateGuestTask(id, { status: newStatus });
+      return;
+    }
+
     try {
       const res = await fetch(`/api/tasks/${id}`, {
         method: 'PATCH',
@@ -1187,6 +1399,11 @@ export const KanbanBoard: React.FC = () => {
       );
     }
 
+    if (isGuestRef.current) {
+      deleteGuestTask(id);
+      return;
+    }
+
     try {
       const res = await fetch(`/api/tasks/${id}`, {
         method: 'DELETE',
@@ -1219,6 +1436,30 @@ export const KanbanBoard: React.FC = () => {
         imageUrl: task.imageUrl || null,
         boardId: task.boardId || (activeBoard?.type === 'TASK' ? activeBoard.id : undefined),
       };
+
+      if (isGuestRef.current) {
+        const created = saveGuestTask(payload);
+        playPopSound(preferences.soundProfile);
+        setTasks((prev) => {
+          const idx = prev.findIndex((t) => t.id === task.id);
+          if (idx !== -1) {
+            const next = [...prev];
+            next.splice(idx + 1, 0, created);
+            return next;
+          }
+          return [created, ...prev];
+        });
+        if (activeBoard) {
+          setBoards((prev) =>
+            prev.map((b) =>
+              b.id === activeBoard.id
+                ? { ...b, _count: { ...b._count, notes: b._count?.notes ?? 0, tasks: (b._count?.tasks ?? 0) + 1 } }
+                : b
+            )
+          );
+        }
+        return;
+      }
 
       const res = await fetch('/api/tasks', {
         method: 'POST',
@@ -1271,6 +1512,11 @@ export const KanbanBoard: React.FC = () => {
       prev.map((t) => (t.id === taskId ? { ...t, description: newDescription } : t))
     );
 
+    if (isGuestRef.current) {
+      updateGuestTask(taskId, { description: newDescription });
+      return;
+    }
+
     try {
       const res = await fetch(`/api/tasks/${taskId}`, {
         method: 'PATCH',
@@ -1303,6 +1549,11 @@ export const KanbanBoard: React.FC = () => {
     setTasks((prev) =>
       prev.map((t) => (t.id === taskId ? { ...t, description: newDescription } : t))
     );
+
+    if (isGuestRef.current) {
+      updateGuestTask(taskId, { description: newDescription });
+      return;
+    }
 
     try {
       const res = await fetch(`/api/tasks/${taskId}`, {
@@ -1349,6 +1600,13 @@ export const KanbanBoard: React.FC = () => {
     });
     setTasks(updatedTasks);
 
+    if (isGuestRef.current) {
+      unarchivedDone.forEach((t) => {
+        updateGuestTask(t.id, { description: setTaskArchived(t.description, true) });
+      });
+      return;
+    }
+
     try {
       await Promise.all(
         unarchivedDone.map((t) =>
@@ -1380,6 +1638,11 @@ export const KanbanBoard: React.FC = () => {
       prev.map((t) => (t.id === taskId ? { ...t, description: newDescription } : t))
     );
 
+    if (isGuestRef.current) {
+      updateGuestTask(taskId, { description: newDescription });
+      return;
+    }
+
     try {
       const res = await fetch(`/api/tasks/${taskId}`, {
         method: 'PATCH',
@@ -1405,6 +1668,11 @@ export const KanbanBoard: React.FC = () => {
     if (toDelete.length === 0) return;
 
     setTasks((prev) => prev.filter((t) => !isTaskArchived(t.description)));
+
+    if (isGuestRef.current) {
+      toDelete.forEach((t) => deleteGuestTask(t.id));
+      return;
+    }
 
     try {
       await Promise.all(
@@ -1474,6 +1742,22 @@ export const KanbanBoard: React.FC = () => {
   ) => {
     try {
       if (id) {
+        if (isGuestRef.current) {
+          const updated = updateGuestTask(id, taskData);
+          const currentTask = tasks.find((t) => t.id === id);
+          const isMovingToDone = taskData.status === 'DONE' && currentTask?.status !== 'DONE';
+          if (isMovingToDone) {
+            triggerCelebration(preferences.celebrationFx);
+            playVictoryChime(preferences.soundProfile);
+            setTaskCompletedTrigger((prev) => prev + 1);
+          } else {
+            playPopSound(preferences.soundProfile);
+          }
+          setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
+          setIsTaskFormOpen(false);
+          return;
+        }
+
         const res = await fetch(`/api/tasks/${id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -1501,6 +1785,30 @@ export const KanbanBoard: React.FC = () => {
             (taskData as CreateTaskInput).boardId ||
             (activeBoard?.type === 'TASK' ? activeBoard.id : undefined),
         };
+
+        if (isGuestRef.current) {
+          const created = saveGuestTask(payload as CreateTaskInput);
+          if (taskData.status === 'DONE') {
+            triggerCelebration(preferences.celebrationFx);
+            playVictoryChime(preferences.soundProfile);
+            setTaskCompletedTrigger((prev) => prev + 1);
+          } else {
+            playPopSound(preferences.soundProfile);
+          }
+          setTasks((prev) => [created, ...prev]);
+          if (activeBoard) {
+            setBoards((prev) =>
+              prev.map((b) =>
+                b.id === activeBoard.id
+                  ? { ...b, _count: { ...b._count, notes: b._count?.notes ?? 0, tasks: (b._count?.tasks ?? 0) + 1 } }
+                  : b
+              )
+            );
+          }
+          setIsTaskFormOpen(false);
+          return;
+        }
+
         const res = await fetch('/api/tasks', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1757,6 +2065,9 @@ export const KanbanBoard: React.FC = () => {
           onEditBoard={handleEditBoard}
           onDeleteBoard={handleDeleteBoard}
         />
+
+        {/* Guest Mode Banner */}
+        {isGuest && <GuestModeBanner />}
 
         {/* Main Board Container */}
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3.5 flex flex-col gap-2.5">

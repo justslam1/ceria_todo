@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { CheckCircle2, MessageSquareShare, ArrowRight, ShieldCheck } from 'lucide-react';
 import AppLogo from '@/components/ui/AppLogo';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
@@ -94,6 +95,16 @@ export default function LoginPage() {
             <span>{t.login.googleButton}</span>
             <ArrowRight className="w-4 h-4 text-slate-400 ml-auto" />
           </button>
+
+          <div className="pt-1 text-center">
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-amber-900/80 hover:text-amber-950 hover:underline py-1"
+            >
+              <span>Coba aplikasi tanpa login</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </div>
 
         {/* Footer Note */}

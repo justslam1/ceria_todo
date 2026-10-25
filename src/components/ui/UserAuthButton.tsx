@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useSession, signOut } from 'next-auth/react';
-import { LogOut, Loader2, Shield } from 'lucide-react';
+import { useSession, signOut, signIn } from 'next-auth/react';
+import { LogOut, Loader2, Shield, LogIn } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
@@ -111,5 +111,14 @@ export const UserAuthButton: React.FC = () => {
     );
   }
 
-  return null;
+  return (
+    <button
+      onClick={() => signIn('google', { callbackUrl: '/' })}
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-semibold text-xs shadow-2xs hover:shadow transition-all cursor-pointer shrink-0"
+      title="Masuk dengan Google"
+    >
+      <LogIn className="w-3.5 h-3.5" />
+      <span>Masuk</span>
+    </button>
+  );
 };

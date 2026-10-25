@@ -7,8 +7,8 @@ export default auth((req) => {
   const isLoginPage = req.nextUrl.pathname === '/login';
   const isAdminPage = req.nextUrl.pathname.startsWith('/admin');
 
-  // 1. Jika belum login dan membuka halaman dashboard / admin -> arahkan ke /login
-  if (!isLoggedIn && !isLoginPage) {
+  // 1. Jika belum login dan membuka halaman admin -> arahkan ke /login
+  if (!isLoggedIn && isAdminPage) {
     return NextResponse.redirect(new URL('/login', req.nextUrl));
   }
 

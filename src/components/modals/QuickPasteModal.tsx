@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { parseWhatsAppMessage } from '@/lib/whatsappParser';
 import { ParsedTask, Priority, Task } from '@/types/task';
 import { CustomCategory, getCategoryBadgeClasses } from '@/lib/userPreferences';
+import { saveGuestTask } from '@/lib/guestStorage';
 import {
   X,
   MessageSquareShare,
@@ -33,6 +35,7 @@ export const QuickPasteModal: React.FC<QuickPasteModalProps> = ({
   const [hasParsed, setHasParsed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const { data: session } = useSession();
 
   if (!isOpen) return null;
 
@@ -85,7 +88,7 @@ export const QuickPasteModal: React.FC<QuickPasteModalProps> = ({
       const payload = parsedItems.map((item, idx) => ({
         title: item.title,
         description: item.description || null,
-        status: 'TODO',
+        status: 'TODO' as const,
         priority: item.priority || 'MEDIUM',
         category: item.category || 'Personal',
         dueDate: item.dueDate || null,
@@ -93,6 +96,17 @@ export const QuickPasteModal: React.FC<QuickPasteModalProps> = ({
         order: idx,
         boardId: boardId || undefined,
       }));
+
+      if (!session?.user) {
+        const savedTasks = payload.map((p) => saveGuestTask(p));
+        onTasksSaved(savedTasks);
+        setRawText('');
+        setParsedItems([]);
+        setHasParsed(false);
+        setIsSubmitting(false);
+        onClose();
+        return;
+      }
 
       const res = await fetch('/api/tasks', {
         method: 'POST',
