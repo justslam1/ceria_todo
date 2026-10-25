@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       defaultTaskBoard = await prisma.board.create({
         data: {
           userId,
-          title: 'Papan Tugas Utama',
+          title: 'Tugas Utama',
           type: 'TASK',
           icon: '📋',
           color: 'amber',
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       defaultNoteBoard = await prisma.board.create({
         data: {
           userId,
-          title: 'Papan Catatan Utama',
+          title: 'Catatan Utama',
           type: 'NOTE',
           icon: '📖',
           color: 'amber',

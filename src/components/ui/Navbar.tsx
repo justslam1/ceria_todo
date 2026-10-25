@@ -190,7 +190,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               ) : (
                 <p
                   onClick={handleStartEditMotto}
-                  className={`text-xs font-medium truncate max-w-[150px] sm:max-w-xs md:max-w-[160px] lg:max-w-xs xl:max-w-sm hidden sm:block cursor-pointer hover:text-amber-500 dark:hover:text-amber-400 transition-colors ${
+                  className={`text-xs font-medium truncate max-w-[150px] sm:max-w-xs md:max-w-[160px] lg:max-w-xs xl:max-w-sm hidden xl:block cursor-pointer hover:text-amber-500 dark:hover:text-amber-400 transition-colors ${
                     themeConfig.isDark ? 'text-slate-400' : 'text-slate-500'
                   }`}
                 >
@@ -269,7 +269,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Counters & Action Buttons */}
-          <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
 
             {/* Pomodoro Timer Toggle */}
             {onOpenPomodoro && (

@@ -11,7 +11,7 @@ const DEFAULT_GUEST_BOARDS: Board[] = [
   {
     id: 'guest-board-task',
     userId: null,
-    title: 'Papan Tugas Utama',
+    title: 'Tugas Utama',
     type: 'TASK',
     icon: '📋',
     color: 'amber',
@@ -23,7 +23,7 @@ const DEFAULT_GUEST_BOARDS: Board[] = [
   {
     id: 'guest-board-note',
     userId: null,
-    title: 'Papan Catatan Utama',
+    title: 'Catatan Utama',
     type: 'NOTE',
     icon: '📖',
     color: 'amber',
@@ -128,18 +128,27 @@ export function getGuestBoards(): Board[] {
     if (!data) return DEFAULT_GUEST_BOARDS;
     const parsed = JSON.parse(data);
     if (Array.isArray(parsed) && parsed.length > 0) {
-      // Auto-heal nilai teks 'clipboard' atau 'book' ke simbol bawaan
+      // Auto-heal nilai teks ikon dan nama papan bawaan agar lebih ringkas
       let updated = false;
       const healed = parsed.map((b: Board) => {
-        if (b.icon === 'clipboard') {
+        let currentBoard = { ...b };
+        if (currentBoard.icon === 'clipboard') {
           updated = true;
-          return { ...b, icon: '📋' };
+          currentBoard.icon = '📋';
         }
-        if (b.icon === 'book') {
+        if (currentBoard.icon === 'book') {
           updated = true;
-          return { ...b, icon: '📖' };
+          currentBoard.icon = '📖';
         }
-        return b;
+        if (currentBoard.isDefault && currentBoard.title === 'Papan Tugas Utama') {
+          updated = true;
+          currentBoard.title = 'Tugas Utama';
+        }
+        if (currentBoard.isDefault && currentBoard.title === 'Papan Catatan Utama') {
+          updated = true;
+          currentBoard.title = 'Catatan Utama';
+        }
+        return currentBoard;
       });
       if (updated) {
         localStorage.setItem(GUEST_BOARDS_KEY, JSON.stringify(healed));
