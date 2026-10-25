@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
         { isPinned: 'desc' },
         { updatedAt: 'desc' },
       ],
+      take: 500,
     });
 
     return NextResponse.json({ success: true, data: notes, count: notes.length });

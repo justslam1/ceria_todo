@@ -159,6 +159,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Batasi kuota jumlah papan per pengguna (maksimal 30 papan)
+    const userBoardCount = await prisma.board.count({
+      where: { userId },
+    });
+    if (userBoardCount >= 30) {
+      return NextResponse.json(
+        { success: false, error: 'Batas maksimum papan tercapai (maksimal 30 papan per akun)' },
+        { status: 400 }
+      );
+    }
+
     const validTypes: BoardType[] = ['TASK', 'NOTE'];
     const validBoardType: BoardType = validTypes.includes(type) ? type : 'TASK';
 
@@ -175,8 +186,8 @@ export async function POST(request: NextRequest) {
         userId,
         title: trimmedTitle,
         type: validBoardType,
-        icon: typeof icon === 'string' && icon.trim() ? icon.trim() : validBoardType === 'TASK' ? '📋' : '📖',
-        color: typeof color === 'string' && color.trim() ? color.trim() : 'amber',
+        icon: typeof icon === 'string' && icon.trim() ? icon.trim().slice(0, 30) : validBoardType === 'TASK' ? '📋' : '📖',
+        color: typeof color === 'string' && color.trim() ? color.trim().slice(0, 30) : 'amber',
         isDefault: false,
         order: nextOrder,
       },

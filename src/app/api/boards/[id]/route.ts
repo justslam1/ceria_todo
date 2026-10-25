@@ -43,9 +43,9 @@ export async function PATCH(
       where: { id },
       data: {
         ...(typeof title === 'string' && title.trim() ? { title: title.trim().slice(0, 80) } : {}),
-        ...(typeof icon === 'string' && icon.trim() ? { icon: icon.trim() } : {}),
-        ...(typeof color === 'string' && color.trim() ? { color: color.trim() } : {}),
-        ...(typeof order === 'number' ? { order } : {}),
+        ...(typeof icon === 'string' && icon.trim() ? { icon: icon.trim().slice(0, 30) } : {}),
+        ...(typeof color === 'string' && color.trim() ? { color: color.trim().slice(0, 30) } : {}),
+        ...(typeof order === 'number' && Number.isFinite(order) ? { order: Math.max(-9999, Math.min(9999, Math.floor(order))) } : {}),
       },
     });
 

@@ -63,6 +63,7 @@ export async function GET(request: NextRequest) {
         { order: 'asc' },
         { createdAt: 'desc' },
       ],
+      take: 500,
     });
 
     return NextResponse.json({ success: true, data: tasks });

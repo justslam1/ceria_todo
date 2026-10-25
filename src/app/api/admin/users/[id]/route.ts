@@ -51,6 +51,22 @@ export async function PATCH(
       }
     }
 
+    // Safety: Super-admin accounts configured via ADMIN_EMAILS cannot be suspended or demoted by others
+    if (targetUser.email && isUserAdmin(targetUser.email)) {
+      if (isSuspended === true) {
+        return NextResponse.json(
+          { success: false, error: 'Akun Super Admin yang terdaftar di konfigurasi sistem tidak dapat ditangguhkan.' },
+          { status: 400 }
+        );
+      }
+      if (role && role !== 'ADMIN') {
+        return NextResponse.json(
+          { success: false, error: 'Hak akses admin pada akun Super Admin tidak dapat dicabut.' },
+          { status: 400 }
+        );
+      }
+    }
+
     const updated = await prisma.user.update({
       where: { id },
       data: {
