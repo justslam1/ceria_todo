@@ -247,6 +247,19 @@ export async function PATCH(
             details: updateData.assignedToId ? `Menugaskan "${updatedTask.title}" ke ${assigneeName}` : `Membatalkan penugasan "${updatedTask.title}"`,
           },
         }).catch(() => {});
+
+        // Send in-app notification to the assigned user
+        if (updateData.assignedToId && updateData.assignedToId !== userId) {
+          await prisma.notification.create({
+            data: {
+              userId: updateData.assignedToId,
+              title: 'Penugasan Tugas',
+              message: `Anda ditugaskan ke tugas: ${updatedTask.title}`,
+              type: 'TASK_ASSIGNED',
+              link: existingTask.boardId ? `?boardId=${existingTask.boardId}` : undefined,
+            },
+          }).catch(() => {});
+        }
       }
     }
 

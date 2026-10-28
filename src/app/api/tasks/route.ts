@@ -274,6 +274,19 @@ export async function POST(request: NextRequest) {
       }).catch(() => {});
     }
 
+    // Notify assignee if assigned to someone else
+    if (newTask.assignedToId && newTask.assignedToId !== userId) {
+      await prisma.notification.create({
+        data: {
+          userId: newTask.assignedToId,
+          title: 'Penugasan Tugas',
+          message: `Anda ditugaskan ke tugas: ${newTask.title}`,
+          type: 'TASK_ASSIGNED',
+          link: effectiveBoardId ? `?boardId=${effectiveBoardId}` : undefined,
+        },
+      }).catch(() => {});
+    }
+
     return NextResponse.json({ success: true, data: newTask }, { status: 201 });
   } catch (error) {
     console.error('Error creating task:', error);

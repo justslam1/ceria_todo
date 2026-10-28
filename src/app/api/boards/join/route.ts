@@ -96,6 +96,32 @@ export async function POST(request: NextRequest) {
           role: 'MEMBER',
         },
       });
+
+      const joinerName = session?.user?.name || 'Seseorang';
+
+      // Record activity on the board
+      await prisma.boardActivity.create({
+        data: {
+          boardId: board.id,
+          userId,
+          userName: joinerName,
+          action: 'MEMBER_JOINED',
+          details: `${joinerName} bergabung ke papan`,
+        },
+      }).catch(() => {});
+
+      // Notify the board owner that someone joined the board
+      if (board.userId && board.userId !== userId) {
+        await prisma.notification.create({
+          data: {
+            userId: board.userId,
+            title: 'Anggota Baru Bergabung',
+            message: `${joinerName} baru saja bergabung ke papan ${board.title}`,
+            type: 'BOARD_JOINED',
+            link: `?boardId=${board.id}`,
+          },
+        }).catch(() => {});
+      }
     }
 
     return NextResponse.json({

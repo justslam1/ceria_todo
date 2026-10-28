@@ -41,6 +41,7 @@ model User {
   boardMembers  BoardMember[]
   showcases     BoardShowcase[]
   boardLikes    BoardLike[]
+  notifications Notification[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -234,4 +235,21 @@ model SystemAnnouncement {
 
   @@index([isActive])
 }
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String   @db.Text
+  type      String   @default("INFO") // "TASK_ASSIGNED" | "BOARD_JOINED" | "INFO"
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+}
+
 

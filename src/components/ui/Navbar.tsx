@@ -8,6 +8,7 @@ import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { Board } from '@/types/board';
 import { BoardSelector } from '@/components/boards/BoardSelector';
 import { SystemAnnouncementBanner } from '@/components/ui/SystemAnnouncementBanner';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 interface NavbarProps {
   onOpenQuickPaste?: () => void;
@@ -360,6 +361,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                 )}
               </button>
             )}
+
+            {/* In-App Notification Bell */}
+            <NotificationBell themeConfig={themeConfig} isPlayful={isPlayful} />
 
             {/* Personalization / Settings Button */}
             <button
