@@ -13,6 +13,11 @@ export async function compressImageToDataUrl(
       return;
     }
 
+    if (file.size > 10 * 1024 * 1024) {
+      reject(new Error('Ukuran file gambar terlalu besar (maksimal 10 MB).'));
+      return;
+    }
+
     const reader = new FileReader();
     reader.onerror = () => reject(new Error('Gagal membaca file gambar'));
     reader.onload = () => {
@@ -80,6 +85,11 @@ export async function compressWallpaperImageToDataUrl(
   return new Promise((resolve, reject) => {
     if (!file.type.startsWith('image/')) {
       reject(new Error('File yang diunggah harus berupa gambar (JPG, PNG, WEBP, dll)'));
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      reject(new Error('Ukuran file wallpaper terlalu besar (maksimal 10 MB).'));
       return;
     }
 

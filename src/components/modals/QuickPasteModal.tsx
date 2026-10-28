@@ -3,7 +3,7 @@ import { useSession } from 'next-auth/react';
 import { parseWhatsAppMessage } from '@/lib/whatsappParser';
 import { ParsedTask, Priority, Task } from '@/types/task';
 import { CustomCategory, getCategoryBadgeClasses } from '@/lib/userPreferences';
-import { saveGuestTask } from '@/lib/guestStorage';
+import { saveGuestTasksBatch } from '@/lib/guestStorage';
 import {
   X,
   MessageSquareShare,
@@ -98,7 +98,7 @@ export const QuickPasteModal: React.FC<QuickPasteModalProps> = ({
       }));
 
       if (!session?.user) {
-        const savedTasks = payload.map((p) => saveGuestTask(p));
+        const savedTasks = saveGuestTasksBatch(payload);
         onTasksSaved(savedTasks);
         setRawText('');
         setParsedItems([]);

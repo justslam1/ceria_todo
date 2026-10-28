@@ -124,9 +124,10 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
       setIsCompressing(true);
       const compressed = await compressImage(file);
       setImageUrl(compressed);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Gagal memproses gambar:', err);
-      alert('Gagal memproses gambar. Pastikan format file berupa gambar yang valid.');
+      const msg = err instanceof Error ? err.message : 'Gagal memproses gambar. Pastikan format file berupa gambar yang valid.';
+      alert(msg);
     } finally {
       setIsCompressing(false);
     }

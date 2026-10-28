@@ -103,20 +103,44 @@ function isBrowser(): boolean {
   return typeof window !== 'undefined';
 }
 
+function isQuotaExceededError(err: unknown): boolean {
+  return (
+    err instanceof DOMException &&
+    (err.name === 'QuotaExceededError' ||
+      err.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+      err.code === 22)
+  );
+}
+
+function notifyQuotaExceeded(message: string): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('ceria:storage-quota-exceeded', {
+        detail: { message },
+      })
+    );
+    console.warn(`[Ceria Storage Quota]: ${message}`);
+  }
+}
+
 export function initGuestStorage(): void {
   if (!isBrowser()) return;
   const isInitialized = localStorage.getItem(GUEST_INITIALIZED_KEY);
   if (!isInitialized) {
-    if (!localStorage.getItem(GUEST_BOARDS_KEY)) {
-      localStorage.setItem(GUEST_BOARDS_KEY, JSON.stringify(DEFAULT_GUEST_BOARDS));
+    try {
+      if (!localStorage.getItem(GUEST_BOARDS_KEY)) {
+        localStorage.setItem(GUEST_BOARDS_KEY, JSON.stringify(DEFAULT_GUEST_BOARDS));
+      }
+      if (!localStorage.getItem(GUEST_TASKS_KEY)) {
+        localStorage.setItem(GUEST_TASKS_KEY, JSON.stringify(DEFAULT_GUEST_TASKS));
+      }
+      if (!localStorage.getItem(GUEST_NOTES_KEY)) {
+        localStorage.setItem(GUEST_NOTES_KEY, JSON.stringify(DEFAULT_GUEST_NOTES));
+      }
+      localStorage.setItem(GUEST_INITIALIZED_KEY, 'true');
+    } catch (err) {
+      console.warn('Gagal menginisialisasi penyimpanan mode tamu:', err);
     }
-    if (!localStorage.getItem(GUEST_TASKS_KEY)) {
-      localStorage.setItem(GUEST_TASKS_KEY, JSON.stringify(DEFAULT_GUEST_TASKS));
-    }
-    if (!localStorage.getItem(GUEST_NOTES_KEY)) {
-      localStorage.setItem(GUEST_NOTES_KEY, JSON.stringify(DEFAULT_GUEST_NOTES));
-    }
-    localStorage.setItem(GUEST_INITIALIZED_KEY, 'true');
   }
 }
 
@@ -151,7 +175,11 @@ export function getGuestBoards(): Board[] {
         return currentBoard;
       });
       if (updated) {
-        localStorage.setItem(GUEST_BOARDS_KEY, JSON.stringify(healed));
+        try {
+          localStorage.setItem(GUEST_BOARDS_KEY, JSON.stringify(healed));
+        } catch {
+          // ignore auto-heal save failure if storage is tight
+        }
       }
       return healed;
     }
@@ -166,6 +194,7 @@ export function saveGuestBoard(data: CreateBoardInput | UpdateBoardInput, boardI
   const boards = getGuestBoards();
   const now = new Date().toISOString();
 
+  let targetBoard: Board;
   if (boardId) {
     const index = boards.findIndex((b) => b.id === boardId);
     if (index === -1) throw new Error('Papan tidak ditemukan');
@@ -175,8 +204,7 @@ export function saveGuestBoard(data: CreateBoardInput | UpdateBoardInput, boardI
       updatedAt: now,
     };
     boards[index] = updatedBoard;
-    localStorage.setItem(GUEST_BOARDS_KEY, JSON.stringify(boards));
-    return updatedBoard;
+    targetBoard = updatedBoard;
   } else {
     const input = data as CreateBoardInput;
     const newBoard: Board = {
@@ -192,22 +220,36 @@ export function saveGuestBoard(data: CreateBoardInput | UpdateBoardInput, boardI
       updatedAt: now,
     };
     boards.push(newBoard);
-    localStorage.setItem(GUEST_BOARDS_KEY, JSON.stringify(boards));
-    return newBoard;
+    targetBoard = newBoard;
   }
+
+  try {
+    localStorage.setItem(GUEST_BOARDS_KEY, JSON.stringify(boards));
+  } catch (err: unknown) {
+    if (isQuotaExceededError(err)) {
+      notifyQuotaExceeded('Penyimpanan lokal penuh saat menyimpan papan.');
+      throw new Error('Penyimpanan lokal peramban penuh. Harap bersihkan data lama atau masuk dengan Google.');
+    }
+    throw err;
+  }
+  return targetBoard;
 }
 
 export function deleteGuestBoard(boardId: string): void {
   if (!isBrowser()) return;
-  const boards = getGuestBoards().filter((b) => b.id !== boardId);
-  localStorage.setItem(GUEST_BOARDS_KEY, JSON.stringify(boards));
+  try {
+    const boards = getGuestBoards().filter((b) => b.id !== boardId);
+    localStorage.setItem(GUEST_BOARDS_KEY, JSON.stringify(boards));
 
-  // Also remove associated tasks and notes
-  const tasks = getGuestTasks().filter((t) => t.boardId !== boardId);
-  localStorage.setItem(GUEST_TASKS_KEY, JSON.stringify(tasks));
+    // Also remove associated tasks and notes
+    const tasks = getGuestTasks().filter((t) => t.boardId !== boardId);
+    localStorage.setItem(GUEST_TASKS_KEY, JSON.stringify(tasks));
 
-  const notes = getGuestNotes().filter((n) => n.boardId !== boardId);
-  localStorage.setItem(GUEST_NOTES_KEY, JSON.stringify(notes));
+    const notes = getGuestNotes().filter((n) => n.boardId !== boardId);
+    localStorage.setItem(GUEST_NOTES_KEY, JSON.stringify(notes));
+  } catch (err) {
+    console.warn('Gagal menghapus papan tamu dari penyimpanan lokal:', err);
+  }
 }
 
 export function getGuestTasks(boardId?: string): Task[] {
@@ -232,7 +274,7 @@ export function saveGuestTask(data: CreateTaskInput): Task {
   const allTasks = getGuestTasks();
   const now = new Date().toISOString();
 
-  const newTask: Task = {
+  let newTask: Task = {
     id: `guest-task-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
     boardId: data.boardId || null,
     userId: null,
@@ -249,9 +291,71 @@ export function saveGuestTask(data: CreateTaskInput): Task {
     updatedAt: now,
   };
 
-  allTasks.unshift(newTask);
-  localStorage.setItem(GUEST_TASKS_KEY, JSON.stringify(allTasks));
+  const updatedTasks = [newTask, ...allTasks];
+  try {
+    localStorage.setItem(GUEST_TASKS_KEY, JSON.stringify(updatedTasks));
+  } catch (err: unknown) {
+    if (isQuotaExceededError(err)) {
+      if (newTask.imageUrl) {
+        try {
+          newTask = { ...newTask, imageUrl: null };
+          localStorage.setItem(GUEST_TASKS_KEY, JSON.stringify([newTask, ...allTasks]));
+          notifyQuotaExceeded('Penyimpanan lokal hampir penuh. Tugas disimpan tanpa lampiran gambar.');
+          return newTask;
+        } catch {
+          // Tetap penuh meski tanpa gambar
+        }
+      }
+      notifyQuotaExceeded('Penyimpanan lokal peramban penuh.');
+      throw new Error('Penyimpanan lokal peramban penuh. Harap hapus beberapa tugas/catatan lama atau masuk dengan Google.');
+    }
+    throw err;
+  }
   return newTask;
+}
+
+export function saveGuestTasksBatch(tasksData: CreateTaskInput[]): Task[] {
+  if (!isBrowser()) throw new Error('Operasi hanya dapat dilakukan di peramban');
+  if (!tasksData.length) return [];
+
+  const allTasks = getGuestTasks();
+  const now = new Date().toISOString();
+
+  let newTasks: Task[] = tasksData.map((data, idx) => ({
+    id: `guest-task-${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 5)}`,
+    boardId: data.boardId || null,
+    userId: null,
+    title: data.title,
+    description: data.description || null,
+    status: data.status || 'TODO',
+    priority: data.priority || 'MEDIUM',
+    category: data.category || 'Personal',
+    dueDate: data.dueDate ? (data.dueDate instanceof Date ? data.dueDate.toISOString() : data.dueDate) : null,
+    estimatedTime: data.estimatedTime || null,
+    imageUrl: data.imageUrl || null,
+    order: data.order ?? (allTasks.length + idx),
+    createdAt: now,
+    updatedAt: now,
+  }));
+
+  try {
+    localStorage.setItem(GUEST_TASKS_KEY, JSON.stringify([...newTasks, ...allTasks]));
+  } catch (err: unknown) {
+    if (isQuotaExceededError(err)) {
+      try {
+        newTasks = newTasks.map((t) => ({ ...t, imageUrl: null }));
+        localStorage.setItem(GUEST_TASKS_KEY, JSON.stringify([...newTasks, ...allTasks]));
+        notifyQuotaExceeded('Penyimpanan lokal hampir penuh. Tugas disimpan tanpa lampiran gambar.');
+        return newTasks;
+      } catch {
+        notifyQuotaExceeded('Penyimpanan lokal peramban penuh.');
+        throw new Error('Penyimpanan lokal peramban penuh. Harap hapus beberapa tugas lama atau masuk dengan Google.');
+      }
+    }
+    throw err;
+  }
+
+  return newTasks;
 }
 
 export function updateGuestTask(id: string, updates: Partial<UpdateTaskInput> | Partial<Task>): Task {
@@ -267,7 +371,7 @@ export function updateGuestTask(id: string, updates: Partial<UpdateTaskInput> | 
         : updates.dueDate
       : allTasks[index].dueDate;
 
-  const updated: Task = {
+  let updated: Task = {
     ...allTasks[index],
     ...updates,
     dueDate: formattedDueDate,
@@ -275,22 +379,49 @@ export function updateGuestTask(id: string, updates: Partial<UpdateTaskInput> | 
   };
 
   allTasks[index] = updated;
-  localStorage.setItem(GUEST_TASKS_KEY, JSON.stringify(allTasks));
+  try {
+    localStorage.setItem(GUEST_TASKS_KEY, JSON.stringify(allTasks));
+  } catch (err: unknown) {
+    if (isQuotaExceededError(err)) {
+      if (updated.imageUrl && updated.imageUrl !== allTasks[index].imageUrl) {
+        try {
+          updated = { ...updated, imageUrl: allTasks[index].imageUrl || null };
+          allTasks[index] = updated;
+          localStorage.setItem(GUEST_TASKS_KEY, JSON.stringify(allTasks));
+          notifyQuotaExceeded('Penyimpanan lokal penuh. Gambar baru tidak dapat disimpan.');
+          return updated;
+        } catch {
+          // Still full
+        }
+      }
+      notifyQuotaExceeded('Penyimpanan lokal peramban penuh.');
+      throw new Error('Penyimpanan lokal peramban penuh. Harap hapus beberapa tugas lama atau masuk dengan Google.');
+    }
+    throw err;
+  }
   return updated;
 }
 
 export function reorderGuestTasks(orderedTasks: Task[]): void {
   if (!isBrowser()) return;
-  const allTasks = getGuestTasks();
-  const updatedMap = new Map(orderedTasks.map((t) => [t.id, t]));
-  const result = allTasks.map((t) => updatedMap.get(t.id) || t);
-  localStorage.setItem(GUEST_TASKS_KEY, JSON.stringify(result));
+  try {
+    const allTasks = getGuestTasks();
+    const updatedMap = new Map(orderedTasks.map((t) => [t.id, t]));
+    const result = allTasks.map((t) => updatedMap.get(t.id) || t);
+    localStorage.setItem(GUEST_TASKS_KEY, JSON.stringify(result));
+  } catch (err) {
+    console.warn('Gagal menyimpan urutan tugas tamu:', err);
+  }
 }
 
 export function deleteGuestTask(id: string): void {
   if (!isBrowser()) return;
-  const allTasks = getGuestTasks().filter((t) => t.id !== id);
-  localStorage.setItem(GUEST_TASKS_KEY, JSON.stringify(allTasks));
+  try {
+    const allTasks = getGuestTasks().filter((t) => t.id !== id);
+    localStorage.setItem(GUEST_TASKS_KEY, JSON.stringify(allTasks));
+  } catch (err) {
+    console.warn('Gagal menghapus tugas tamu:', err);
+  }
 }
 
 export function getGuestNotes(boardId?: string): NoteItem[] {
@@ -315,7 +446,7 @@ export function saveGuestNote(data: Partial<NoteItem> & { title: string; content
   const notes = getGuestNotes();
   const now = new Date().toISOString();
 
-  const newNote: NoteItem = {
+  let newNote: NoteItem = {
     id: `guest-note-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
     boardId: data.boardId || null,
     userId: null,
@@ -336,8 +467,26 @@ export function saveGuestNote(data: Partial<NoteItem> & { title: string; content
     updatedAt: now,
   };
 
-  notes.unshift(newNote);
-  localStorage.setItem(GUEST_NOTES_KEY, JSON.stringify(notes));
+  const updatedNotes = [newNote, ...notes];
+  try {
+    localStorage.setItem(GUEST_NOTES_KEY, JSON.stringify(updatedNotes));
+  } catch (err: unknown) {
+    if (isQuotaExceededError(err)) {
+      if (newNote.imageUrl) {
+        try {
+          newNote = { ...newNote, imageUrl: null };
+          localStorage.setItem(GUEST_NOTES_KEY, JSON.stringify([newNote, ...notes]));
+          notifyQuotaExceeded('Penyimpanan lokal hampir penuh. Catatan disimpan tanpa gambar.');
+          return newNote;
+        } catch {
+          // Still full
+        }
+      }
+      notifyQuotaExceeded('Penyimpanan lokal peramban penuh.');
+      throw new Error('Penyimpanan lokal peramban penuh. Harap hapus beberapa catatan lama atau masuk dengan Google.');
+    }
+    throw err;
+  }
   return newNote;
 }
 
@@ -347,21 +496,44 @@ export function updateGuestNote(id: string, updates: Partial<NoteItem>): NoteIte
   const index = notes.findIndex((n) => n.id === id);
   if (index === -1) throw new Error('Catatan tidak ditemukan');
 
-  const updated: NoteItem = {
+  let updated: NoteItem = {
     ...notes[index],
     ...updates,
     updatedAt: new Date().toISOString(),
   };
 
   notes[index] = updated;
-  localStorage.setItem(GUEST_NOTES_KEY, JSON.stringify(notes));
+  try {
+    localStorage.setItem(GUEST_NOTES_KEY, JSON.stringify(notes));
+  } catch (err: unknown) {
+    if (isQuotaExceededError(err)) {
+      if (updated.imageUrl && updated.imageUrl !== notes[index].imageUrl) {
+        try {
+          updated = { ...updated, imageUrl: notes[index].imageUrl || null };
+          notes[index] = updated;
+          localStorage.setItem(GUEST_NOTES_KEY, JSON.stringify(notes));
+          notifyQuotaExceeded('Penyimpanan lokal penuh. Gambar baru pada catatan tidak dapat disimpan.');
+          return updated;
+        } catch {
+          // Still full
+        }
+      }
+      notifyQuotaExceeded('Penyimpanan lokal peramban penuh.');
+      throw new Error('Penyimpanan lokal peramban penuh. Harap hapus beberapa catatan lama atau masuk dengan Google.');
+    }
+    throw err;
+  }
   return updated;
 }
 
 export function deleteGuestNote(id: string): void {
   if (!isBrowser()) return;
-  const notes = getGuestNotes().filter((n) => n.id !== id);
-  localStorage.setItem(GUEST_NOTES_KEY, JSON.stringify(notes));
+  try {
+    const notes = getGuestNotes().filter((n) => n.id !== id);
+    localStorage.setItem(GUEST_NOTES_KEY, JSON.stringify(notes));
+  } catch (err) {
+    console.warn('Gagal menghapus catatan tamu:', err);
+  }
 }
 
 export function hasGuestData(): boolean {

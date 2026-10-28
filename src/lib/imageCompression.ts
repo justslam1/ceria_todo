@@ -5,11 +5,18 @@
 
 export async function compressImage(
   fileOrBlob: Blob,
-  maxWidth = 1200,
-  maxHeight = 1200,
-  quality = 0.82
+  maxWidth = 1000,
+  maxHeight = 1000,
+  quality = 0.78
 ): Promise<string> {
   return new Promise((resolve, reject) => {
+    // Batasi ukuran awal file sebelum dibaca ke memori peramban (maks 10 MB)
+    const MAX_RAW_FILE_SIZE = 10 * 1024 * 1024;
+    if (fileOrBlob.size && fileOrBlob.size > MAX_RAW_FILE_SIZE) {
+      reject(new Error('Ukuran file gambar terlalu besar (maksimal 10 MB).'));
+      return;
+    }
+
     const reader = new FileReader();
 
     reader.onload = (readerEvent) => {
@@ -55,10 +62,13 @@ export async function compressImage(
           outputDataUrl = canvas.toDataURL('image/jpeg', quality);
         }
 
+        // Bersihkan memori elemen image
+        img.src = '';
         resolve(outputDataUrl);
       };
 
       img.onerror = () => {
+        img.src = '';
         reject(new Error('Format file gambar tidak valid atau rusak'));
       };
 
