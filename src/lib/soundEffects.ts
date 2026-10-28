@@ -20,7 +20,7 @@ function getAudioContext(): AudioContext | null {
 
   // Resume suspended audio context if needed
   if (audioCtx && audioCtx.state === 'suspended') {
-    audioCtx.resume();
+    audioCtx.resume().catch(() => {});
   }
 
   return audioCtx;
@@ -28,6 +28,7 @@ function getAudioContext(): AudioContext | null {
 
 // Sound state management
 const MUTE_STORAGE_KEY = 'ceria_todo_sound_muted';
+let lastPopTime = 0;
 
 export function isSoundMuted(): boolean {
   if (typeof window === 'undefined') return false;
@@ -44,6 +45,10 @@ export function setSoundMuted(muted: boolean): void {
  */
 export function playPopSound(profile: SoundProfile = 'pop'): void {
   if (isSoundMuted()) return;
+  const nowMs = typeof performance !== 'undefined' ? performance.now() : Date.now();
+  if (nowMs - lastPopTime < 45) return;
+  lastPopTime = nowMs;
+
   const ctx = getAudioContext();
   if (!ctx) return;
 
