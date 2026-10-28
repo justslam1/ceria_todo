@@ -22,6 +22,9 @@ async function getTaskAccess(taskId: string, userId: string) {
           },
         },
       },
+      assignedTo: {
+        select: { id: true, name: true, image: true, email: true },
+      },
     },
   });
 
@@ -142,6 +145,7 @@ export async function PATCH(
       estimatedTime?: string | null;
       imageUrl?: string | null;
       order?: number;
+      assignedToId?: string | null;
     } = {};
 
     if (body.title !== undefined) {
@@ -202,10 +206,49 @@ export async function PATCH(
       }
     }
 
+    if (body.assignedToId !== undefined) {
+      if (body.assignedToId === null || body.assignedToId === '') {
+        updateData.assignedToId = null;
+      } else if (typeof body.assignedToId === 'string') {
+        updateData.assignedToId = body.assignedToId;
+      }
+    }
+
     const updatedTask = await prisma.task.update({
       where: { id },
       data: updateData,
+      include: {
+        assignedTo: {
+          select: { id: true, name: true, image: true, email: true },
+        },
+      },
     });
+
+    // Record activity on the board
+    if (existingTask.boardId) {
+      if (updateData.status === 'DONE' && existingTask.status !== 'DONE') {
+        await prisma.boardActivity.create({
+          data: {
+            boardId: existingTask.boardId,
+            userId,
+            userName: session?.user?.name || 'Pengguna',
+            action: 'TASK_COMPLETED',
+            details: updatedTask.title,
+          },
+        }).catch(() => {});
+      } else if (updateData.assignedToId !== undefined && updateData.assignedToId !== existingTask.assignedToId) {
+        const assigneeName = updatedTask.assignedTo?.name || 'seseorang';
+        await prisma.boardActivity.create({
+          data: {
+            boardId: existingTask.boardId,
+            userId,
+            userName: session?.user?.name || 'Pengguna',
+            action: 'TASK_ASSIGNED',
+            details: updateData.assignedToId ? `Menugaskan "${updatedTask.title}" ke ${assigneeName}` : `Membatalkan penugasan "${updatedTask.title}"`,
+          },
+        }).catch(() => {});
+      }
+    }
 
     return NextResponse.json({ success: true, data: updatedTask });
   } catch (error) {

@@ -78,7 +78,7 @@ export async function GET() {
       orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
       include: {
         user: {
-          select: { name: true, image: true, email: true },
+          select: { id: true, name: true, image: true, email: true },
         },
         members: {
           include: {
@@ -112,6 +112,7 @@ export async function GET() {
         role: isOwner ? 'OWNER' : 'MEMBER',
         isShared: (b._count.members > 0) || !isOwner,
         ownerName: b.user?.name || null,
+        owner: b.user ? { id: b.user.id, name: b.user.name, image: b.user.image, email: b.user.email } : null,
         membersCount: b._count.members,
         members: b.members.map((m) => ({
           id: m.id,

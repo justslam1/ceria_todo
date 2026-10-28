@@ -47,6 +47,7 @@ import { Board, BoardType, CreateBoardInput, UpdateBoardInput } from '@/types/bo
 import { BoardFormModal } from '@/components/modals/BoardFormModal';
 import { ShareBoardModal } from '@/components/modals/ShareBoardModal';
 import { JoinBoardModal } from '@/components/modals/JoinBoardModal';
+import { BoardActivityModal } from '@/components/modals/BoardActivityModal';
 
 const StickyNotesMatchModal = dynamic(
   () => import('@/components/modals/StickyNotesMatchModal').then((m) => m.StickyNotesMatchModal),
@@ -94,6 +95,8 @@ import {
   LayoutGrid,
   Rows3,
   Columns3,
+  Users,
+  History,
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 
@@ -133,6 +136,8 @@ export const KanbanBoard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedPriority, setSelectedPriority] = useState<string>('ALL');
+  const [selectedAssigneeFilter, setSelectedAssigneeFilter] = useState<string>('ALL');
+  const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
 
   // Preferences & Customization State
   const [preferences, setPreferences] = useState<UserPreferences>(() =>
@@ -1214,7 +1219,24 @@ export const KanbanBoard: React.FC = () => {
     return Array.from(set);
   }, [activeTasks, preferences.customCategories]);
 
-  // Filter active tasks based on search & tags
+  // Extract all assignees (owner + collaborators) for the active board
+  const boardAssignees = useMemo(() => {
+    if (!activeBoard) return [];
+    const list: Array<{ id: string; name: string | null; email: string | null; image: string | null }> = [];
+    if (activeBoard.owner) {
+      list.push(activeBoard.owner);
+    }
+    if (Array.isArray(activeBoard.members)) {
+      for (const m of activeBoard.members) {
+        if (m.user && !list.some((u) => u.id === m.user.id)) {
+          list.push(m.user);
+        }
+      }
+    }
+    return list;
+  }, [activeBoard]);
+
+  // Filter active tasks based on search & tags & assignee
   const filteredTasks = useMemo(() => {
     return activeTasks.filter((task) => {
       const matchSearch =
@@ -1227,9 +1249,18 @@ export const KanbanBoard: React.FC = () => {
       const matchPriority =
         selectedPriority === 'ALL' || task.priority === selectedPriority;
 
-      return matchSearch && matchCategory && matchPriority;
+      let matchAssignee = true;
+      if (selectedAssigneeFilter === 'ME') {
+        matchAssignee = task.assignedToId === session?.user?.id;
+      } else if (selectedAssigneeFilter === 'UNASSIGNED') {
+        matchAssignee = !task.assignedToId;
+      } else if (selectedAssigneeFilter !== 'ALL') {
+        matchAssignee = task.assignedToId === selectedAssigneeFilter;
+      }
+
+      return matchSearch && matchCategory && matchPriority && matchAssignee;
     });
-  }, [activeTasks, searchQuery, selectedCategory, selectedPriority]);
+  }, [activeTasks, searchQuery, selectedCategory, selectedPriority, selectedAssigneeFilter, session?.user?.id]);
 
   // Sort filtered tasks if a specific sorting mode is active
   const sortedFilteredTasks = useMemo(() => {
@@ -2496,6 +2527,53 @@ export const KanbanBoard: React.FC = () => {
               </select>
             </div>
 
+            {/* Assignee Filter (Shown if current board has assignees) */}
+            {boardAssignees.length > 0 && (
+              <div
+                className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-xl border ${
+                  themeConfig.isDark
+                    ? 'bg-slate-900/40 border-slate-700/60 text-slate-300'
+                    : 'bg-white/50 border-slate-200 text-slate-600'
+                }`}
+              >
+                <Users className="w-3 h-3 text-amber-500" />
+                <span className="font-medium text-slate-500 text-[11px]">Penugasan</span>
+                <select
+                  value={selectedAssigneeFilter}
+                  onChange={(e) => setSelectedAssigneeFilter(e.target.value)}
+                  className={`bg-transparent font-semibold text-xs focus:outline-hidden cursor-pointer ${
+                    themeConfig.isDark ? 'text-slate-200' : 'text-slate-800'
+                  }`}
+                >
+                  <option value="ALL" className={themeConfig.isDark ? 'bg-slate-900 text-white' : ''}>Semua Anggota</option>
+                  <option value="ME" className={themeConfig.isDark ? 'bg-slate-900 text-white' : ''}>Tugas Saya</option>
+                  <option value="UNASSIGNED" className={themeConfig.isDark ? 'bg-slate-900 text-white' : ''}>Belum Ditugaskan</option>
+                  {boardAssignees.map((person) => (
+                    <option key={person.id} value={person.id} className={themeConfig.isDark ? 'bg-slate-900 text-white' : ''}>
+                      {person.name || person.email || 'Anggota'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Board Activity Button */}
+            {activeBoard && (
+              <button
+                type="button"
+                onClick={() => setIsActivityModalOpen(true)}
+                className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-xl border transition-colors cursor-pointer ${
+                  themeConfig.isDark
+                    ? 'bg-slate-900/40 border-slate-700/60 text-slate-300 hover:text-amber-400 hover:bg-slate-800/60'
+                    : 'bg-white/50 border-slate-200 text-slate-600 hover:text-amber-800 hover:bg-slate-50'
+                }`}
+                title="Lihat riwayat aktivitas papan"
+              >
+                <History className="w-3.5 h-3.5 text-amber-500" />
+                <span className="font-semibold text-[11px] hidden md:inline">Aktivitas</span>
+              </button>
+            )}
+
             {/* View Density Quick Toggle */}
             <button
               type="button"
@@ -3065,6 +3143,7 @@ export const KanbanBoard: React.FC = () => {
         taskToEdit={taskToEdit}
         defaultStatus={defaultStatusForNew}
         customCategories={preferences.customCategories}
+        assignees={boardAssignees}
         onSave={handleSaveTask}
       />
 
@@ -3159,6 +3238,15 @@ export const KanbanBoard: React.FC = () => {
         themeConfig={themeConfig}
         onJoined={handleBoardJoined}
         initialCode={joinInitialCode}
+      />
+
+      {/* Board Activity Modal */}
+      <BoardActivityModal
+        isOpen={isActivityModalOpen}
+        onClose={() => setIsActivityModalOpen(false)}
+        boardId={activeBoard?.id || null}
+        boardTitle={activeBoard?.title}
+        themeConfig={themeConfig}
       />
 
       {/* Easter Egg: Memory Card Sticky Notes Match Modal (triggered by typing gabut, rehat, game) */}

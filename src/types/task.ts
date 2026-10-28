@@ -1,10 +1,19 @@
 export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE';
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH';
 
+export interface TaskAssignee {
+  id: string;
+  name: string | null;
+  image: string | null;
+  email: string | null;
+}
+
 export interface Task {
   id: string;
   userId?: string | null;
   boardId?: string | null;
+  assignedToId?: string | null;
+  assignedTo?: TaskAssignee | null;
   title: string;
   description: string | null;
   status: TaskStatus;
@@ -21,6 +30,7 @@ export interface Task {
 export interface CreateTaskInput {
   title: string;
   boardId?: string | null;
+  assignedToId?: string | null;
   description?: string | null;
   status?: TaskStatus;
   priority?: Priority;
@@ -34,6 +44,7 @@ export interface CreateTaskInput {
 export interface UpdateTaskInput {
   title?: string;
   boardId?: string | null;
+  assignedToId?: string | null;
   description?: string | null;
   status?: TaskStatus;
   priority?: Priority;
@@ -51,4 +62,14 @@ export interface ParsedTask {
   dueDate?: string;
   estimatedTime?: string;
   category?: string;
+}
+
+export interface BoardActivityItem {
+  id: string;
+  boardId: string;
+  userId: string | null;
+  userName: string | null;
+  action: string;
+  details: string | null;
+  createdAt: string;
 }

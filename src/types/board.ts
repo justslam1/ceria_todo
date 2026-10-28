@@ -26,6 +26,12 @@ export interface Board {
   role?: BoardRole;
   isShared?: boolean;
   ownerName?: string | null;
+  owner?: {
+    id: string;
+    name: string | null;
+    image: string | null;
+    email: string | null;
+  } | null;
   membersCount?: number;
   members?: BoardMemberInfo[];
   tasksCount?: number;

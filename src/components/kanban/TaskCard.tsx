@@ -477,6 +477,17 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             <div className="flex items-center gap-1.5 flex-wrap">
               <DateBadge date={task.dueDate} isDone={task.status === 'DONE'} />
               <TimeEstimateBadge time={task.estimatedTime} />
+              {task.assignedTo && (
+                <span
+                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-900 dark:text-amber-200 border border-amber-300/40"
+                  title={`Ditugaskan ke: ${task.assignedTo.name || task.assignedTo.email || 'Anggota'}`}
+                >
+                  <span className="w-3.5 h-3.5 rounded-full bg-amber-500 text-white flex items-center justify-center text-[9px] font-black uppercase">
+                    {task.assignedTo.name ? task.assignedTo.name[0] : 'U'}
+                  </span>
+                  <span className="max-w-[70px] truncate">{task.assignedTo.name || 'Anggota'}</span>
+                </span>
+              )}
             </div>
 
             {/* Quick Status Buttons (Back / Forward) */}

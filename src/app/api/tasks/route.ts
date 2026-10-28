@@ -25,7 +25,7 @@ function parseDueDate(val: unknown): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
-// GET /api/tasks - Retrieve tasks with shared board awareness
+// GET /api/tasks - Retrieve tasks with shared board and assignee awareness
 export async function GET(request: NextRequest) {
   try {
     const session = await auth();
@@ -48,9 +48,20 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const statusParam = searchParams.get('status');
     const boardIdParam = searchParams.get('boardId');
+    const assignedToParam = searchParams.get('assignedTo');
+
     const status = statusParam && VALID_STATUSES.includes(statusParam as TaskStatus)
       ? (statusParam as TaskStatus)
       : null;
+
+    let assignedToFilter: Prisma.TaskWhereInput = {};
+    if (assignedToParam === 'me') {
+      assignedToFilter = { assignedToId: userId };
+    } else if (assignedToParam === 'unassigned') {
+      assignedToFilter = { assignedToId: null };
+    } else if (assignedToParam) {
+      assignedToFilter = { assignedToId: assignedToParam };
+    }
 
     let where: Prisma.TaskWhereInput;
     if (boardIdParam) {
@@ -64,6 +75,7 @@ export async function GET(request: NextRequest) {
       where = {
         boardId: boardIdParam,
         ...(status ? { status } : {}),
+        ...assignedToFilter,
       };
     } else {
       where = {
@@ -72,6 +84,7 @@ export async function GET(request: NextRequest) {
           { board: { members: { some: { userId } } } },
         ],
         ...(status ? { status } : {}),
+        ...assignedToFilter,
       };
     }
 
@@ -81,6 +94,11 @@ export async function GET(request: NextRequest) {
         { order: 'asc' },
         { createdAt: 'desc' },
       ],
+      include: {
+        assignedTo: {
+          select: { id: true, name: true, image: true, email: true },
+        },
+      },
       take: 500,
     });
 
@@ -158,7 +176,6 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Pre-fetch all user's accessible boards of type TASK
       const userBoards = await prisma.board.findMany({
         where: {
           type: 'TASK',
@@ -180,6 +197,7 @@ export async function POST(request: NextRequest) {
           return {
             userId,
             boardId: targetBoardId,
+            assignedToId: typeof item.assignedToId === 'string' && item.assignedToId ? item.assignedToId : null,
             title: item.title.trim().slice(0, 150),
             description: typeof item.description === 'string' ? item.description.slice(0, 10000) : null,
             status: parseStatus(item.status),
@@ -210,7 +228,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Single task creation with strict bounds
-    const { title, boardId, description, status, priority, category, dueDate, estimatedTime, imageUrl, order } = body;
+    const { title, boardId, assignedToId, description, status, priority, category, dueDate, estimatedTime, imageUrl, order } = body;
 
     if (!title || typeof title !== 'string' || !title.trim()) {
       return NextResponse.json(
@@ -225,6 +243,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId,
         boardId: effectiveBoardId,
+        assignedToId: typeof assignedToId === 'string' && assignedToId ? assignedToId : null,
         title: title.trim().slice(0, 150),
         description: typeof description === 'string' ? description.slice(0, 10000) : null,
         status: parseStatus(status),
@@ -235,7 +254,25 @@ export async function POST(request: NextRequest) {
         imageUrl: typeof imageUrl === 'string' && imageUrl.length > 0 && imageUrl.length <= 2_500_000 ? imageUrl : null,
         order: typeof order === 'number' && Number.isFinite(order) ? Math.max(0, Math.floor(order)) : 0,
       },
+      include: {
+        assignedTo: {
+          select: { id: true, name: true, image: true, email: true },
+        },
+      },
     });
+
+    // Record activity on the board
+    if (effectiveBoardId) {
+      await prisma.boardActivity.create({
+        data: {
+          boardId: effectiveBoardId,
+          userId,
+          userName: session?.user?.name || 'Pengguna',
+          action: 'TASK_CREATED',
+          details: newTask.title,
+        },
+      }).catch(() => {});
+    }
 
     return NextResponse.json({ success: true, data: newTask }, { status: 201 });
   } catch (error) {

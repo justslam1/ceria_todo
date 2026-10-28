@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Task, TaskStatus, Priority, CreateTaskInput, UpdateTaskInput } from '@/types/task';
-import { X, Calendar, Clock, AlertCircle, CheckSquare, Plus, Trash2, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { X, Calendar, Clock, AlertCircle, CheckSquare, Plus, Trash2, Image as ImageIcon, Loader2, Users } from 'lucide-react';
 
 import { CustomCategory, NoteColor } from '@/types/preferences';
 import { getCategoryBadgeClasses, getCategoryDotHex, NOTE_COLOR_OPTIONS } from '@/lib/userPreferences';
@@ -15,6 +15,7 @@ interface TaskFormModalProps {
   taskToEdit?: Task | null;
   defaultStatus?: TaskStatus;
   customCategories?: CustomCategory[];
+  assignees?: Array<{ id: string; name: string | null; email: string | null; image: string | null }>;
   onSave: (taskData: CreateTaskInput | UpdateTaskInput, id?: string) => Promise<void>;
 }
 
@@ -26,6 +27,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
   taskToEdit,
   defaultStatus = 'TODO',
   customCategories,
+  assignees = [],
   onSave,
 }) => {
   const { t } = useLanguage();
@@ -35,6 +37,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
   const [newSubtaskInput, setNewSubtaskInput] = useState('');
   const [status, setStatus] = useState<TaskStatus>('TODO');
   const [priority, setPriority] = useState<Priority>('MEDIUM');
+  const [assignedToId, setAssignedToId] = useState<string | null>(taskToEdit?.assignedToId || null);
   const [category, setCategory] = useState('Personal');
   const [noteColor, setNoteColor] = useState<NoteColor>('auto');
   const [dueDate, setDueDate] = useState('');
@@ -72,6 +75,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
       setNoteColor((parsed.colorTag as NoteColor) || 'auto');
       setStatus(taskToEdit.status);
       setPriority(taskToEdit.priority);
+      setAssignedToId(taskToEdit.assignedToId || null);
       setCategory(taskToEdit.category || 'Personal');
       setDueDate(taskToEdit.dueDate ? toLocalISOString(new Date(taskToEdit.dueDate)) : '');
       setEstimatedTime(taskToEdit.estimatedTime || '');
@@ -84,6 +88,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
       setNoteColor('auto');
       setStatus(defaultStatus);
       setPriority('MEDIUM');
+      setAssignedToId(null);
       setCategory('Personal');
       setDueDate('');
       setEstimatedTime('');
@@ -153,6 +158,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
         description: finalDescription || null,
         status,
         priority,
+        assignedToId: assignedToId || null,
         category: category.trim() || 'Personal',
         dueDate: dueDate ? new Date(dueDate).toISOString() : null,
         estimatedTime: estimatedTime.trim() || null,
@@ -392,6 +398,28 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
               </select>
             </div>
           </div>
+
+          {/* Assignee Row (Visible if board has members/assignees) */}
+          {assignees && assignees.length > 0 && (
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                <Users className="w-3.5 h-3.5 text-amber-500" />
+                <span>Tugaskan Ke (Penanggung Jawab)</span>
+              </label>
+              <select
+                value={assignedToId || ''}
+                onChange={(e) => setAssignedToId(e.target.value || null)}
+                className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-amber-400 text-sm font-medium text-slate-700 bg-white"
+              >
+                <option value="">-- Belum Ditugaskan --</option>
+                {assignees.map((person) => (
+                  <option key={person.id} value={person.id}>
+                    👤 {person.name || person.email || 'Anggota'}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Sticky Note Paper Color Picker (Pilihan Warna Kertas Per-Kartu) */}
           <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
