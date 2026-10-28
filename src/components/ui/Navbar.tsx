@@ -210,7 +210,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               ) : (
                 <p
                   onClick={handleStartEditMotto}
-                  className={`text-xs font-medium truncate max-w-[150px] sm:max-w-xs md:max-w-[160px] lg:max-w-xs xl:max-w-sm hidden 2xl:block cursor-pointer hover:text-amber-500 dark:hover:text-amber-400 transition-colors ${
+                  className={`text-xs font-medium truncate max-w-[180px] sm:max-w-xs md:max-w-[200px] lg:max-w-xs xl:max-w-md block cursor-pointer hover:text-amber-500 dark:hover:text-amber-400 transition-colors ${
                     themeConfig.isDark ? 'text-slate-400' : 'text-slate-500'
                   }`}
                 >
