@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Sparkles, Images, Plus, Volume2, VolumeX, Palette, Timer, Archive, Check, X, HelpCircle } from 'lucide-react';
+import { Sparkles, Images, Plus, Volume2, VolumeX, Palette, Timer, Archive, Check, X, HelpCircle, Share2 } from 'lucide-react';
 import { UserPreferences, ThemeConfig } from '@/types/preferences';
 import { UserAuthButton } from '@/components/ui/UserAuthButton';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
@@ -36,6 +36,8 @@ interface NavbarProps {
   activeBoard?: Board | null;
   onSelectBoard?: (board: Board) => void;
   onOpenCreateBoard?: () => void;
+  onOpenJoinBoard?: () => void;
+  onOpenShareBoard?: (board: Board) => void;
   onEditBoard?: (board: Board) => void;
   onDeleteBoard?: (board: Board) => void;
 }
@@ -61,6 +63,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   activeBoard = null,
   onSelectBoard,
   onOpenCreateBoard,
+  onOpenJoinBoard,
+  onOpenShareBoard,
   onEditBoard,
   onDeleteBoard,
 }) => {
@@ -201,17 +205,36 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Board Selector & View Mode Switcher */}
-          <div className="flex items-center gap-2 self-center shrink-0 flex-wrap sm:flex-nowrap justify-center">
+          <div className="flex items-center gap-1.5 sm:gap-2 self-center shrink-0 flex-wrap sm:flex-nowrap justify-center">
             {boards.length > 0 && onSelectBoard && onOpenCreateBoard && (
               <BoardSelector
                 boards={boards}
                 activeBoard={activeBoard}
                 onSelectBoard={onSelectBoard}
                 onOpenCreateBoard={onOpenCreateBoard}
+                onOpenJoinBoard={onOpenJoinBoard}
+                onOpenShareBoard={onOpenShareBoard}
                 onEditBoard={onEditBoard || (() => {})}
                 onDeleteBoard={onDeleteBoard || (() => {})}
                 themeConfig={themeConfig}
               />
+            )}
+
+            {/* Quick Share Pill */}
+            {activeBoard && onOpenShareBoard && (
+              <button
+                type="button"
+                onClick={() => onOpenShareBoard(activeBoard)}
+                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-2xl border text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs ${
+                  themeConfig.isDark
+                    ? 'bg-slate-800/90 border-slate-700/80 text-slate-200 hover:text-amber-400 hover:border-amber-500/50'
+                    : 'bg-white/95 border-amber-200/90 text-amber-950 hover:bg-amber-50/60 hover:border-amber-400/80'
+                }`}
+                title="Bagikan papan ini"
+              >
+                <Share2 className="w-3.5 h-3.5 text-amber-500" />
+                <span className="hidden md:inline">Bagikan</span>
+              </button>
             )}
 
             {/* View Mode Switcher: Papan Tugas ↔ Papan Catatan */}

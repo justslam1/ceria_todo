@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Plus, Edit2, Trash2, Check, Columns3, StickyNote } from 'lucide-react';
+import { ChevronDown, Plus, Edit2, Trash2, Check, Columns3, StickyNote, Share2, Users } from 'lucide-react';
 import { Board } from '@/types/board';
 import { ThemeConfig } from '@/types/preferences';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
@@ -11,6 +11,8 @@ interface BoardSelectorProps {
   activeBoard: Board | null;
   onSelectBoard: (board: Board) => void;
   onOpenCreateBoard: () => void;
+  onOpenJoinBoard?: () => void;
+  onOpenShareBoard?: (board: Board) => void;
   onEditBoard: (board: Board) => void;
   onDeleteBoard: (board: Board) => void;
   themeConfig: ThemeConfig;
@@ -21,6 +23,8 @@ export const BoardSelector: React.FC<BoardSelectorProps> = ({
   activeBoard,
   onSelectBoard,
   onOpenCreateBoard,
+  onOpenJoinBoard,
+  onOpenShareBoard,
   onEditBoard,
   onDeleteBoard,
   themeConfig,
@@ -61,7 +65,7 @@ export const BoardSelector: React.FC<BoardSelectorProps> = ({
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl border text-xs sm:text-sm font-black transition-all cursor-pointer active:scale-95 shadow-2xs group ${
+        className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 rounded-2xl border text-xs sm:text-sm font-black transition-all cursor-pointer active:scale-95 shadow-2xs group ${
           themeConfig.isDark
             ? 'bg-slate-800/90 border-slate-700/80 text-white hover:bg-slate-800 hover:border-amber-500/50'
             : 'bg-white/95 border-amber-200/90 text-amber-950 hover:bg-amber-50/60 hover:border-amber-400/80 shadow-[0_2px_8px_rgba(180,83,9,0.06)]'
@@ -74,6 +78,15 @@ export const BoardSelector: React.FC<BoardSelectorProps> = ({
         <span className="max-w-[100px] sm:max-w-[125px] md:max-w-[145px] lg:max-w-[180px] xl:max-w-[210px] truncate text-left">
           {currentTitle}
         </span>
+        {activeBoard?.isShared && (
+          <span
+            className="text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center gap-0.5 shrink-0"
+            title="Papan Kolaborasi"
+          >
+            <Users className="w-2.5 h-2.5" />
+            <span className="hidden sm:inline">Bersama</span>
+          </span>
+        )}
         <ChevronDown
           className={`w-3.5 h-3.5 text-amber-500 transition-transform duration-200 shrink-0 ${
             isOpen ? 'rotate-180' : ''
@@ -84,7 +97,7 @@ export const BoardSelector: React.FC<BoardSelectorProps> = ({
       {/* Dropdown Menu */}
       {isOpen && (
         <div
-          className={`absolute left-0 sm:left-auto sm:right-0 mt-2 w-72 sm:w-80 rounded-3xl border shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150 backdrop-blur-md ${
+          className={`absolute left-0 sm:left-auto sm:right-0 mt-2 w-72 sm:w-84 rounded-3xl border shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150 backdrop-blur-md ${
             themeConfig.isDark
               ? 'bg-slate-900/95 border-slate-700 text-white'
               : 'bg-white/95 border-slate-200 text-slate-800'
@@ -100,6 +113,7 @@ export const BoardSelector: React.FC<BoardSelectorProps> = ({
               <div className="space-y-0.5 mt-1">
                 {taskBoards.map((board) => {
                   const isSelected = activeBoard?.id === board.id;
+                  const isOwner = board.role !== 'MEMBER';
                   return (
                     <div
                       key={board.id}
@@ -125,28 +139,57 @@ export const BoardSelector: React.FC<BoardSelectorProps> = ({
                                 {t.boards.defaultBadge}
                               </span>
                             )}
+                            {board.isShared && (
+                              <span
+                                className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold flex items-center gap-0.5 shrink-0 ${
+                                  isOwner
+                                    ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                                    : 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
+                                }`}
+                              >
+                                <Users className="w-2.5 h-2.5" />
+                                <span>{isOwner ? 'Bersama' : 'Tamu'}</span>
+                              </span>
+                            )}
                           </div>
                           <span className="text-[10px] text-slate-400 block">
                             {board.tasksCount ?? 0} {t.boards.tasksSuffix}
+                            {board.ownerName && !isOwner ? ` • oleh ${board.ownerName}` : ''}
                           </span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1 shrink-0">
+                      <div className="flex items-center gap-0.5 shrink-0">
                         {isSelected && <Check className="w-4 h-4 text-amber-500 font-bold mr-1" />}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEditBoard(board);
-                            setIsOpen(false);
-                          }}
-                          className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 opacity-60 group-hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10 transition-all cursor-pointer"
-                          title={t.common.edit}
-                        >
-                          <Edit2 className="w-3 h-3" />
-                        </button>
-                        {!board.isDefault && (
+                        {onOpenShareBoard && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenShareBoard(board);
+                              setIsOpen(false);
+                            }}
+                            className="p-1 rounded-lg text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 opacity-60 group-hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10 transition-all cursor-pointer"
+                            title="Bagikan papan"
+                          >
+                            <Share2 className="w-3 h-3" />
+                          </button>
+                        )}
+                        {isOwner && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEditBoard(board);
+                              setIsOpen(false);
+                            }}
+                            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 opacity-60 group-hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10 transition-all cursor-pointer"
+                            title={t.common.edit}
+                          >
+                            <Edit2 className="w-3 h-3" />
+                          </button>
+                        )}
+                        {!board.isDefault && isOwner && (
                           <button
                             type="button"
                             onClick={(e) => {
@@ -176,6 +219,7 @@ export const BoardSelector: React.FC<BoardSelectorProps> = ({
               <div className="space-y-0.5 mt-1">
                 {noteBoards.map((board) => {
                   const isSelected = activeBoard?.id === board.id;
+                  const isOwner = board.role !== 'MEMBER';
                   return (
                     <div
                       key={board.id}
@@ -201,28 +245,57 @@ export const BoardSelector: React.FC<BoardSelectorProps> = ({
                                 {t.boards.defaultBadge}
                               </span>
                             )}
+                            {board.isShared && (
+                              <span
+                                className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold flex items-center gap-0.5 shrink-0 ${
+                                  isOwner
+                                    ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400'
+                                    : 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
+                                }`}
+                              >
+                                <Users className="w-2.5 h-2.5" />
+                                <span>{isOwner ? 'Bersama' : 'Tamu'}</span>
+                              </span>
+                            )}
                           </div>
                           <span className="text-[10px] text-slate-400 block">
                             {board.notesCount ?? 0} {t.boards.notesSuffix}
+                            {board.ownerName && !isOwner ? ` • oleh ${board.ownerName}` : ''}
                           </span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1 shrink-0">
+                      <div className="flex items-center gap-0.5 shrink-0">
                         {isSelected && <Check className="w-4 h-4 text-purple-500 font-bold mr-1" />}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEditBoard(board);
-                            setIsOpen(false);
-                          }}
-                          className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 opacity-60 group-hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10 transition-all cursor-pointer"
-                          title={t.common.edit}
-                        >
-                          <Edit2 className="w-3 h-3" />
-                        </button>
-                        {!board.isDefault && (
+                        {onOpenShareBoard && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenShareBoard(board);
+                              setIsOpen(false);
+                            }}
+                            className="p-1 rounded-lg text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 opacity-60 group-hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10 transition-all cursor-pointer"
+                            title="Bagikan papan"
+                          >
+                            <Share2 className="w-3 h-3" />
+                          </button>
+                        )}
+                        {isOwner && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEditBoard(board);
+                              setIsOpen(false);
+                            }}
+                            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 opacity-60 group-hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10 transition-all cursor-pointer"
+                            title={t.common.edit}
+                          >
+                            <Edit2 className="w-3 h-3" />
+                          </button>
+                        )}
+                        {!board.isDefault && isOwner && (
                           <button
                             type="button"
                             onClick={(e) => {
@@ -244,19 +317,32 @@ export const BoardSelector: React.FC<BoardSelectorProps> = ({
             </div>
           </div>
 
-          {/* Add Board Button */}
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+          {/* Action Buttons: New Board & Join Board */}
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-1.5">
             <button
               type="button"
               onClick={() => {
                 onOpenCreateBoard();
                 setIsOpen(false);
               }}
-              className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors cursor-pointer active:scale-98"
+              className="flex items-center justify-center gap-1 py-2 px-2 rounded-xl text-xs font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors cursor-pointer active:scale-98"
             >
-              <Plus className="w-4 h-4" />
-              <span>{t.boards.addNewBoard}</span>
+              <Plus className="w-3.5 h-3.5" />
+              <span>Papan Baru</span>
             </button>
+            {onOpenJoinBoard && (
+              <button
+                type="button"
+                onClick={() => {
+                  onOpenJoinBoard();
+                  setIsOpen(false);
+                }}
+                className="flex items-center justify-center gap-1 py-2 px-2 rounded-xl text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer active:scale-98"
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>Gabung Kode</span>
+              </button>
+            )}
           </div>
         </div>
       )}

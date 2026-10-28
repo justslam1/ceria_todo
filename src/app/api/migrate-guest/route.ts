@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
-import { TaskStatus, Priority, Prisma } from '@prisma/client';
+import { TaskStatus, Priority } from '@prisma/client';
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Pastikan user memiliki papan default
-    let userBoards = await prisma.board.findMany({
+    const userBoards = await prisma.board.findMany({
       where: { userId },
     });
 

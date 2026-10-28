@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { TaskStatus, Priority, Prisma } from '@prisma/client';
 import { auth } from '@/auth';
+import { checkBoardAccess } from '@/lib/boardPermissions';
 
 const VALID_STATUSES: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'DONE'];
 const VALID_PRIORITIES: Priority[] = ['LOW', 'MEDIUM', 'HIGH'];
@@ -24,7 +25,7 @@ function parseDueDate(val: unknown): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
-// GET /api/tasks - Retrieve tasks strictly isolated to logged-in user
+// GET /api/tasks - Retrieve tasks with shared board awareness
 export async function GET(request: NextRequest) {
   try {
     const session = await auth();
@@ -51,11 +52,28 @@ export async function GET(request: NextRequest) {
       ? (statusParam as TaskStatus)
       : null;
 
-    const where: Prisma.TaskWhereInput = {
-      userId,
-      ...(boardIdParam ? { boardId: boardIdParam } : {}),
-      ...(status ? { status } : {}),
-    };
+    let where: Prisma.TaskWhereInput;
+    if (boardIdParam) {
+      const { hasAccess } = await checkBoardAccess(boardIdParam, userId);
+      if (!hasAccess) {
+        return NextResponse.json(
+          { success: false, error: 'Anda tidak memiliki hak akses ke papan ini' },
+          { status: 403 }
+        );
+      }
+      where = {
+        boardId: boardIdParam,
+        ...(status ? { status } : {}),
+      };
+    } else {
+      where = {
+        OR: [
+          { userId },
+          { board: { members: { some: { userId } } } },
+        ],
+        ...(status ? { status } : {}),
+      };
+    }
 
     const tasks = await prisma.task.findMany({
       where,
@@ -76,7 +94,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/tasks - Create single or batch tasks strictly attached to current user
+// POST /api/tasks - Create single or batch tasks
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
@@ -98,14 +116,20 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    // Helper to find target boardId with strict ownership verification
+    // Helper to find target boardId with board membership verification
     const getEffectiveBoardId = async (providedBoardId?: string | null) => {
       if (providedBoardId) {
-        const userBoard = await prisma.board.findFirst({
-          where: { id: providedBoardId, userId },
+        const board = await prisma.board.findFirst({
+          where: {
+            id: providedBoardId,
+            OR: [
+              { userId },
+              { members: { some: { userId } } },
+            ],
+          },
           select: { id: true },
         });
-        if (userBoard) return userBoard.id;
+        if (board) return board.id;
       }
       const defaultBoard = await prisma.board.findFirst({
         where: { userId, type: 'TASK', isDefault: true },
@@ -134,9 +158,15 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Pre-fetch all user's boards of type TASK to validate ownership efficiently
+      // Pre-fetch all user's accessible boards of type TASK
       const userBoards = await prisma.board.findMany({
-        where: { userId, type: 'TASK' },
+        where: {
+          type: 'TASK',
+          OR: [
+            { userId },
+            { members: { some: { userId } } },
+          ],
+        },
         select: { id: true, isDefault: true },
       });
       const validBoardIds = new Set(userBoards.map((b) => b.id));

@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
+import { checkBoardAccess } from '@/lib/boardPermissions';
+import { Prisma } from '@prisma/client';
 
 const VALID_COLORS = ['yellow', 'pink', 'blue', 'green', 'purple', 'cream'];
 
-// GET /api/notes - Retrieve notes isolated to the logged-in user
+// GET /api/notes - Retrieve notes with shared board awareness
 export async function GET(request: NextRequest) {
   try {
     const session = await auth();
@@ -28,10 +30,18 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('q')?.trim() || '';
     const boardIdParam = searchParams.get('boardId');
 
-    const notes = await prisma.note.findMany({
-      where: {
-        userId,
-        ...(boardIdParam ? { boardId: boardIdParam } : {}),
+    let where: Prisma.NoteWhereInput;
+
+    if (boardIdParam) {
+      const { hasAccess } = await checkBoardAccess(boardIdParam, userId);
+      if (!hasAccess) {
+        return NextResponse.json(
+          { success: false, error: 'Anda tidak memiliki hak akses ke papan ini' },
+          { status: 403 }
+        );
+      }
+      where = {
+        boardId: boardIdParam,
         ...(search
           ? {
               OR: [
@@ -40,7 +50,26 @@ export async function GET(request: NextRequest) {
               ],
             }
           : {}),
-      },
+      };
+    } else {
+      where = {
+        OR: [
+          { userId },
+          { board: { members: { some: { userId } } } },
+        ],
+        ...(search
+          ? {
+              OR: [
+                { title: { contains: search } },
+                { content: { contains: search } },
+              ],
+            }
+          : {}),
+      };
+    }
+
+    const notes = await prisma.note.findMany({
+      where,
       orderBy: [
         { isPinned: 'desc' },
         { updatedAt: 'desc' },
@@ -94,14 +123,21 @@ export async function POST(request: NextRequest) {
 
     const validColor = VALID_COLORS.includes(color) ? color : 'yellow';
 
-    // Verify boardId ownership or fallback to user's default note board
+    // Verify boardId membership or fallback to user's default note board
     let effectiveBoardId: string | null = null;
     if (boardId) {
-      const userBoard = await prisma.board.findFirst({
-        where: { id: boardId, userId, type: 'NOTE' },
+      const board = await prisma.board.findFirst({
+        where: {
+          id: boardId,
+          type: 'NOTE',
+          OR: [
+            { userId },
+            { members: { some: { userId } } },
+          ],
+        },
         select: { id: true },
       });
-      effectiveBoardId = userBoard?.id || null;
+      effectiveBoardId = board?.id || null;
     }
 
     if (!effectiveBoardId) {

@@ -33,6 +33,16 @@ export async function PATCH(
     });
 
     if (!existingBoard) {
+      const isMember = await prisma.boardMember.findFirst({
+        where: { boardId: id, userId },
+      });
+      if (isMember) {
+        return NextResponse.json(
+          { success: false, error: 'Hanya pemilik papan yang dapat mengubah pengaturan papan' },
+          { status: 403 }
+        );
+      }
+
       return NextResponse.json(
         { success: false, error: 'Papan tidak ditemukan' },
         { status: 404 }
@@ -88,6 +98,16 @@ export async function DELETE(
     });
 
     if (!existingBoard) {
+      const isMember = await prisma.boardMember.findFirst({
+        where: { boardId: id, userId },
+      });
+      if (isMember) {
+        return NextResponse.json(
+          { success: false, error: 'Anda bukan pemilik papan ini. Gunakan tombol "Keluar dari Papan" jika ingin berhenti bergabung.' },
+          { status: 403 }
+        );
+      }
+
       return NextResponse.json(
         { success: false, error: 'Papan tidak ditemukan' },
         { status: 404 }
@@ -101,7 +121,7 @@ export async function DELETE(
       );
     }
 
-    // Count boards of the same type to make sure at least 1 board remains
+    // Count boards of the same type owned by this user to make sure at least 1 board remains
     const sameTypeCount = await prisma.board.count({
       where: { userId, type: existingBoard.type },
     });

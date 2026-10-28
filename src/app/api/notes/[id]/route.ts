@@ -8,6 +8,34 @@ interface RouteContext {
 
 const VALID_COLORS = ['yellow', 'pink', 'blue', 'green', 'purple', 'cream'];
 
+async function getNoteAccess(noteId: string, userId: string) {
+  const note = await prisma.note.findUnique({
+    where: { id: noteId },
+    include: {
+      board: {
+        include: {
+          members: {
+            where: { userId },
+            select: { id: true },
+          },
+        },
+      },
+    },
+  });
+
+  if (!note) return { hasAccess: false, note: null };
+
+  if (note.userId === userId) {
+    return { hasAccess: true, note };
+  }
+
+  if (note.board && (note.board.userId === userId || note.board.members.length > 0)) {
+    return { hasAccess: true, note };
+  }
+
+  return { hasAccess: false, note: null };
+}
+
 // GET /api/notes/[id]
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
@@ -29,9 +57,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     const { id } = await context.params;
-    const note = await prisma.note.findUnique({
-      where: { id },
-    });
+    const { hasAccess, note } = await getNoteAccess(id, userId);
 
     if (!note) {
       return NextResponse.json(
@@ -40,7 +66,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       );
     }
 
-    if (!note.userId || note.userId !== userId) {
+    if (!hasAccess) {
       return NextResponse.json(
         { success: false, error: 'Anda tidak memiliki hak akses ke catatan ini' },
         { status: 403 }
@@ -78,7 +104,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     const { id } = await context.params;
-    const existing = await prisma.note.findUnique({ where: { id } });
+    const { hasAccess, note: existing } = await getNoteAccess(id, userId);
 
     if (!existing) {
       return NextResponse.json(
@@ -87,7 +113,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       );
     }
 
-    if (!existing.userId || existing.userId !== userId) {
+    if (!hasAccess) {
       return NextResponse.json(
         { success: false, error: 'Anda tidak memiliki hak akses untuk mengubah catatan ini' },
         { status: 403 }
@@ -101,12 +127,19 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       if (body.boardId === null) {
         updateData.boardId = null;
       } else if (typeof body.boardId === 'string') {
-        const userBoard = await prisma.board.findFirst({
-          where: { id: body.boardId, userId, type: 'NOTE' },
+        const board = await prisma.board.findFirst({
+          where: {
+            id: body.boardId,
+            type: 'NOTE',
+            OR: [
+              { userId },
+              { members: { some: { userId } } },
+            ],
+          },
           select: { id: true },
         });
-        if (userBoard) {
-          updateData.boardId = userBoard.id;
+        if (board) {
+          updateData.boardId = board.id;
         }
       }
     }
@@ -187,7 +220,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     }
 
     const { id } = await context.params;
-    const existing = await prisma.note.findUnique({ where: { id } });
+    const { hasAccess, note: existing } = await getNoteAccess(id, userId);
 
     if (!existing) {
       return NextResponse.json(
@@ -196,7 +229,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       );
     }
 
-    if (!existing.userId || existing.userId !== userId) {
+    if (!hasAccess) {
       return NextResponse.json(
         { success: false, error: 'Anda tidak memiliki hak akses untuk menghapus catatan ini' },
         { status: 403 }

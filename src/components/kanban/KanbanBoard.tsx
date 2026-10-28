@@ -45,6 +45,8 @@ import { DeskBuddy } from '@/components/ui/DeskBuddy';
 import { BoardStickers } from '@/components/ui/BoardStickers';
 import { Board, BoardType, CreateBoardInput, UpdateBoardInput } from '@/types/board';
 import { BoardFormModal } from '@/components/modals/BoardFormModal';
+import { ShareBoardModal } from '@/components/modals/ShareBoardModal';
+import { JoinBoardModal } from '@/components/modals/JoinBoardModal';
 
 const StickyNotesMatchModal = dynamic(
   () => import('@/components/modals/StickyNotesMatchModal').then((m) => m.StickyNotesMatchModal),
@@ -172,6 +174,10 @@ export const KanbanBoard: React.FC = () => {
   const [isBoardModalOpen, setIsBoardModalOpen] = useState(false);
   const [editingBoard, setEditingBoard] = useState<Board | null>(null);
   const [newBoardInitialType, setNewBoardInitialType] = useState<BoardType>('TASK');
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
+  const [boardToShare, setBoardToShare] = useState<Board | null>(null);
+  const [joinInitialCode, setJoinInitialCode] = useState<string>('');
 
   // Abort controllers to prevent race conditions during rapid tab/board switching
   const tasksAbortRef = useRef<AbortController | null>(null);
@@ -729,6 +735,41 @@ export const KanbanBoard: React.FC = () => {
       alert(err instanceof Error ? err.message : 'Gagal menghapus papan');
     }
   };
+
+  const handleOpenShareBoard = (board: Board) => {
+    setBoardToShare(board);
+    setIsShareModalOpen(true);
+  };
+
+  const handleOpenJoinBoard = () => {
+    setJoinInitialCode('');
+    setIsJoinModalOpen(true);
+  };
+
+  const handleBoardJoined = async (joinedBoard: Board) => {
+    await fetchBoards(joinedBoard.id);
+  };
+
+  const handleBoardLeft = async () => {
+    await fetchBoards();
+  };
+
+  // Auto-detect invite code from URL: ?join=CODE
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const joinCode = params.get('join');
+    if (!joinCode) return;
+
+    const timer = setTimeout(() => {
+      setJoinInitialCode(joinCode);
+      setIsJoinModalOpen(true);
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, '', cleanUrl);
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   // Global paste handler on Kanban Board: Paste image opens TaskForm with image cover
   useEffect(() => {
@@ -2062,6 +2103,8 @@ export const KanbanBoard: React.FC = () => {
           activeBoard={activeBoard}
           onSelectBoard={handleSelectBoard}
           onOpenCreateBoard={handleOpenCreateBoard}
+          onOpenJoinBoard={handleOpenJoinBoard}
+          onOpenShareBoard={handleOpenShareBoard}
           onEditBoard={handleEditBoard}
           onDeleteBoard={handleDeleteBoard}
         />
@@ -3094,6 +3137,28 @@ export const KanbanBoard: React.FC = () => {
         initialType={newBoardInitialType}
         boardToEdit={editingBoard}
         themeConfig={themeConfig}
+      />
+
+      {/* Share Board Modal */}
+      <ShareBoardModal
+        isOpen={isShareModalOpen}
+        onClose={() => {
+          setIsShareModalOpen(false);
+          setBoardToShare(null);
+        }}
+        board={boardToShare}
+        themeConfig={themeConfig}
+        onBoardUpdated={() => fetchBoards(boardToShare?.id)}
+        onBoardLeft={handleBoardLeft}
+      />
+
+      {/* Join Board Modal */}
+      <JoinBoardModal
+        isOpen={isJoinModalOpen}
+        onClose={() => setIsJoinModalOpen(false)}
+        themeConfig={themeConfig}
+        onJoined={handleBoardJoined}
+        initialCode={joinInitialCode}
       />
 
       {/* Easter Egg: Memory Card Sticky Notes Match Modal (triggered by typing gabut, rehat, game) */}

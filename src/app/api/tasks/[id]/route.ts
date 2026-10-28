@@ -10,7 +10,37 @@ interface RouteContext {
 const VALID_STATUSES: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'DONE'];
 const VALID_PRIORITIES: Priority[] = ['LOW', 'MEDIUM', 'HIGH'];
 
-// GET /api/tasks/[id] - Get single task with strict authorization check
+async function getTaskAccess(taskId: string, userId: string) {
+  const task = await prisma.task.findUnique({
+    where: { id: taskId },
+    include: {
+      board: {
+        include: {
+          members: {
+            where: { userId },
+            select: { id: true },
+          },
+        },
+      },
+    },
+  });
+
+  if (!task) return { hasAccess: false, task: null };
+
+  // Access allowed if user created the task
+  if (task.userId === userId) {
+    return { hasAccess: true, task };
+  }
+
+  // Access allowed if task belongs to a board the user owns or is a member of
+  if (task.board && (task.board.userId === userId || task.board.members.length > 0)) {
+    return { hasAccess: true, task };
+  }
+
+  return { hasAccess: false, task: null };
+}
+
+// GET /api/tasks/[id] - Get single task
 export async function GET(
   request: NextRequest,
   context: RouteContext
@@ -34,10 +64,7 @@ export async function GET(
     }
 
     const { id } = await context.params;
-
-    const task = await prisma.task.findUnique({
-      where: { id },
-    });
+    const { hasAccess, task } = await getTaskAccess(id, userId);
 
     if (!task) {
       return NextResponse.json(
@@ -46,7 +73,7 @@ export async function GET(
       );
     }
 
-    if (!task.userId || task.userId !== userId) {
+    if (!hasAccess) {
       return NextResponse.json(
         { success: false, error: 'Anda tidak memiliki hak akses ke tugas ini' },
         { status: 403 }
@@ -63,7 +90,7 @@ export async function GET(
   }
 }
 
-// PATCH /api/tasks/[id] - Update task with strict ownership and input validation
+// PATCH /api/tasks/[id] - Update task
 export async function PATCH(
   request: NextRequest,
   context: RouteContext
@@ -87,9 +114,8 @@ export async function PATCH(
     }
 
     const { id } = await context.params;
+    const { hasAccess, task: existingTask } = await getTaskAccess(id, userId);
 
-    // Check existing task
-    const existingTask = await prisma.task.findUnique({ where: { id } });
     if (!existingTask) {
       return NextResponse.json(
         { success: false, error: 'Tugas tidak ditemukan' },
@@ -97,7 +123,7 @@ export async function PATCH(
       );
     }
 
-    if (!existingTask.userId || existingTask.userId !== userId) {
+    if (!hasAccess) {
       return NextResponse.json(
         { success: false, error: 'Anda tidak memiliki hak mengubah tugas ini' },
         { status: 403 }
@@ -191,7 +217,7 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/tasks/[id] - Delete a task with strict ownership check
+// DELETE /api/tasks/[id] - Delete a task
 export async function DELETE(
   request: NextRequest,
   context: RouteContext
@@ -215,8 +241,8 @@ export async function DELETE(
     }
 
     const { id } = await context.params;
+    const { hasAccess, task: existingTask } = await getTaskAccess(id, userId);
 
-    const existingTask = await prisma.task.findUnique({ where: { id } });
     if (!existingTask) {
       return NextResponse.json(
         { success: false, error: 'Tugas tidak ditemukan' },
@@ -224,7 +250,7 @@ export async function DELETE(
       );
     }
 
-    if (!existingTask.userId || existingTask.userId !== userId) {
+    if (!hasAccess) {
       return NextResponse.json(
         { success: false, error: 'Anda tidak memiliki hak menghapus tugas ini' },
         { status: 403 }

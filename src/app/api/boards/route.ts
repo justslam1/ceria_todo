@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { BoardType } from '@prisma/client';
+import { generateInviteCode } from '@/lib/boardPermissions';
 
 export async function GET() {
   try {
@@ -22,21 +23,12 @@ export async function GET() {
       );
     }
 
-    let boards = await prisma.board.findMany({
+    // Check if user has any owned boards; if not, create defaults
+    const ownedBoardCount = await prisma.board.count({
       where: { userId },
-      orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
-      include: {
-        _count: {
-          select: {
-            tasks: true,
-            notes: true,
-          },
-        },
-      },
     });
 
-    // Auto-create default boards if user doesn't have any
-    if (boards.length === 0) {
+    if (ownedBoardCount === 0) {
       const defaultTaskBoard = await prisma.board.create({
         data: {
           userId,
@@ -46,6 +38,7 @@ export async function GET() {
           color: 'amber',
           isDefault: true,
           order: 0,
+          inviteCode: generateInviteCode(),
         },
       });
 
@@ -58,6 +51,7 @@ export async function GET() {
           color: 'amber',
           isDefault: true,
           order: 1,
+          inviteCode: generateInviteCode(),
         },
       });
 
@@ -71,53 +65,66 @@ export async function GET() {
         where: { userId, boardId: null },
         data: { boardId: defaultNoteBoard.id },
       });
+    }
 
-      boards = await prisma.board.findMany({
-        where: { userId },
-        orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
-        include: {
-          _count: {
-            select: {
-              tasks: true,
-              notes: true,
+    // Retrieve both owned boards and shared boards (where user is a member)
+    const boards = await prisma.board.findMany({
+      where: {
+        OR: [
+          { userId },
+          { members: { some: { userId } } },
+        ],
+      },
+      orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+      include: {
+        user: {
+          select: { name: true, image: true, email: true },
+        },
+        members: {
+          include: {
+            user: {
+              select: { id: true, name: true, image: true, email: true },
             },
           },
         },
-      });
-    } else {
-      // Ensure any orphan tasks/notes without boardId get linked to a default board
-      const defaultTaskBoard = boards.find((b) => b.type === 'TASK' && b.isDefault) || boards.find((b) => b.type === 'TASK');
-      const defaultNoteBoard = boards.find((b) => b.type === 'NOTE' && b.isDefault) || boards.find((b) => b.type === 'NOTE');
+        _count: {
+          select: {
+            tasks: true,
+            notes: true,
+            members: true,
+          },
+        },
+      },
+    });
 
-      if (defaultTaskBoard) {
-        await prisma.task.updateMany({
-          where: { userId, boardId: null },
-          data: { boardId: defaultTaskBoard.id },
-        });
-      }
-
-      if (defaultNoteBoard) {
-        await prisma.note.updateMany({
-          where: { userId, boardId: null },
-          data: { boardId: defaultNoteBoard.id },
-        });
-      }
-    }
-
-    const data = boards.map((b) => ({
-      id: b.id,
-      userId: b.userId,
-      title: b.title,
-      type: b.type,
-      icon: b.icon,
-      color: b.color,
-      isDefault: b.isDefault,
-      order: b.order,
-      tasksCount: b._count.tasks,
-      notesCount: b._count.notes,
-      createdAt: b.createdAt.toISOString(),
-      updatedAt: b.updatedAt.toISOString(),
-    }));
+    const data = boards.map((b) => {
+      const isOwner = b.userId === userId;
+      return {
+        id: b.id,
+        userId: b.userId,
+        title: b.title,
+        type: b.type,
+        icon: b.icon,
+        color: b.color,
+        isDefault: b.isDefault,
+        order: b.order,
+        inviteCode: b.inviteCode,
+        role: isOwner ? 'OWNER' : 'MEMBER',
+        isShared: (b._count.members > 0) || !isOwner,
+        ownerName: b.user?.name || null,
+        membersCount: b._count.members,
+        members: b.members.map((m) => ({
+          id: m.id,
+          role: m.role,
+          createdAt: m.createdAt.toISOString(),
+          user: m.user,
+        })),
+        tasksCount: b._count.tasks,
+        notesCount: b._count.notes,
+        createdAt: b.createdAt.toISOString(),
+        updatedAt: b.updatedAt.toISOString(),
+      };
+    });
 
     return NextResponse.json({ success: true, data });
   } catch (error) {
@@ -190,6 +197,7 @@ export async function POST(request: NextRequest) {
         color: typeof color === 'string' && color.trim() ? color.trim().slice(0, 30) : 'amber',
         isDefault: false,
         order: nextOrder,
+        inviteCode: generateInviteCode(),
       },
     });
 
@@ -197,6 +205,10 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         ...newBoard,
+        role: 'OWNER',
+        isShared: false,
+        membersCount: 0,
+        members: [],
         tasksCount: 0,
         notesCount: 0,
         createdAt: newBoard.createdAt.toISOString(),

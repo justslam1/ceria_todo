@@ -131,7 +131,7 @@ export function getGuestBoards(): Board[] {
       // Auto-heal nilai teks ikon dan nama papan bawaan agar lebih ringkas
       let updated = false;
       const healed = parsed.map((b: Board) => {
-        let currentBoard = { ...b };
+        const currentBoard = { ...b };
         if (currentBoard.icon === 'clipboard') {
           updated = true;
           currentBoard.icon = '📋';

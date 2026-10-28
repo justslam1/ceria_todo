@@ -1,21 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { Info, LogIn, X } from 'lucide-react';
-import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export const GuestModeBanner: React.FC = () => {
-  const [dismissed, setDismissed] = useState(true);
-  const { t } = useLanguage();
-
-  useEffect(() => {
-    // Cek apakah user pernah menutup banner di sesi ini
-    const isDismissed = sessionStorage.getItem('ceria_guest_banner_dismissed');
-    if (!isDismissed) {
-      setDismissed(false);
+  const [dismissed, setDismissed] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return Boolean(sessionStorage.getItem('ceria_guest_banner_dismissed'));
     }
-  }, []);
+    return true;
+  });
 
   const handleDismiss = () => {
     sessionStorage.setItem('ceria_guest_banner_dismissed', 'true');
