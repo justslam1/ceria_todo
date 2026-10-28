@@ -29,6 +29,11 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('q')?.trim() || '';
     const boardIdParam = searchParams.get('boardId');
+    const limitParam = searchParams.get('limit');
+    const offsetParam = searchParams.get('offset');
+
+    const limit = Math.min(Math.max(parseInt(limitParam || '200', 10) || 200, 1), 500);
+    const offset = Math.max(parseInt(offsetParam || '0', 10) || 0, 0);
 
     let where: Prisma.NoteWhereInput;
 
@@ -74,7 +79,8 @@ export async function GET(request: NextRequest) {
         { isPinned: 'desc' },
         { updatedAt: 'desc' },
       ],
-      take: 500,
+      take: limit,
+      skip: offset > 0 ? offset : undefined,
     });
 
     return NextResponse.json({ success: true, data: notes, count: notes.length });

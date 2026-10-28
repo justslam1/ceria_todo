@@ -49,6 +49,11 @@ export async function GET(request: NextRequest) {
     const statusParam = searchParams.get('status');
     const boardIdParam = searchParams.get('boardId');
     const assignedToParam = searchParams.get('assignedTo');
+    const limitParam = searchParams.get('limit');
+    const offsetParam = searchParams.get('offset');
+
+    const limit = Math.min(Math.max(parseInt(limitParam || '300', 10) || 300, 1), 500);
+    const offset = Math.max(parseInt(offsetParam || '0', 10) || 0, 0);
 
     const status = statusParam && VALID_STATUSES.includes(statusParam as TaskStatus)
       ? (statusParam as TaskStatus)
@@ -99,10 +104,11 @@ export async function GET(request: NextRequest) {
           select: { id: true, name: true, image: true, email: true },
         },
       },
-      take: 500,
+      take: limit,
+      skip: offset > 0 ? offset : undefined,
     });
 
-    return NextResponse.json({ success: true, data: tasks });
+    return NextResponse.json({ success: true, data: tasks, count: tasks.length });
   } catch (error) {
     console.error('Error fetching tasks:', error);
     return NextResponse.json(

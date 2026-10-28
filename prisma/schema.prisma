@@ -105,7 +105,8 @@ model Task {
   board      Board? @relation(fields: [boardId], references: [id], onDelete: Cascade)
 
   @@index([userId, status])
-  @@index([boardId])
+  @@index([boardId, status])
+  @@index([boardId, order])
   @@index([status])
   @@index([assignedToId])
 }
@@ -132,7 +133,8 @@ model Note {
   board Board? @relation(fields: [boardId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([boardId])
+  @@index([boardId, isPinned])
+  @@index([boardId, order])
   @@index([isPinned])
 }
 
@@ -155,6 +157,7 @@ model Board {
   members    BoardMember[]
   activities BoardActivity[]
 
+  @@index([userId, type])
   @@index([userId])
   @@index([type])
   @@index([inviteCode])

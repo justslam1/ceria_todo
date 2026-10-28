@@ -76,6 +76,7 @@ export async function GET() {
         ],
       },
       orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+      take: 100,
       include: {
         user: {
           select: { id: true, name: true, image: true, email: true },
