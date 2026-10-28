@@ -13,6 +13,9 @@ const cspHeader = `
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(__dirname),
+  experimental: {
+    cpus: 2,
+  },
   images: {
     remotePatterns: [
       {
