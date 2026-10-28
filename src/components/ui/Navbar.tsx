@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { Sparkles, Images, Plus, Volume2, VolumeX, Palette, Timer, Archive, Check, X, HelpCircle, Share2 } from 'lucide-react';
+import { Sparkles, Images, Plus, Volume2, VolumeX, Palette, Timer, Archive, Check, X, HelpCircle, Share2, MoreHorizontal } from 'lucide-react';
 import { UserPreferences, ThemeConfig } from '@/types/preferences';
 import { UserAuthButton } from '@/components/ui/UserAuthButton';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
@@ -70,7 +70,23 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [isEditingMotto, setIsEditingMotto] = useState(false);
   const [draftMotto, setDraftMotto] = useState('');
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
   const { t } = useLanguage();
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(e.target as Node)) {
+        setIsMoreMenuOpen(false);
+      }
+    };
+    if (isMoreMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMoreMenuOpen]);
 
   const handleStartEditMotto = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -105,7 +121,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       }`}
     >
       <SystemAnnouncementBanner />
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-2.5">
+      <div className="max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-2.5">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 sm:gap-3 lg:gap-4">
           {/* Logo & Tagline */}
           <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 min-w-0">
@@ -194,7 +210,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               ) : (
                 <p
                   onClick={handleStartEditMotto}
-                  className={`text-xs font-medium truncate max-w-[150px] sm:max-w-xs md:max-w-[160px] lg:max-w-xs xl:max-w-sm hidden xl:block cursor-pointer hover:text-amber-500 dark:hover:text-amber-400 transition-colors ${
+                  className={`text-xs font-medium truncate max-w-[150px] sm:max-w-xs md:max-w-[160px] lg:max-w-xs xl:max-w-sm hidden 2xl:block cursor-pointer hover:text-amber-500 dark:hover:text-amber-400 transition-colors ${
                     themeConfig.isDark ? 'text-slate-400' : 'text-slate-500'
                   }`}
                 >
@@ -233,7 +249,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 title="Bagikan papan ini"
               >
                 <Share2 className="w-3.5 h-3.5 text-amber-500" />
-                <span className="hidden md:inline">Bagikan</span>
+                <span className="hidden 2xl:inline">Bagikan</span>
               </button>
             )}
 
@@ -345,52 +361,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             )}
 
-            {/* Community Board Showcase Button */}
-            {onOpenShowcase && (
-              <button
-                type="button"
-                onClick={onOpenShowcase}
-                className={`relative inline-flex items-center justify-center p-2 rounded-xl border transition-all duration-150 cursor-pointer active:scale-95 shrink-0 ${
-                  isPlayful ? '-rotate-1.5 hover:rotate-0 hover:-translate-y-0.5 shadow-xs' : 'hover:-translate-y-0.5 shadow-2xs'
-                } ${
-                  themeConfig.isDark
-                    ? 'bg-slate-800/80 hover:bg-slate-800 border-slate-700 text-rose-300'
-                    : isPlayful
-                    ? 'bg-rose-100/85 hover:bg-rose-100 border-rose-300 text-rose-950'
-                    : 'bg-rose-100/60 hover:bg-rose-100 border-rose-200/80 text-rose-900'
-                }`}
-                title={t.navbar.galleryBtn}
-              >
-                {isPlayful && !themeConfig.isDark && (
-                  <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-4 h-1.5 bg-rose-200/90 border-y border-dashed border-rose-400/60 rounded-2xs pointer-events-none" />
-                )}
-                <Images className="w-4 h-4 text-rose-500 dark:text-rose-400 shrink-0" />
-              </button>
-            )}
-
-            {/* Quick Guide Button */}
-            <Link
-              href="/guide"
-              className={`relative inline-flex items-center justify-center p-2 rounded-xl border transition-all duration-150 cursor-pointer active:scale-95 shrink-0 ${
-                isPlayful ? 'rotate-1 hover:rotate-0 hover:-translate-y-0.5 shadow-xs' : 'hover:-translate-y-0.5 shadow-2xs'
-              } ${
-                themeConfig.isDark
-                  ? 'bg-slate-800/80 hover:bg-slate-800 border-slate-700 text-sky-300'
-                  : isPlayful
-                  ? 'bg-sky-100/85 hover:bg-sky-100 border-sky-300 text-sky-950'
-                  : 'bg-sky-100/60 hover:bg-sky-100 border-sky-200/80 text-sky-900'
-              }`}
-              title={t.navbar.guideBtn || 'Quick Guide'}
-            >
-              {isPlayful && !themeConfig.isDark && (
-                <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-4 h-1.5 bg-sky-200/90 border-y border-dashed border-sky-400/60 rounded-2xs pointer-events-none" />
-              )}
-              <HelpCircle className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />
-            </Link>
-
-            {/* Language Switcher */}
-            <LanguageSwitcher variant="compact" className="hidden sm:inline-flex" />
-
             {/* Personalization / Settings Button */}
             <button
               onClick={onOpenPersonalization}
@@ -411,32 +381,115 @@ export const Navbar: React.FC<NavbarProps> = ({
               <Palette className="w-4 h-4 text-orange-600 dark:text-orange-400 shrink-0" />
             </button>
 
-            {/* Sound Effects Toggle Button */}
-            <button
-              onClick={onToggleSound}
-              className={`p-1.5 rounded-xl border transition-all duration-150 cursor-pointer shrink-0 ${
-                isPlayful ? '-rotate-1 hover:rotate-0 hover:-translate-y-0.5 shadow-xs' : 'hover:-translate-y-0.5 shadow-2xs'
-              } ${
-                isSoundMuted
-                  ? themeConfig.isDark
-                    ? 'bg-slate-900 border-slate-800 text-slate-600'
-                    : 'bg-stone-100 border-stone-200 text-stone-400 hover:text-stone-600'
-                  : themeConfig.isDark
-                  ? 'bg-slate-800 border-slate-700 text-amber-400'
-                  : 'bg-amber-100/60 border-amber-200/80 text-amber-900 hover:bg-amber-100'
-              }`}
-              title={
-                isSoundMuted
-                  ? t.navbar.soundMutedTitle
-                  : t.navbar.soundActiveTitle
-              }
-            >
-              {isSoundMuted ? (
-                <VolumeX className="w-4 h-4" />
-              ) : (
-                <Volume2 className="w-4 h-4" />
+            {/* More Utilities Dropdown (Showcase, Guide, Sound, Language) */}
+            <div className="relative shrink-0" ref={moreMenuRef}>
+              <button
+                type="button"
+                onClick={() => setIsMoreMenuOpen((prev) => !prev)}
+                className={`relative inline-flex items-center justify-center p-2 rounded-xl border transition-all duration-150 cursor-pointer active:scale-95 shrink-0 ${
+                  isMoreMenuOpen
+                    ? themeConfig.isDark
+                      ? 'bg-slate-700 border-amber-400/70 text-amber-300'
+                      : 'bg-amber-200/80 border-amber-400 text-amber-950'
+                    : isPlayful
+                    ? '-rotate-1 hover:rotate-0 hover:-translate-y-0.5 shadow-xs'
+                    : 'hover:-translate-y-0.5 shadow-2xs'
+                } ${
+                  themeConfig.isDark
+                    ? 'bg-slate-800/80 hover:bg-slate-800 border-slate-700 text-slate-300'
+                    : isPlayful
+                    ? 'bg-amber-100/70 hover:bg-amber-100 border-amber-300/80 text-amber-950'
+                    : 'bg-stone-100/80 hover:bg-stone-200/70 border-stone-200/80 text-stone-700'
+                }`}
+                title={t.common.all || 'Menu Lainnya'}
+                aria-expanded={isMoreMenuOpen}
+              >
+                <MoreHorizontal className="w-4 h-4 shrink-0" />
+              </button>
+
+              {isMoreMenuOpen && (
+                <div
+                  className={`absolute right-0 top-full mt-2 w-56 p-1.5 rounded-2xl border shadow-xl z-50 backdrop-blur-md animate-in fade-in zoom-in-95 duration-150 ${
+                    themeConfig.isDark
+                      ? 'bg-slate-900/95 border-slate-700 text-slate-200 shadow-black/40'
+                      : 'bg-white/95 border-amber-200/90 text-amber-950 shadow-amber-900/10'
+                  }`}
+                >
+                  {/* Quick Guide */}
+                  <Link
+                    href="/guide"
+                    onClick={() => setIsMoreMenuOpen(false)}
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${
+                      themeConfig.isDark
+                        ? 'hover:bg-slate-800 text-slate-200 hover:text-white'
+                        : 'hover:bg-amber-50 text-slate-700 hover:text-amber-950'
+                    }`}
+                  >
+                    <HelpCircle className="w-4 h-4 text-sky-500 shrink-0" />
+                    <span>{t.navbar.guideBtn || 'Quick Guide'}</span>
+                  </Link>
+
+                  {/* Community Board Showcase */}
+                  {onOpenShowcase && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMoreMenuOpen(false);
+                        onOpenShowcase();
+                      }}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer text-left ${
+                        themeConfig.isDark
+                          ? 'hover:bg-slate-800 text-slate-200 hover:text-white'
+                          : 'hover:bg-amber-50 text-slate-700 hover:text-amber-950'
+                      }`}
+                    >
+                      <Images className="w-4 h-4 text-rose-500 shrink-0" />
+                      <span>{t.navbar.galleryBtn || 'Galeri Showcase'}</span>
+                    </button>
+                  )}
+
+                  {/* Sound Effects Toggle */}
+                  <button
+                    type="button"
+                    onClick={onToggleSound}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer text-left ${
+                      themeConfig.isDark
+                        ? 'hover:bg-slate-800 text-slate-200 hover:text-white'
+                        : 'hover:bg-amber-50 text-slate-700 hover:text-amber-950'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      {isSoundMuted ? (
+                        <VolumeX className="w-4 h-4 text-slate-400 shrink-0" />
+                      ) : (
+                        <Volume2 className="w-4 h-4 text-amber-500 shrink-0" />
+                      )}
+                      <span>Efek Suara</span>
+                    </div>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        isSoundMuted
+                          ? 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                          : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
+                      }`}
+                    >
+                      {isSoundMuted ? 'Muted' : 'ON'}
+                    </span>
+                  </button>
+
+                  <div className="my-1 border-t border-amber-100 dark:border-slate-800" />
+
+                  {/* Language Switcher */}
+                  <div className="flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    <span className="flex items-center gap-2">
+                      <span className="text-sm">🌐</span>
+                      <span>{t.common.language || 'Bahasa'}</span>
+                    </span>
+                    <LanguageSwitcher variant="badge" />
+                  </div>
+                </div>
               )}
-            </button>
+            </div>
 
             {/* Google Authentication Button / Avatar */}
             <div className="shrink-0 relative z-50">
