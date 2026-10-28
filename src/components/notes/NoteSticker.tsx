@@ -58,7 +58,7 @@ interface NoteStickerProps {
   onSelect?: (id: string) => void;
 }
 
-export const NoteSticker: React.FC<NoteStickerProps> = ({
+const NoteStickerComponent: React.FC<NoteStickerProps> = ({
   note,
   onDuplicate,
   onDelete,
@@ -536,3 +536,6 @@ export const NoteSticker: React.FC<NoteStickerProps> = ({
     </div>
   );
 };
+
+export const NoteSticker = React.memo(NoteStickerComponent);
+NoteSticker.displayName = 'NoteSticker';

@@ -45,7 +45,7 @@ interface KanbanColumnProps {
   onArchiveDone?: () => void;
 }
 
-export const KanbanColumn: React.FC<KanbanColumnProps> = ({
+const KanbanColumnComponent: React.FC<KanbanColumnProps> = ({
   id,
   title,
   subtitle,
@@ -249,3 +249,6 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
     </div>
   );
 };
+
+export const KanbanColumn = React.memo(KanbanColumnComponent);
+KanbanColumn.displayName = 'KanbanColumn';

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback, useSyncExternalStore, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useSyncExternalStore, useRef, useDeferredValue } from 'react';
 import dynamic from 'next/dynamic';
 import { DragDropContext, DropResult } from '@hello-pangea/dnd';
 import { Task, TaskStatus, CreateTaskInput, UpdateTaskInput } from '@/types/task';
@@ -18,6 +18,7 @@ import { NoteItem, NoteColor } from '@/types/note';
 import { Navbar } from '@/components/ui/Navbar';
 import { useSession } from 'next-auth/react';
 import { GuestModeBanner } from '@/components/ui/GuestModeBanner';
+import { LiveDateTimeBadge } from '@/components/ui/LiveDateTimeBadge';
 import {
   getGuestBoards,
   saveGuestBoard,
@@ -81,8 +82,6 @@ import {
   Filter,
   RefreshCw,
   X,
-  Calendar,
-  Clock,
   SlidersHorizontal,
   Target,
   Gift,
@@ -188,8 +187,6 @@ export const KanbanBoard: React.FC = () => {
   const tasksAbortRef = useRef<AbortController | null>(null);
   const notesAbortRef = useRef<AbortController | null>(null);
 
-  const [currentDate, setCurrentDate] = useState('');
-  const [currentTime, setCurrentTime] = useState('');
   const [currentHour, setCurrentHour] = useState<number>(() => {
     if (typeof window !== 'undefined') return new Date().getHours();
     return 8;
@@ -298,31 +295,13 @@ export const KanbanBoard: React.FC = () => {
   }, [isStickyMatchOpen, isWhackGameOpen, isSnakeGameOpen, isPongGameOpen]);
 
   useEffect(() => {
-    const locale = language === 'en' ? 'en-US' : 'id-ID';
-    const updateDateTime = () => {
-      const now = new Date();
-      setCurrentHour(now.getHours());
-      setCurrentDate(
-        now.toLocaleDateString(locale, {
-          weekday: 'long',
-          day: 'numeric',
-          month: 'short',
-          year: 'numeric',
-        })
-      );
-      setCurrentTime(
-        now.toLocaleTimeString(locale, {
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-        }) + (language === 'id' ? ' WIB' : '')
-      );
+    const updateHour = () => {
+      setCurrentHour(new Date().getHours());
     };
-
-    updateDateTime();
-    const timer = setInterval(updateDateTime, 1000);
+    updateHour();
+    const timer = setInterval(updateHour, 60000);
     return () => clearInterval(timer);
-  }, [language]);
+  }, []);
 
   // Active Theme Config
   const themeConfig = useMemo(() => {
@@ -1236,12 +1215,16 @@ export const KanbanBoard: React.FC = () => {
     return list;
   }, [activeBoard]);
 
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+
   // Filter active tasks based on search & tags & assignee
   const filteredTasks = useMemo(() => {
+    const query = deferredSearchQuery.trim().toLowerCase();
     return activeTasks.filter((task) => {
       const matchSearch =
-        task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (task.description && task.description.toLowerCase().includes(searchQuery.toLowerCase()));
+        !query ||
+        task.title.toLowerCase().includes(query) ||
+        (task.description && task.description.toLowerCase().includes(query));
 
       const matchCategory =
         selectedCategory === 'ALL' || task.category.toLowerCase() === selectedCategory.toLowerCase();
@@ -1260,7 +1243,7 @@ export const KanbanBoard: React.FC = () => {
 
       return matchSearch && matchCategory && matchPriority && matchAssignee;
     });
-  }, [activeTasks, searchQuery, selectedCategory, selectedPriority, selectedAssigneeFilter, session?.user?.id]);
+  }, [activeTasks, deferredSearchQuery, selectedCategory, selectedPriority, selectedAssigneeFilter, session?.user?.id]);
 
   // Sort filtered tasks if a specific sorting mode is active
   const sortedFilteredTasks = useMemo(() => {
@@ -2248,23 +2231,7 @@ export const KanbanBoard: React.FC = () => {
 
             {/* Badges: Live Date & Time + Completion Percentage */}
             <div className="flex flex-wrap items-center gap-1.5">
-              {currentDate && (
-                <div
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-[11px] font-semibold shadow-2xs ${
-                    themeConfig.isDark
-                      ? 'bg-slate-900/50 border-slate-700/50 text-slate-300'
-                      : 'bg-amber-50/70 border-amber-200/70 text-amber-900'
-                  }`}
-                >
-                  <Calendar className="w-3 h-3 text-amber-500 shrink-0" />
-                  <span>{currentDate}</span>
-                  <span className="text-amber-300">•</span>
-                  <Clock className="w-3 h-3 text-amber-500 shrink-0" />
-                  <span className={`font-mono ${themeConfig.isDark ? 'text-amber-400' : 'text-slate-800'}`}>
-                    {currentTime}
-                  </span>
-                </div>
-              )}
+              <LiveDateTimeBadge isDark={themeConfig.isDark} language={language} />
 
               <div
                 className={`flex items-center gap-1 px-2.5 py-1 rounded-xl border text-[11px] font-bold shadow-2xs ${

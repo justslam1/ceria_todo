@@ -106,6 +106,7 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
             archivedTasks.map((task) => (
               <div
                 key={task.id}
+                style={{ contentVisibility: 'auto', containIntrinsicSize: '0 60px' }}
                 className="p-3.5 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 shadow-2xs flex items-center justify-between gap-3 transition-all"
               >
                 <div className="flex items-center gap-2.5 min-w-0">

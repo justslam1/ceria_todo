@@ -60,7 +60,7 @@ interface TaskCardProps {
   activeColumnCount?: ActiveColumnCount;
 }
 
-export const TaskCard: React.FC<TaskCardProps> = ({
+const TaskCardComponent: React.FC<TaskCardProps> = ({
   task,
   index,
   onEdit,
@@ -568,3 +568,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     </Draggable>
   );
 };
+
+export const TaskCard = React.memo(TaskCardComponent);
+TaskCard.displayName = 'TaskCard';
